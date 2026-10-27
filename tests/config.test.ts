@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config';
 
 describe('configuration', () => {
+  it('FakeのLLMと投稿先を実サービス用のモデル・接続先・Secretなしで検証する', () => {
+    const config = loadConfig({ llm: { provider: 'fake' }, targets: [{ id: 'local', provider: 'fake' }] });
+    expect(config.llm.provider).toBe('fake');
+    expect(config.targets[0]?.provider).toBe('fake');
+    expect(config.targets[0]?.enabled).toBe(false);
+  });
+
+  it('Fake LLMではカスタムモデルの料金係数を要求しない', () => {
+    expect(loadConfig({ llm: { provider: 'fake', model: 'local' } }).llm.provider).toBe('fake');
+  });
+
+  it('Provider省略時は既存のWorkers AIとMisskeyを選択する', () => {
+    const config = loadConfig({ targets: [{ id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' }] });
+    expect(config.llm.provider).toBe('workers-ai');
+    expect(config.targets[0]?.provider).toBe('misskey');
+  });
+
+  it.each([
+    { llm: { provider: 'unknown' } },
+    { targets: [{ id: 'main', provider: 'unknown' }] },
+    { targets: [{ id: 'main', provider: 'misskey' }] },
+    { llm: { provider: 'workers-ai', model: 'custom' } },
+  ])('未知のProviderや実サービスの設定不足を拒否する: %j', (raw) => {
+    expect(() => loadConfig(raw)).toThrow();
+  });
+
   it('品質方針を変えずに明示設定やプリセットより環境変数を優先する', () => {
     const config = loadConfig(
       {

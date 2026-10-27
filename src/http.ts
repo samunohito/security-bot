@@ -48,7 +48,7 @@ export async function getText(
       ...options.headers,
     },
     signal: AbortSignal.timeout(15000),
-    redirect: 'error',
+    redirect: 'manual',
   });
   if (response.status === 304) {
     return { text: '', notModified: true };

@@ -4,9 +4,10 @@ import { classify, digest, type PostIntent, type Summary, type Validation } from
 import { HttpError } from './http';
 import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
 import type { AiBinding, LlmProvider, LlmRequest } from './llm/provider';
-import { WorkersAiProvider } from './llm/workers-ai';
-import { summarySchema, validateSummary, validateVerdict, verdictSchema } from './quality';
-import { MisskeyProvider } from './social/misskey';
+import { createLlmProvider } from './llm';
+import { evidencePrompt } from './llm/evidence';
+import { summarySchema, validateSummary, validateVerdict, verdictSchema, type Verdict } from './quality';
+import { createSocialProvider } from './social';
 import { PublishError, type PreparedPost, type SocialProvider } from './social/provider';
 import { sourceProvider } from './sources';
 import type { SourceProvider } from './sources/provider';
@@ -51,7 +52,7 @@ export class Bot {
     public providers: Providers = {},
   ) {
     this.store = new Store(env.DB);
-    this.llm = providers.llm ?? (env.AI ? new WorkersAiProvider(env.AI, config.llm) : undefined);
+    this.llm = providers.llm ?? createLlmProvider(config.llm, env.AI);
   }
 
   private async analyzeKey(revisionId: string, evidenceHash: string) {
@@ -60,6 +61,7 @@ export class Bot {
         targets: this.config.targets,
         dryRun: this.config.dryRun,
         model: this.config.llm.model,
+        llmProvider: this.config.llm.provider,
       }),
     );
 
@@ -112,6 +114,67 @@ export class Bot {
     }
   }
 
+  /** 検証不合格を含む保存済み要約を取得し、未生成と改訂不存在を区別する。 */
+  async summary(id: string) {
+    const revision = await this.store.getRevision(id);
+    if (!revision) {
+      return null;
+    }
+
+    const cached = await this.store.getSummary(revision);
+
+    return {
+      revisionId: id,
+      key: revision.threat_key,
+      evidenceHash: revision.evidence_hash,
+      status: cached ? 'generated' : 'not_generated',
+      summary: cached?.summary ?? null,
+      validation: cached?.validation ?? null,
+    };
+  }
+
+  /** 保存済み根拠で生成と品質検証を診断し、予算以外の永続状態や投稿を変更しない。 */
+  async generateSummary(id: string, now = Date.now()) {
+    const revision = await this.store.getRevision(id);
+    if (!revision) {
+      throw new Error('revision_not_found');
+    }
+
+    const input = this.promptEvidence(revision);
+    const summary = await this.generate({ system: SUMMARY_SYSTEM, data: input }, summarySchema, now);
+    const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key);
+    let verdict: Verdict | null = null;
+    if (this.config.llm.provider === 'fake' && !this.providers.llm) {
+      validation.valid = false;
+      validation.reasons.push('fake_provider');
+    } else if (validation.valid) {
+      verdict = await this.generate({ system: VERIFY_SYSTEM, data: { ...input, summary } }, verdictSchema, now);
+      validation.valid = validateVerdict(verdict);
+      validation.reasons.push(
+        ...verdict.contradictions,
+        ...verdict.unsupportedClaims,
+        ...(!verdict.supported ? ['unsupported_summary'] : []),
+      );
+    }
+
+    const current = await this.store.getRevision(id);
+    if (!current || current.evidence_hash !== revision.evidence_hash || !(await this.store.isCurrent(id))) {
+      validation.valid = false;
+      validation.reasons.push('evidence_changed');
+    }
+
+    return {
+      revisionId: id,
+      key: revision.threat_key,
+      evidenceHash: revision.evidence_hash,
+      provider: this.config.llm.provider,
+      model: this.config.llm.provider === 'fake' ? null : this.config.llm.model,
+      summary,
+      validation,
+      verdict,
+    };
+  }
+
   /** 改訂の保存済み要約から投稿先ごとの本文と投稿可否のプレビューを作る。 */
   async preview(id: string) {
     const revision = await this.store.getRevision(id);
@@ -135,7 +198,7 @@ export class Bot {
         sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(0, 2),
         previousPost: await this.store.previousPost(target.id, revision.threat_key),
       };
-      const provider = this.providers.social?.(target) ?? new MisskeyProvider(target, '');
+      const provider = this.providers.social?.(target) ?? createSocialProvider(target);
       try {
         results.push({
           targetId: target.id,
@@ -259,16 +322,7 @@ export class Bot {
   }
 
   private promptEvidence(revision: Revision) {
-    return {
-      key: revision.threat_key,
-      evidence: revision.snapshot.evidence.slice(0, 4).map((e) => ({
-        id: e.evidenceId,
-        scope: e.scope,
-        cves: e.cves,
-        url: e.url,
-        text: `${e.affected ?? ''}\n${e.remediation ?? ''}\n${e.text}`.slice(0, 2200),
-      })),
-    };
+    return evidencePrompt(revision.threat_key, revision.snapshot.evidence);
   }
 
   private async generate<T>(request: LlmRequest, schema: z.ZodType<T>, now: number): Promise<T> {
@@ -329,6 +383,11 @@ export class Bot {
     }
 
     let cached = await this.store.getSummary(revision);
+    const fakeLlm = this.config.llm.provider === 'fake' && !this.providers.llm;
+    if (cached?.validation.reasons.includes('fake_provider') && !fakeLlm) {
+      cached = null;
+    }
+
     if (!cached) {
       const summary = await this.generate(
         { system: SUMMARY_SYSTEM, data: this.promptEvidence(revision) },
@@ -336,7 +395,9 @@ export class Bot {
         now,
       );
       const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key);
-      if (validation.valid) {
+      if (fakeLlm) {
+        validation.reasons = ['fake_provider', ...validation.reasons];
+      } else if (validation.valid) {
         validation.reasons = ['verification_pending'];
       }
       validation.valid = false;
@@ -487,8 +548,7 @@ export class Bot {
       return;
     }
 
-    const provider =
-      this.providers.social?.(target) ?? new MisskeyProvider(target, String(this.env[target.tokenSecret] ?? ''));
+    const provider = this.providers.social?.(target) ?? createSocialProvider(target, this.env);
     const previousPost = await this.store.previousPost(target.id, revision.threat_key);
     const intent: PostIntent = {
       kind: previousPost ? (revision.kind === 'correction' ? 'correction' : 'update') : 'new',

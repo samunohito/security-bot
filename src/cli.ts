@@ -68,7 +68,7 @@ async function main() {
 
   if (!command || command === 'help') {
     console.log(
-      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions; show jobs|deliveries|revisions ID; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
+      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
     );
     return;
   }
@@ -93,13 +93,14 @@ async function main() {
     path = '/admin/status';
   } else if (command === 'list' && ['jobs', 'deliveries', 'sources', 'targets', 'revisions'].includes(resource ?? '')) {
     path = `/admin/${resource}`;
-  } else if (command === 'show' && ['jobs', 'deliveries', 'revisions'].includes(resource ?? '') && id) {
+  } else if (command === 'show' && ['jobs', 'deliveries', 'revisions', 'summaries'].includes(resource ?? '') && id) {
     path = `/admin/${resource}/${encodeURIComponent(id)}`;
   } else if (command === 'dry-run' && resource) {
     path = `/admin/dry-run?id=${encodeURIComponent(resource)}`;
   } else {
     const paths: Record<string, string> = {
       'retry-job': '/admin/jobs/retry',
+      'generate-summary': '/admin/summaries/generate',
       'retry-delivery': '/admin/deliveries/retry',
       resolve: '/admin/deliveries/resolve',
       pause: '/admin/targets/pause',
@@ -125,7 +126,7 @@ async function main() {
       'Content-Type': 'application/json',
     },
     body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(command === 'generate-summary' ? 120000 : 30000),
     redirect: 'error',
   });
   if (!response.ok) {

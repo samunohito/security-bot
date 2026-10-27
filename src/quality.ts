@@ -3,20 +3,32 @@ import type { Evidence, Summary, Validation } from './domain';
 
 const claimSchema = z
   .object({
-    text: z.string().min(1).max(1500),
+    text: z
+      .string()
+      .min(1)
+      .max(1500)
+      .describe('開発者・運用者向けの簡潔な日本語。引用から裏付けられる内容だけを書く。'),
     evidence: z
       .array(z.object({ id: z.string().min(1), quote: z.string().min(2).max(4000) }).strict())
       .min(1)
-      .max(10),
+      .max(10)
+      .describe('根拠のidと、同じ根拠のtextまたはsectionsから一字も変えずに抜き出した引用。'),
   })
   .strict();
 
 export const summarySchema = z
   .object({
-    overview: claimSchema.nullable(),
-    impact: claimSchema.nullable(),
-    action: claimSchema.nullable(),
-    uncertainties: z.array(z.string().max(500)).max(10),
+    overview: claimSchema
+      .nullable()
+      .describe('対象製品と脆弱性の概要。CVSSや悪用状況が不明でも、概要を裏付ける本文があれば生成する。'),
+    impact: claimSchema.nullable().describe('攻撃により起こる被害や影響。原文に記載がなければnull。'),
+    action: claimSchema
+      .nullable()
+      .describe('修正適用・更新・回避策など、利用者が取るべき対処。原文に記載がなければnull。'),
+    uncertainties: z
+      .array(z.string().max(500))
+      .max(10)
+      .describe('必要な判断に影響する未確認事項を日本語で書く。特にない場合は空配列。'),
   })
   .strict();
 

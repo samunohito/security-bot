@@ -52,6 +52,13 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       });
     }
 
+    const summaryMatch = url.pathname.match(/^\/admin\/summaries\/([^/]+)$/);
+    if (request.method === 'GET' && summaryMatch) {
+      const result = await bot.summary(decodeURIComponent(summaryMatch[1]!));
+
+      return result ? json(result) : json({ error: 'not_found' }, 404);
+    }
+
     const tableMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|sources|targets|revisions)$/);
     if (request.method === 'GET' && tableMatch) {
       return json(await bot.store.list(tableMatch[1] as 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions'));
@@ -91,6 +98,13 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       .parse(JSON.parse(text));
     const now = Date.now();
 
+    if (url.pathname === '/admin/summaries/generate') {
+      if (!(await bot.store.getRevision(body.id))) {
+        return json({ error: 'not_found' }, 404);
+      }
+
+      return json(await bot.generateSummary(body.id));
+    }
     if (url.pathname === '/admin/targets/pause' || url.pathname === '/admin/targets/resume') {
       await bot.store.pauseTarget(body.id, url.pathname.endsWith('/pause'));
     } else if (url.pathname === '/admin/jobs/retry') {
@@ -111,6 +125,7 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       if (
         delivery?.state !== 'unknown' ||
         !target ||
+        target.provider !== 'misskey' ||
         !body.postId ||
         !body.postUrl ||
         new URL(body.postUrl).origin !== new URL(target.baseUrl).origin ||

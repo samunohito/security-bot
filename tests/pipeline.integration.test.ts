@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { Bot } from '../src/pipeline';
 import { adminRequest } from '../src/admin';
@@ -151,6 +151,72 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('設定のFake LLMで要約を生成し、意味検証を通過したことにはしない', async () => {
+    const config = loadConfig({ sources: [], llm: { provider: 'fake' }, targets: [{ id: 'local', provider: 'fake' }] });
+    const bot = new Bot(
+      {
+        DB: db,
+        JOBS: { async send() {} },
+        AI: {
+          async run() {
+            throw new Error('unexpected_AI_call');
+          },
+        },
+      },
+      config,
+    );
+    const [id] = await bot.store.ingest(item, now);
+    await bot.tick(now);
+    await processAll(bot, now);
+
+    const revision = await bot.store.getRevision(id!);
+    const cached = await bot.store.getSummary(revision!);
+    expect(cached?.summary.overview?.text).toContain('Acme');
+    expect(cached?.summary.uncertainties.join('')).toContain('Fake LLM');
+    expect(cached?.validation.valid).toBe(false);
+    expect((await bot.store.budgetStatus(now))?.neurons).toBe(0);
+    expect((await bot.store.list('deliveries')).map((delivery) => delivery.state)).toEqual(['held']);
+  });
+
+  it('設定のFake投稿先はSecretなしでstdoutへ出力し配信を完了する', async () => {
+    const { bot: original } = harness();
+    const config = loadConfig({
+      sources: [],
+      dryRun: false,
+      targets: [{ id: 'local', provider: 'fake', enabled: true }],
+    });
+    const bot = new Bot(original.env, config, { llm: original.providers.llm });
+    const output: string[] = [];
+    const log = vi.spyOn(console, 'log').mockImplementation((text) => {
+      output.push(String(text));
+    });
+    try {
+      await bot.store.ingest(item, now);
+      await bot.tick(now);
+      await processAll(bot, now);
+      expect(output).toHaveLength(1);
+      expect(output[0]).toContain('CVE-2026-1111');
+      expect((await bot.store.list('deliveries')).map((delivery) => delivery.state)).toEqual(['sent']);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('Fakeから実LLMへ切り替えた場合はFake要約を再生成して品質検証する', async () => {
+    const config = loadConfig({ sources: [], llm: { provider: 'fake' }, targets: [{ id: 'local', provider: 'fake' }] });
+    const fake = new Bot({ DB: db, JOBS: { async send() {} } }, config);
+    const [id] = await fake.store.ingest(item, now);
+    await fake.tick(now);
+    await processAll(fake, now);
+
+    const { bot: real } = harness({ dryRun: true });
+    await real.tick(now + 1000);
+    await processAll(real, now + 1000);
+    const cached = await real.store.getSummary((await real.store.getRevision(id!))!);
+    expect(cached?.validation.valid).toBe(true);
+    expect(cached?.summary.overview?.text).toBe('Acmeに脆弱性');
+  });
+
   it('検証済みの要約を投稿先間で共有し各投稿先に一度だけ投稿する', async () => {
     const { bot, store } = harness();
     await store.ingest(item, now);
@@ -307,6 +373,137 @@ describe('complete pipeline', () => {
 });
 
 describe('management boundary', () => {
+  it('不合格の生成結果も取得でき、未生成と改訂不存在を区別する', async () => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const get = (revisionId: string) =>
+      adminRequest(
+        new Request(`https://bot.example/admin/summaries/${revisionId}`, {
+          headers: { Authorization: 'Bearer token' },
+        }),
+        bot,
+        'token',
+      );
+
+    expect((await get('missing'))?.status).toBe(404);
+    const empty = await get(id!);
+    expect(empty?.status).toBe(200);
+    expect(await empty?.json()).toMatchObject({
+      revisionId: id,
+      status: 'not_generated',
+      summary: null,
+      validation: null,
+    });
+
+    const generated = { overview: null, impact: null, action: null, uncertainties: ['未確認'] };
+    await store.saveSummary(
+      (await store.getRevision(id!))!,
+      generated,
+      { valid: false, complete: false, reasons: ['overview_missing'] },
+      now,
+    );
+    const saved = await get(id!);
+    expect(await saved?.json()).toMatchObject({
+      revisionId: id,
+      status: 'generated',
+      summary: generated,
+      validation: { valid: false, reasons: ['overview_missing'] },
+    });
+  });
+
+  it('生成結果の取得と診断には管理認証を要求する', async () => {
+    const { bot } = harness();
+    expect((await adminRequest(new Request('https://bot.example/admin/summaries/id'), bot, 'token'))?.status).toBe(401);
+    expect(
+      (
+        await adminRequest(
+          new Request('https://bot.example/admin/summaries/generate', { method: 'POST' }),
+          bot,
+          'token',
+        )
+      )?.status,
+    ).toBe(401);
+  });
+
+  it('生成診断では保存済み不合格要約を再利用せず、配信やキャッシュを変更しない', async () => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    const saved = { overview: null, impact: null, action: null, uncertainties: [] };
+    await store.saveSummary(revision, saved, { valid: false, complete: false, reasons: ['overview_missing'] }, now);
+    const response = await adminRequest(
+      new Request('https://bot.example/admin/summaries/generate', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify({ id }),
+      }),
+      bot,
+      'token',
+    );
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toMatchObject({
+      revisionId: id,
+      summary,
+      validation: { valid: true, complete: true },
+      verdict: { supported: true },
+    });
+    expect((await store.getSummary(revision))?.summary).toEqual(saved);
+    expect(await store.list('jobs')).toEqual([]);
+    expect(await store.list('deliveries')).toEqual([]);
+  });
+
+  it('診断の予算が枯渇している場合はLLMを呼ばない', async () => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    await store.reserveBudget('exhausted', now, bot.config.budget.neurons, bot.config.budget);
+    await expect(bot.generateSummary(id!, now)).rejects.toThrow('AI_daily_budget_exhausted');
+    expect(await store.getSummary((await store.getRevision(id!))!)).toBeNull();
+  });
+
+  it('診断でも捏造引用を不合格にし、意味検証の呼び出しを行わない', async () => {
+    const { bot: original, store } = harness();
+    const [id] = await store.ingest(item, now);
+    let calls = 0;
+    const bot = new Bot(original.env, original.config, {
+      llm: {
+        async generateStructured<T>(_request: LlmRequest, schema: z.ZodType<T>) {
+          calls++;
+          return {
+            value: schema.parse({ ...summary, overview: claim('不正な主張', '原文にない引用') }),
+            usage: { inputTokens: 1, outputTokens: 1 },
+          };
+        },
+      },
+    });
+    const result = await bot.generateSummary(id!, now);
+    expect(result.validation.valid).toBe(false);
+    expect(result.validation.reasons).toContain('overview: fabricated evidence');
+    expect(result.verdict).toBeNull();
+    expect(calls).toBe(1);
+  });
+
+  it('診断中に根拠が更新された場合は結果を有効と扱わない', async () => {
+    const { bot: original, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const llm = original.providers.llm!;
+    let updated = false;
+    const bot = new Bot(original.env, original.config, {
+      llm: {
+        async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+          if (!updated) {
+            updated = true;
+            await store.ingest({ ...item, text: item.text + ' More information.', modifiedAt: now + 1000 }, now + 1000);
+          }
+          return llm.generateStructured(request, schema);
+        },
+      },
+    });
+    const result = await bot.generateSummary(id!, now);
+    expect(result.validation.valid).toBe(false);
+    expect(result.validation.reasons).toContain('evidence_changed');
+    expect(await store.list('deliveries')).toEqual([]);
+  });
+
   it('IDでジョブと配信の詳細を返しレコードが存在しない場合は通知する', async () => {
     const { bot, store } = harness();
     const id = "quoted:'id";

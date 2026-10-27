@@ -1,9 +1,10 @@
 import type { Config } from './config';
 import { classify, normalizeItem } from './domain';
 import type { Fetcher } from './http';
-import { FakeLlmProvider, SUMMARY_SYSTEM } from './llm';
+import { FakeLlmProvider } from './llm/fake';
+import { SUMMARY_SYSTEM } from './llm/prompts';
 import { summarySchema, validateSummary } from './quality';
-import { StdoutSocialProvider } from './social';
+import { StdoutSocialProvider } from './social/stdout';
 import { sourceProvider } from './sources';
 
 /** 情報源の1件を取得し、永続化せずFake要約・根拠検証・投稿整形の結果を返す。 */

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config';
 import { preview } from './preview';
-import { StdoutSocialProvider } from './social';
+import { StdoutSocialProvider } from './social/stdout';
 
 async function main() {
   const { positionals: args, values } = parseArgs({

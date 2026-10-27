@@ -17,8 +17,8 @@ import {
   type ThreatSnapshot,
   type Validation,
 } from './domain';
-import type { SourceCursor } from './sources';
-import type { PreparedPost } from './social';
+import type { PreparedPost } from './social/provider';
+import type { SourceCursor } from './sources/provider';
 
 export type Job = typeof tables.jobs.$inferSelect;
 export type Revision = Omit<typeof tables.revisions.$inferSelect, 'snapshot'> & { snapshot: ThreatSnapshot };

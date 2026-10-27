@@ -5,8 +5,9 @@ import { Bot } from '../src/pipeline';
 import { adminRequest } from '../src/admin';
 import { loadConfig } from '../src/config';
 import { Store } from '../src/store';
-import { PublishError, UrlReferenceProvider } from '../src/social';
-import type { LlmProvider, LlmRequest } from '../src/llm';
+import { PublishError } from '../src/social/provider';
+import { UrlReferenceProvider } from '../src/social/url-reference';
+import type { LlmProvider, LlmRequest } from '../src/llm/provider';
 import type { PostIntent, SourceItem } from '../src/domain';
 
 const db = (env as unknown as { DB: D1Database }).DB;

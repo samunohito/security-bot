@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { classify, materialKey, normalizeItem, publicationDay } from '../src/domain';
 import { snapshot } from '../src/domain';
-import { formatPost } from '../src/social';
+import { formatPost } from '../src/social/format';
 
 const item = {
   sourceId: 'jvn',

@@ -2,17 +2,14 @@ import { z } from 'zod';
 import type { Config, Environment, SourceConfig, TargetConfig } from './config';
 import { classify, digest, type PostIntent, type Summary, type Validation } from './domain';
 import { HttpError } from './http';
-import {
-  SUMMARY_SYSTEM,
-  VERIFY_SYSTEM,
-  WorkersAiProvider,
-  type AiBinding,
-  type LlmProvider,
-  type LlmRequest,
-} from './llm';
+import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
+import type { AiBinding, LlmProvider, LlmRequest } from './llm/provider';
+import { WorkersAiProvider } from './llm/workers-ai';
 import { summarySchema, validateSummary, validateVerdict, verdictSchema } from './quality';
-import { MisskeyProvider, PublishError, type PreparedPost, type SocialProvider } from './social';
-import { sourceProvider, type SourceProvider } from './sources';
+import { MisskeyProvider } from './social/misskey';
+import { PublishError, type PreparedPost, type SocialProvider } from './social/provider';
+import { sourceProvider } from './sources';
+import type { SourceProvider } from './sources/provider';
 import { Store, type Job, type Revision } from './store';
 
 export interface BotEnv extends Environment {

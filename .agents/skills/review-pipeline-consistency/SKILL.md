@@ -59,14 +59,15 @@ description: Use when changing or reviewing Security Bot's D1-backed jobs, deliv
 ### 記事全体の情報と個別CVEへの帰属
 
 - 実装：[domain](../../../src/domain.ts) の `normalizeItem`、`snapshot`、`classify` と、
-  [投稿整形](../../../src/social.ts)の `formatPost`。
+  [投稿整形](../../../src/social/format.ts)の `formatPost`。
 - 複数CVEを含む記事全体のスコア・悪用確認を、すべてのCVEの確定情報へコピーしない。
   根拠のscopeだけでなく、最終的な投稿可否・緊急度・見出しまで追う。
 - [Domainテスト](../../../tests/domain.test.ts)の `never promotes every CVE` を確認する。
 
 ### 中断後の収集再開
 
-- 実装：[sourceProvider](../../../src/sources/index.ts) と `SourceCursor`。
+- 実装：[sourceProvider](../../../src/sources/index.ts)、[NVD収集](../../../src/sources/nvd.ts) と
+  [SourceCursor](../../../src/sources/provider.ts)。
 - 初回のlookbackと既存の完了watermarkからの再開を区別する。ページング中の検索窓は固定し、
   未完了の窓を完了済みとして進めない。再開位置を常に「昨日」に切り詰めると停止中の更新を失う。
 - [Providerテスト](../../../tests/providers.test.ts)の `keeps a fixed NVD window` と `resumes all NVD updates`
@@ -75,7 +76,7 @@ description: Use when changing or reviewing Security Bot's D1-backed jobs, deliv
 ### 送信結果不明・予算・優先度
 
 - 実装：Storeの `recover`、`deliveryError`、`retryDelivery`、`reserveDelivery`、`reserveBudget` と、
-  [MisskeyProvider](../../../src/social.ts)の送信結果の分類。
+  [MisskeyProvider](../../../src/social/misskey.ts)の送信結果の分類。
 - 外部SNSでの受理とD1記録は同一トランザクションにならない。タイムアウトや記録失敗を、確実な未送信と混同しない。
   `unknown` と確実な失敗では、再試行・枠返却・アカウント占有の扱いが異なる。
 - Store統合テストの `moves expired sending to unknown`、`reserves budgets atomically`、

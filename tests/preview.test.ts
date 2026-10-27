@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { FakeLlmProvider, SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm';
+import { FakeLlmProvider } from '../src/llm/fake';
+import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
 import { summarySchema, verdictSchema } from '../src/quality';
-import { StdoutSocialProvider } from '../src/social';
+import { StdoutSocialProvider } from '../src/social/stdout';
 import { loadConfig } from '../src/config';
 import { preview } from '../src/preview';
 

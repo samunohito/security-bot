@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { enrichArticle, parseFeed, parseKev, parseNvd } from '../src/sources/parsers';
 import { getText, HttpError } from '../src/http';
-import { MisskeyProvider, UrlReferenceProvider } from '../src/social';
+import { MisskeyProvider } from '../src/social/misskey';
+import { UrlReferenceProvider } from '../src/social/url-reference';
 import { loadConfig } from '../src/config';
 import { sourceProvider } from '../src/sources';
 

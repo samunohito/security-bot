@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
-import { loadConfig } from './config';
+import { parseConfig } from './config';
 import { preview } from './preview';
 import { StdoutSocialProvider } from './social/stdout';
 
@@ -24,8 +24,8 @@ async function main() {
       throw new Error('Usage: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]');
     }
 
-    const raw = JSON.parse(await readFile(values.config ?? 'bot.config.json', 'utf8')) as unknown;
-    const result = await preview(loadConfig(raw, process.env), {
+    const text = await readFile(values.config ?? 'bot.config.jsonc', 'utf8');
+    const result = await preview(parseConfig(text, process.env), {
       source: values.source,
       item: values.item,
       key: values.key,
@@ -44,8 +44,8 @@ async function main() {
   }
 
   if (command === 'config') {
-    const raw = JSON.parse(await readFile(values.config ?? 'bot.config.json', 'utf8')) as unknown;
-    const config = loadConfig(raw, process.env);
+    const text = await readFile(values.config ?? 'bot.config.jsonc', 'utf8');
+    const config = parseConfig(text, process.env);
     if (resource !== 'validate' && resource !== 'show') {
       throw new Error('Usage: config validate|show [--config path]');
     }

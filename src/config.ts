@@ -1,3 +1,4 @@
+import { parse, type ParseError, printParseErrorCode } from 'jsonc-parser';
 import { z } from 'zod';
 
 const interval = z.number().int().min(60);
@@ -184,4 +185,16 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
   }
 
   return config;
+}
+
+/** JSONC設定を解析し、構文・設定値の検証と環境変数の適用を行う。 */
+export function parseConfig(text: string, env: Environment = {}): Config {
+  const errors: ParseError[] = [];
+  const raw: unknown = parse(text, errors, { allowTrailingComma: true });
+  const error = errors[0];
+  if (error) {
+    throw new SyntaxError(`Invalid JSONC configuration: ${printParseErrorCode(error.error)} at offset ${error.offset}`);
+  }
+
+  return loadConfig(raw, env);
 }

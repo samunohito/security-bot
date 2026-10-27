@@ -1,0 +1,49 @@
+{
+  // 各項目の詳細・入力可能な値・既定値はbot.config.example.jsoncを参照。
+  // 予算プリセット: "free"（既定）/ "balanced" / "performance"。
+  "mode": "free",
+  // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信。
+  "dryRun": true,
+  // 既定の取得間隔（秒）: 60以上の整数。省略時900。
+  "pollIntervalSeconds": 60,
+  // 情報源の配列。指定すると既定リスト全体を置き換える。[]も可。
+  "sources": [
+    {
+      // 情報源ID: 英小文字・数字・_・-（1文字以上）。sources内で一意。
+      "id": "jvn",
+      // 取得形式: "rss" / "kev" / "nvd"。
+      "kind": "rss",
+      // フィード/APIのHTTPS URL。
+      "url": "https://jvn.jp/rss/jvn.rdf",
+      // RSS記事取得を許可するホスト名の配列（完全一致）。省略時[]で本文取得不可。
+      "articleHosts": ["jvn.jp"]
+    },
+    {
+      // 情報源ID: 英小文字・数字・_・-（1文字以上）。sources内で一意。
+      "id": "jpcert",
+      // 取得形式: "rss" / "kev" / "nvd"。
+      "kind": "rss",
+      // フィード/APIのHTTPS URL。
+      "url": "https://www.jpcert.or.jp/rss/jpcert.rdf",
+      // RSS記事取得を許可するホスト名の配列（完全一致）。省略時[]で本文取得不可。
+      "articleHosts": ["www.jpcert.or.jp"]
+    },
+    {
+      // 情報源ID: 英小文字・数字・_・-（1文字以上）。sources内で一意。
+      "id": "kev",
+      // 取得形式: "rss" / "kev" / "nvd"。
+      "kind": "kev",
+      // フィード/APIのHTTPS URL。
+      "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    }
+  ],
+  // 投稿先の配列。省略時[]。enabledは省略時false。
+  "targets": [
+    {
+      // 投稿先ID: 英小文字・数字・_・-（1文字以上）。targets内で一意。
+      "id": "local",
+      // "misskey"（既定）/ "fake"（標準出力用。接続先・Secret不要）。
+      "provider": "fake"
+    }
+  ]
+}

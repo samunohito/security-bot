@@ -1,0 +1,127 @@
+{
+  // 予算プリセット: "free"（既定）/ "balanced" / "performance"。契約プランは変更しない。
+  // maxCalls / concurrency / neurons は順に free: 20/1/8000、balanced: 100/2/30000、performance: 500/5/100000。
+  "mode": "free",
+  // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信する。
+  "dryRun": true,
+  // 情報源の既定取得間隔（秒）: 60以上の整数。省略時900。実行は毎分のCronに従う。
+  "pollIntervalSeconds": 900,
+
+  // 情報源の配列。指定すると既定のJVN・JPCERT・KEV・NVDを全置換する。[]も可。
+  "sources": [
+    {
+      // 情報源ID: 英小文字・数字・_・-（1文字以上）。sources内で一意にする。
+      "id": "jvn",
+      // 取得形式: "rss"（RSS/Atom）/ "kev"（CISA KEV JSON）/ "nvd"（NVD API）。必須。
+      "kind": "rss",
+      // フィード/APIのURL: HTTPS URL。必須。
+      "url": "https://jvn.jp/rss/jvn.rdf",
+      // true（既定）: 収集する / false: 収集しない。
+      "enabled": true,
+      // この情報源の取得間隔（秒）: 60以上の整数。省略時は全体のpollIntervalSeconds。
+      "pollIntervalSeconds": 900,
+      // RSS記事取得を許可するホスト名の配列（完全一致）。省略時[]で、記事本文の取得は許可しない。
+      "articleHosts": ["jvn.jp"]
+    },
+    {
+      // 2件目以降も上記と同じ制約。
+      "id": "jpcert",
+      "kind": "rss",
+      "url": "https://www.jpcert.or.jp/rss/jpcert.rdf",
+      "articleHosts": ["www.jpcert.or.jp"]
+    },
+    {
+      "id": "kev",
+      "kind": "kev",
+      "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    },
+    {
+      "id": "nvd",
+      "kind": "nvd",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+      // 既定の情報源リストではNVDのみ7200秒。自分でsourcesを指定する場合は明示する。
+      "pollIntervalSeconds": 7200,
+      // NVD APIキーを保持するSecretの名前（任意の文字列）。任意項目。未登録ならキーなしで取得する。
+      // APIキーそのものは書かない。
+      "apiKeySecret": "NVD_API_KEY"
+    }
+  ],
+
+  // 投稿先の配列。省略時[]。投稿先を追加してもenabledの既定値はfalse。
+  "targets": [
+    {
+      // 投稿先ID: 英小文字・数字・_・-（1文字以上）。targets内で一意にする。
+      "id": "main",
+      // "misskey"（既定）/ "fake"（標準出力用）。fakeではbaseUrl・tokenSecretは不要。
+      "provider": "misskey",
+      // false（既定）: 投稿しない / true: 投稿対象にする。実投稿にはdryRun: falseも必要。
+      "enabled": false,
+      // MisskeyインスタンスのHTTPS URL。provider: "misskey"では必須。
+      "baseUrl": "https://your-misskey.example",
+      // Misskeyトークンを保持するSecret名。英大文字で始まる英大文字・数字・_。misskeyでは必須。
+      "tokenSecret": "MISSKEY_TOKEN",
+      "qualityGate": {
+        // true（既定）: 概要・影響・対策の根拠を必須にする / false: 不足を「未確認」とした投稿も許可。
+        // falseでも原文との不一致や出典の矛盾などの検証は継続する。
+        "enabled": true
+      },
+      // 通常投稿の間隔（秒）: 60以上の整数。省略時3600。
+      "normalIntervalSeconds": 3600,
+      // 緊急投稿の間隔（秒）: 60以上の整数。省略時300。
+      "urgentIntervalSeconds": 300,
+      // 通常・緊急を問わない全投稿間の最低間隔（秒）: 60以上の整数。省略時300。
+      "minimumIntervalSeconds": 300,
+      // 通常投稿の日本時間1日あたりの上限: 0以上の整数。省略時10。0は通常投稿を許可しない。
+      "normalDailyLimit": 10,
+      // 緊急投稿の日本時間1日あたりの上限（通常と別枠）: 0以上の整数。省略時10。
+      "urgentDailyLimit": 10,
+      // 投稿本文の文字数上限: 200〜10000の整数。省略時500。投稿先の制限に合わせる。
+      "maxCharacters": 500,
+      // 公開範囲: "public"（既定）/ "home" / "followers"。
+      "visibility": "public"
+    },
+    {
+      // 不足のある投稿も許可する投稿先の例。同じSecretを使う必要はない。
+      "id": "unsafe",
+      "provider": "misskey",
+      "enabled": false,
+      "baseUrl": "https://your-misskey.example",
+      "tokenSecret": "UNSAFE_MISSKEY_TOKEN",
+      "qualityGate": { "enabled": false }
+    }
+  ],
+
+  // 任意の個別上書き。以下の値を明示するとmodeを変更してもその項目はプリセットに追従しない。
+  // プリセットを使う項目は削除する。空オブジェクト{}やbudget全体の省略も可。
+  "budget": {
+    // UTC日ごとのLLM呼び出し上限: 1以上の整数。省略時はmodeのプリセット。
+    "maxCalls": 20,
+    // 同時に処理するLLM呼び出し数: 1〜20の整数。省略時はmodeのプリセット。
+    "concurrency": 1,
+    // UTC日ごとの推定Neurons上限: 0より大きい数。省略時はmodeのプリセット。
+    "neurons": 8000,
+    // UTC日ごとのキュー操作数の概算上限: 1以上の整数。省略時8000。通常配送1件を3操作と見積もる。
+    "queueOperations": 8000
+  },
+  "llm": {
+    // "workers-ai"（既定）/ "fake"（ローカル検証用。意味検証は行わず品質ゲートを通過しない）。
+    "provider": "workers-ai",
+    // モデル名: 1文字以上の文字列。省略時は以下のモデル。
+    // workers-aiでモデルを変更する場合は、入力・出力の料金係数を両方とも明示する。
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    // LLM入力の最大文字数: 1000〜24000の整数。省略時16000。
+    "maxInputCharacters": 16000,
+    // 最大出力トークン数: 256〜4096の整数。省略時1024。
+    "maxOutputTokens": 1024,
+    // 入力100万トークンあたりの推定Neurons係数: 0より大きい数。既定モデルでは省略時26668。
+    "inputNeuronsPerMillion": 26668,
+    // 出力100万トークンあたりの推定Neurons係数: 0より大きい数。既定モデルでは省略時204805。
+    "outputNeuronsPerMillion": 204805
+  },
+  // 未投稿候補の有効期間（イベントからの秒数）: 0より大きい数。省略時259200（72時間）。
+  "freshnessSeconds": 259200,
+  // 初回収集・新規投稿候補で遡る期間（秒）: 0より大きい数。省略時86400（24時間）。
+  "initialLookbackSeconds": 86400,
+  // 処理履歴の保持日数: 1以上の整数。省略時90。
+  "retentionDays": 90
+}

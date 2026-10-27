@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../src/config';
+import { loadConfig, parseConfig } from '../src/config';
 
 describe('configuration', () => {
   it('FakeのLLMと投稿先を実サービス用のモデル・接続先・Secretなしで検証する', () => {
@@ -64,5 +64,37 @@ describe('configuration', () => {
   it('未知のモードと真偽が曖昧な環境変数の値を拒否する', () => {
     expect(() => loadConfig({}, { BOT_MODE: 'cheap' })).toThrow();
     expect(() => loadConfig({}, { DRY_RUN: 'maybe' })).toThrow();
+  });
+});
+
+describe('JSONC設定', () => {
+  it('コメントと末尾カンマを読み込み、URL内の記号を保持する', () => {
+    const config = parseConfig(`{
+      // 行コメント
+      "dryRun": true,
+      /* ブロックコメント */
+      "targets": [{
+        "id": "main",
+        "baseUrl": "https://social.example/path//segment",
+        "tokenSecret": "TOKEN",
+      },],
+    }`);
+    expect(config.dryRun).toBe(true);
+    expect(config.targets[0]?.baseUrl).toBe('https://social.example/path//segment');
+  });
+
+  it('通常のJSONも読み込み、環境変数による上書きを適用する', () => {
+    expect(parseConfig('{"mode":"free"}', { BOT_MODE: 'balanced' }).mode).toBe('balanced');
+  });
+
+  it.each(['', '// コメントのみ', '{"dryRun": false', '{"mode": "free" "dryRun": true}', '{} trailing', '/* 未完了'])(
+    '不正な構文を部分的な設定として受理しない: %j',
+    (text) => {
+      expect(() => parseConfig(text)).toThrow(SyntaxError);
+    },
+  );
+
+  it('JSONCでも設定値の検証を適用する', () => {
+    expect(() => parseConfig('{"pollIntervalSeconds": 59,}')).toThrow();
   });
 });

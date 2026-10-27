@@ -110,7 +110,7 @@ pnpm run db:migrate:remote
 
 `ADMIN_TOKEN`は長いランダムな値にします。Misskeyのトークンはボットアカウントの設定から作成し、ノート投稿に必要な`write:notes`権限を与えます。通常版とunsafe版を別アカウントで運用する場合は、別のSecretを登録してください。
 
-`bot.config.json`に投稿先を追加します。全項目の例は[`bot.config.example.json`](bot.config.example.json)です。
+`bot.config.jsonc`に投稿先を追加します。全項目の例は[`bot.config.example.jsonc`](bot.config.example.jsonc)です。
 
 ```json
 {
@@ -128,6 +128,8 @@ pnpm run db:migrate:remote
 }
 ```
 
+設定はJSONC形式で、`//`・`/* ... */`コメントと末尾カンマを使用できます。CLIの`--config path`では従来のJSONも読み込めます。各項目の意味・入力可能な値・省略時の既定値は設定例のコメントを参照してください。
+
 設定ファイルはWorkerへバンドルされます。変更を反映するには再デプロイします。
 
 ```sh
@@ -141,7 +143,7 @@ AIの呼び出しはローカル起動でもクラウド側の推論・利用量
 
 ## 設定
 
-適用順は、既定値 → モードのプリセット → `bot.config.json` →
+適用順は、既定値 → モードのプリセット → `bot.config.jsonc` →
 対応する環境変数です。Secretsの値は設定ファイルへ書かず、名前だけを参照します。
 
 | モード         | LLM呼び出し/UTC日 | LLM並列数 | 推定Neurons/UTC日 |

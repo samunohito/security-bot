@@ -64,7 +64,9 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       const row =
         table === 'revisions'
           ? await bot.store.getRevision(id)
-          : await bot.store.db.prepare(`SELECT * FROM ${table} WHERE id=?`).bind(id).first();
+          : table === 'jobs'
+            ? await bot.store.getJob(id)
+            : await bot.store.getDelivery(id);
 
       return row ? json(row) : json({ error: 'not_found' }, 404);
     }

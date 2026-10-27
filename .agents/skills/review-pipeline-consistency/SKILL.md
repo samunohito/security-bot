@@ -51,7 +51,7 @@ description: Use when changing or reviewing Security Bot's D1-backed jobs, deliv
 
 ### 訂正された情報源と古いデータの再到着
 
-- 実装：Storeの `ingest`、`refreshThreat` と、[スキーマ](../../../migrations/0001_initial.sql)の `source_versions`。
+- 実装：Storeの `ingest`、`refreshThreat` と、[スキーマ](../../../src/db/schema.ts)の `sourceVersions`。
 - 同じ記事の対象がA・BからBだけに変わるとき、Bの更新だけでなくAとの関連解除も必要。
   古い版の再到着で解除した関連が復活しないか、準備済み配信や根拠の無効化も確認する。
 - Store統合テストの `retires source membership` を確認する。削除された対象と古い版の再投入の期待値を読む。

@@ -14,11 +14,13 @@
     "format:check": "biome format .",
     "build": "wrangler deploy --dry-run --outdir dist",
     "cli": "tsx src/cli.ts",
+    "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply security-bot --local",
     "db:migrate:remote": "wrangler d1 migrations apply security-bot --remote",
     "benchmark": "tsx scripts/benchmark.ts"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.4",
     "fast-xml-parser": "^5.5.0",
     "zod": "^4.3.0"
   },
@@ -27,6 +29,7 @@
     "@cloudflare/vitest-plugin": "1.4.8",
     "@cloudflare/workers-types": "latest",
     "@types/node": "^24.0.0",
+    "drizzle-kit": "0.31.11",
     "tsx": "^4.21.0",
     "typescript": "^5.9.0",
     "vitest": "~4.1.0",

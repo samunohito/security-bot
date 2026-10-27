@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import { cloudflareTest } from '@cloudflare/vitest-plugin';
+import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
+
+const migrations = await readD1Migrations('./migrations');
 
 export default defineConfig({
   test: {
@@ -19,11 +21,13 @@ export default defineConfig({
               compatibilityDate: '2026-10-27',
               compatibilityFlags: ['nodejs_compat'],
               d1Databases: ['DB'],
+              bindings: { TEST_MIGRATIONS: migrations },
             },
           }),
         ],
         test: {
           name: 'workers',
+          setupFiles: ['./tests/setup.ts'],
           include: ['tests/**/*.integration.test.ts'],
           fileParallelism: false,
         },

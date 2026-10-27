@@ -20,7 +20,9 @@
 
 - Node.js 22以上、npm、TypeScript（strict）、ES Modules。
 - Cloudflare Workers。設定は `wrangler.jsonc`、エントリーポイントは `src/index.ts`。
-- D1を状態の正本とし、Queuesでジョブを配送、Cron Triggersで定期実行する。SQLの変更は `migrations/` で管理する。
+- D1を状態の正本とし、Queuesでジョブを配送、Cron Triggersで定期実行する。
+- スキーマの正本は `src/db/schema.ts`。通常CRUDはDrizzle ORM、複雑な原子更新はD1のSQL・batchを併用する。
+- SQLの変更はDrizzle Kitで `migrations/` に生成し、メタデータとともに管理する。適用はWranglerを使う。
 - Workers AIで要約し、Misskeyへ投稿する。処理の中心は `src/pipeline.ts`、永続化は `src/store.ts`。
 - 設定検証はZod、RSS/XML解析はfast-xml-parser。
 - Vitest 4.1系で単体テストとWorkers/D1統合テストを実行する。構成は `vitest.config.ts`。
@@ -95,6 +97,9 @@ npm run cli -- config validate
 
 `npm run build` はWranglerのdry-run。シェルスクリプトを変更した場合は `sh -n scripts/install-skills.sh`
 でも構文を確認する。
+
+スキーマを変更した場合は `npm run db:generate -- --name describe_change` で差分を生成し、SQLをレビューする。
+ローカルD1への適用と変更なしの再生成も確認する。依頼のないリモート適用は行わない。
 
 ## Skills
 

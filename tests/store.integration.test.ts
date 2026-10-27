@@ -1,6 +1,5 @@
 import { env } from 'cloudflare:test';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import migration from '../migrations/0001_initial.sql?raw';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Store } from '../src/store';
 import { loadConfig } from '../src/config';
 import type { SourceItem } from '../src/domain';
@@ -36,10 +35,6 @@ const item: SourceItem = {
   remediation: 'Upgrade to 2.0',
   rejected: false,
 };
-beforeAll(async () => {
-  // exec()は改行で文を分割するため、SQLファイルは1文1行の形式で読み込む。
-  await db.exec(migration);
-});
 beforeEach(async () => {
   await db.batch(
     [
@@ -63,6 +58,23 @@ beforeEach(async () => {
 });
 
 describe('durable work', () => {
+  it('returns job details with JSON payload and null leases, or null for a missing ID', async () => {
+    const id = "job:'quoted";
+    await store.enqueue(id, 'analyze', { revisionId: '日本語' }, now);
+
+    expect(await store.getJob(id)).toMatchObject({
+      id,
+      payload: JSON.stringify({ revisionId: '日本語' }),
+      state: 'pending',
+      lease_token: null,
+      error: null,
+      attempts: 0,
+    });
+    expect(await store.getJob('missing')).toBeNull();
+    expect(await store.getDelivery('missing')).toBeNull();
+    expect(await store.getRevision('missing')).toBeNull();
+  });
+
   it('recovers an enqueue crash and deduplicates a queue replay', async () => {
     await store.enqueue('one', 'analyze', { revisionId: 'r' }, now);
     await store.enqueue('one', 'analyze', { revisionId: 'r' }, now);

@@ -1,7 +1,6 @@
 import { env } from 'cloudflare:test';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import migration from '../migrations/0001_initial.sql?raw';
 import { Bot } from '../src/pipeline';
 import { adminRequest } from '../src/admin';
 import { loadConfig } from '../src/config';
@@ -61,10 +60,6 @@ function makeConfig(dryRun = false) {
     ],
   });
 }
-beforeAll(async () => {
-  // exec()は改行で文を分割するため、SQLファイルは1文1行の形式で読み込む。
-  await db.exec(migration);
-});
 beforeEach(async () => {
   await db.batch(
     [
@@ -311,6 +306,32 @@ describe('complete pipeline', () => {
 });
 
 describe('management boundary', () => {
+  it('returns job and delivery details by ID and reports missing records', async () => {
+    const { bot, store } = harness();
+    const id = "quoted:'id";
+    await store.enqueue(id, 'analyze', { revisionId: 'r' }, now);
+    await store.createDelivery(id, 'main', 'r', false, now);
+
+    for (const table of ['jobs', 'deliveries']) {
+      const request = new Request(`https://bot.example/admin/${table}/${encodeURIComponent(id)}`, {
+        headers: { Authorization: 'Bearer token' },
+      });
+      const response = await adminRequest(request, bot, 'token');
+      expect(response?.status).toBe(200);
+      expect(await response?.json()).toMatchObject({ id, lease_token: null, error: null });
+
+      const missing = await adminRequest(
+        new Request(`https://bot.example/admin/${table}/missing`, {
+          headers: { Authorization: 'Bearer token' },
+        }),
+        bot,
+        'token',
+      );
+      expect(missing?.status).toBe(404);
+      expect(await missing?.json()).toEqual({ error: 'not_found' });
+    }
+  });
+
   it('denies missing auth and permits authenticated status', async () => {
     const { bot } = harness();
     expect((await adminRequest(new Request('https://bot.example/admin/status'), bot, 'token'))?.status).toBe(401);

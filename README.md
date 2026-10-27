@@ -81,6 +81,33 @@ npx wrangler secret put MISSKEY_TOKEN
 npx wrangler secret put NVD_API_KEY
 ```
 
+### DBスキーマとマイグレーション
+
+スキーマの正本は [`src/db/schema.ts`](src/db/schema.ts) です。通常のDBアクセスにはDrizzle ORMを使い、
+配信枠・予算・リースなどの複雑な原子更新にはD1のSQLとbatchを併用します。
+
+スキーマを変更したら、Drizzle Kitで差分SQLを生成し、内容を確認してからWranglerで適用します。
+初回セットアップでは生成済みの初期SQLをそのまま適用でき、再生成は不要です。
+
+```sh
+# src/db/schema.tsを編集した後
+npm run db:generate -- --name describe_change
+# migrations/の生成SQLをレビューしてからローカルD1へ適用
+npm run db:migrate:local
+npm test
+# 運用者がリモートD1へ適用する場合
+npm run db:migrate:remote
+```
+
+`migrations/` のSQLと `migrations/meta/` のスナップショット・生成履歴は一緒にGit管理します。
+適用履歴はWranglerの `d1_migrations` で管理し、`drizzle-kit migrate` や `push` は併用しません。
+統合テストも同じディレクトリのマイグレーション一式をローカルD1に適用します。
+生成にCloudflareの認証情報は不要です。操作の根拠は
+[Drizzle Kitの生成手順](https://orm.drizzle.team/docs/drizzle-kit-generate)と
+[D1のマイグレーション仕様](https://developers.cloudflare.com/d1/reference/migrations/)です（確認日：2026-10-27）。
+
+### 投稿先とSecrets
+
 `ADMIN_TOKEN`は長いランダムな値にします。Misskeyのトークンはボットアカウントの設定から作成し、ノート投稿に必要な`write:notes`権限を与えます。通常版とunsafe版を別アカウントで運用する場合は、別のSecretを登録してください。
 
 `bot.config.json`に投稿先を追加します。全項目の例は[`bot.config.example.json`](bot.config.example.json)です。

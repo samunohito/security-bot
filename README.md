@@ -13,17 +13,17 @@ AIとMisskeyです。
 Node.js 22以上を使用します（開発・検証はNode.js 24）。
 
 ```sh
-npm ci
-npm test
-npm run typecheck
-npm run format:check
-npm run build
-npm run cli -- config validate
+pnpm ci
+pnpm test
+pnpm run typecheck
+pnpm run format:check
+pnpm run build
+pnpm run cli -- config validate
 ```
 
-`npm test`は実際のWorkersランタイムとローカルD1を使う統合テストを含みます。外部情報源・LLM・SNSへのアクセスはテストでは置き換え、SNSへの実送信は行いません。`npm run build`もWranglerのdry-runです。
+`pnpm test`は実際のWorkersランタイムとローカルD1を使う統合テストを含みます。外部情報源・LLM・SNSへのアクセスはテストでは置き換え、SNSへの実送信は行いません。`pnpm run build`もWranglerのdry-runです。
 
-フォーマットにはBiomeを使用します。`npm run format`で対応ファイル全体を整形し、`npm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`は整形対象から除外します。
+フォーマットにはBiomeを使用します。`pnpm run format`で対応ファイル全体を整形し、`pnpm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`は整形対象から除外します。
 
 ## AIエージェント向けの開発環境
 
@@ -41,7 +41,7 @@ Cloudflare公式リポジトリは調査時点で約3.2K starsです。各skill�
 5.1のベータ版を前提としているため、このプロジェクトのVitest 4.1系には導入していません。フロントエンドやDurable
 Objects向けのskillsも、現在の構成では使用しないため対象外です。
 
-Node.js 22以上、npm（npx）、Git、GitHubとnpmへのネットワーク接続が必要です。
+Node.js 22以上、pnpm（pnpx）、Git、GitHubとnpmへのネットワーク接続が必要です。
 
 ```sh
 sh scripts/install-skills.sh
@@ -65,20 +65,20 @@ sh scripts/install-skills.sh
 以下のリソース作成とデプロイは、運用者がCloudflareアカウントで行います。
 
 ```sh
-npx wrangler login
-npx wrangler d1 create security-bot
-npx wrangler queues create security-bot-jobs
+pnpm wrangler login
+pnpm wrangler d1 create security-bot
+pnpm wrangler queues create security-bot-jobs
 ```
 
 作成結果のdatabase IDを`wrangler.jsonc`のプレースホルダーと置き換えてください。
 
 ```sh
-npm run db:migrate:local
-npm run db:migrate:remote
-npx wrangler secret put ADMIN_TOKEN
-npx wrangler secret put MISSKEY_TOKEN
+pnpm run db:migrate:local
+pnpm run db:migrate:remote
+pnpm wrangler secret put ADMIN_TOKEN
+pnpm wrangler secret put MISSKEY_TOKEN
 # NVDのAPIキーを使う場合
-npx wrangler secret put NVD_API_KEY
+pnpm wrangler secret put NVD_API_KEY
 ```
 
 ### DBスキーマとマイグレーション
@@ -91,12 +91,12 @@ npx wrangler secret put NVD_API_KEY
 
 ```sh
 # src/db/schema.tsを編集した後
-npm run db:generate -- --name describe_change
+pnpm run db:generate -- --name describe_change
 # migrations/の生成SQLをレビューしてからローカルD1へ適用
-npm run db:migrate:local
-npm test
+pnpm run db:migrate:local
+pnpm test
 # 運用者がリモートD1へ適用する場合
-npm run db:migrate:remote
+pnpm run db:migrate:remote
 ```
 
 `migrations/` のSQLと `migrations/meta/` のスナップショット・生成履歴は一緒にGit管理します。
@@ -131,12 +131,12 @@ npm run db:migrate:remote
 設定ファイルはWorkerへバンドルされます。変更を反映するには再デプロイします。
 
 ```sh
-npx wrangler deploy
+pnpm wrangler deploy
 ```
 
 最初はdry-runのまま動かし、CLIで`preview`状態の投稿本文と検証結果を確認します。実投稿を始める際に`dryRun: false`と対象アカウントの`enabled: true`を設定してデプロイしてください。CLIで停止したアカウントは`resume`も必要です。
 
-ローカル起動には`.dev.vars.example`を`.dev.vars`へコピーして値を設定し、`npm run dev`を使用します。Workers
+ローカル起動には`.dev.vars.example`を`.dev.vars`へコピーして値を設定し、`pnpm run dev`を使用します。Workers
 AIの呼び出しはローカル起動でもクラウド側の推論・利用量を伴うため、オフラインでの検証にはテストを使ってください。
 
 ## 設定
@@ -194,8 +194,8 @@ RSSの保持件数には上限があるため、長期停止中にフィード�
 ### ローカルで1件をプレビュー
 
 ```sh
-npm run cli -- preview --source jvn
-npm run cli -- preview --source jvn --item ITEM_ID --key CVE-2026-1111
+pnpm run cli -- preview --source jvn
+pnpm run cli -- preview --source jvn --item ITEM_ID --key CVE-2026-1111
 ```
 
 設定済み情報源を1回収集し、先頭1件（`--item` 指定時はIDが一致する項目）について、記事取得→Fake要約→
@@ -218,20 +218,20 @@ npm run cli -- preview --source jvn --item ITEM_ID --key CVE-2026-1111
 export SECURITY_BOT_URL=https://security-bot.your-subdomain.workers.dev
 export SECURITY_BOT_ADMIN_TOKEN='your-admin-token'
 
-npm run cli -- config validate
-npm run cli -- config show
-npm run cli -- status
-npm run cli -- list sources
-npm run cli -- list jobs --state held
-npm run cli -- list deliveries --state unknown
-npm run cli -- list revisions
-npm run cli -- show jobs JOB_ID
-npm run cli -- show deliveries DELIVERY_ID
-npm run cli -- show revisions REVISION_ID
-npm run cli -- dry-run REVISION_ID
-npm run cli -- pause main
-npm run cli -- resume main
-npm run cli -- retry-job JOB_ID
+pnpm run cli -- config validate
+pnpm run cli -- config show
+pnpm run cli -- status
+pnpm run cli -- list sources
+pnpm run cli -- list jobs --state held
+pnpm run cli -- list deliveries --state unknown
+pnpm run cli -- list revisions
+pnpm run cli -- show jobs JOB_ID
+pnpm run cli -- show deliveries DELIVERY_ID
+pnpm run cli -- show revisions REVISION_ID
+pnpm run cli -- dry-run REVISION_ID
+pnpm run cli -- pause main
+pnpm run cli -- resume main
+pnpm run cli -- retry-job JOB_ID
 ```
 
 `dry-run REVISION_ID`は保存済み要約を各投稿先の形式でプレビューする読み取り操作です。新規収集・推論・送信は行いません。要約が未生成の場合は先に通常のdry-runパイプラインを動かしてください。一覧は直近50件で、詳細はIDで指定します。
@@ -243,13 +243,13 @@ SNSでの投稿とD1への記録は同一トランザクションにできませ
 実際には投稿されていた場合:
 
 ```sh
-npm run cli -- resolve DELIVERY_ID --post-id NOTE_ID --post-url https://your-misskey.example/notes/NOTE_ID
+pnpm run cli -- resolve DELIVERY_ID --post-id NOTE_ID --post-url https://your-misskey.example/notes/NOTE_ID
 ```
 
 未投稿と確認して再送する場合:
 
 ```sh
-npm run cli -- retry-delivery DELIVERY_ID --ack-duplicate-risk
+pnpm run cli -- retry-delivery DELIVERY_ID --ack-duplicate-risk
 ```
 
 429など明確な未受理は待機後に再試行します。認証エラーは投稿先を停止します。トークンを修正して再デプロイした後、対象アカウントを再開し、保留した配信を再処理してください。再送時も現行の根拠・品質ゲート・鮮度を再確認します。
@@ -259,9 +259,9 @@ npm run cli -- retry-delivery DELIVERY_ID --ack-duplicate-risk
 ## CPU計測とログ
 
 ```sh
-npm run benchmark -- --source kev --save benchmark-data/kev.json
-npm run benchmark -- --source jvn --save benchmark-data/jvn.rdf
-npm run benchmark -- --source kev --file benchmark-data/kev.json
+pnpm run benchmark -- --source kev --save benchmark-data/kev.json
+pnpm run benchmark -- --source jvn --save benchmark-data/jvn.rdf
+pnpm run benchmark -- --source kev --file benchmark-data/kev.json
 ```
 
 公式データを使ってローカルNode.jsのCPU時間を計測します。Cloudflare本番のCPU時間を再現・保証する測定ではありません。無料Workersの10ms制限に対しては、実際のInvocation

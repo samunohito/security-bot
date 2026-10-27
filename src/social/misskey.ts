@@ -14,6 +14,10 @@ export class MisskeyProvider implements SocialProvider {
     private token: string,
     private fetcher: Fetcher = fetch,
   ) {
+    if (target.provider !== 'misskey') {
+      throw new Error('misskey_provider_requires_misskey_target');
+    }
+
     this.base = target.baseUrl.replace(/\/$/, '');
   }
 
@@ -59,12 +63,16 @@ export class MisskeyProvider implements SocialProvider {
           noExtractEmojis: true,
         }),
         signal: AbortSignal.timeout(15000),
-        redirect: 'error',
+        redirect: 'manual',
       });
     } catch {
       throw new PublishError('unknown', 'send_result_unknown');
     }
 
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new PublishError('unknown', 'social_redirect_result_unknown');
+    }
     if (response.status === 401 || response.status === 403) {
       throw new PublishError('auth', 'social_auth_failed');
     }

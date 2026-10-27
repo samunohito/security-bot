@@ -169,6 +169,24 @@ LLMは呼び出し前に入力のバイト数と最大出力数から予算を�
 
 既定モデルは`@cf/meta/llama-3.3-70b-instruct-fp8-fast`です。変更時は`llm.inputNeuronsPerMillion`と`llm.outputNeuronsPerMillion`にモデルの料金係数を明示します。`LlmProvider`を実装することで別プロバイダにも拡張できます。
 
+LLMは `llm.provider` に `workers-ai`（省略時）または `fake`、投稿先は `provider` に `misskey`（省略時）または `fake`
+を指定できます。Fakeの最小設定例は以下です。
+
+```json
+{
+  "dryRun": true,
+  "llm": { "provider": "fake" },
+  "targets": [{ "id": "local", "provider": "fake", "enabled": false }]
+}
+```
+
+Fake LLMではAIバインディング・モデル指定・料金係数の指定は不要です。Fake投稿先は `StdoutSocialProvider` を使い、
+`baseUrl` と `tokenSecret` は不要です。投稿先の文字数・品質ゲートなどの共通設定は引き続き検証します。
+Misskeyでは接続先とSecret名を引き続き必須とし、未知のProviderは拒否します。
+通常パイプラインも設定に従ってProviderを選びますが、Fake LLMは意味検証を実装せず、品質ゲートを通過しません。
+取得から投稿本文までを手軽に確認する用途には下記の単発 `preview` を使います。`preview` は設定に関わらずFake固定です。
+Fake投稿先も `dryRun: true` の間は送信処理を行わず、配信を `preview` として記録します。
+
 ### 収集・配信
 
 - RSS/KEVは900秒、NVDは7,200秒。`sources[].pollIntervalSeconds`で情報源別に上書きできます。`sources`を指定すると既定リスト全体を置き換えるので、利用する情報源をすべて記載します。
@@ -228,13 +246,34 @@ pnpm run cli -- list revisions
 pnpm run cli -- show jobs JOB_ID
 pnpm run cli -- show deliveries DELIVERY_ID
 pnpm run cli -- show revisions REVISION_ID
+pnpm run cli -- show summaries REVISION_ID
+pnpm run cli -- generate-summary REVISION_ID
 pnpm run cli -- dry-run REVISION_ID
 pnpm run cli -- pause main
 pnpm run cli -- resume main
 pnpm run cli -- retry-job JOB_ID
 ```
 
-`dry-run REVISION_ID`は保存済み要約を各投稿先の形式でプレビューする読み取り操作です。新規収集・推論・送信は行いません。要約が未生成の場合は先に通常のdry-runパイプラインを動かしてください。一覧は直近50件で、詳細はIDで指定します。
+`show revisions REVISION_ID` は収集した記事本文や出典、`show summaries REVISION_ID` は保存済みの構造化要約と
+引用根拠・品質検証結果を表示します。不合格の生成結果も確認できます。要約が未生成なら `status: "not_generated"` と
+`summary: null` を返し、改訂そのものが存在しない場合は404になります。
+
+`generate-summary REVISION_ID`
+は保存済み根拠を使って現在の設定で新しく生成し、要約と引用検証・意味検証の結果を返す診断操作です。
+実LLMでは生成に加え、引用検証を通過した場合に意味検証も呼び出すため、最大2回の推論と利用量が発生し、既存の日次予算と並列数制限が適用されます。
+Fakeの場合は本文抜粋とFakeを示す不合格結果を返し、実AIによる意味検証は行いません。
+`validation.valid`
+を確認してください。HTTP成功でも生成品質の合格を意味せず、生成中に根拠が更新された結果も不合格になります。
+診断結果で保存済み要約を上書きせず、ジョブや配信の状態も変更しません。既存の保留要約を自動で再生成する操作ではありません。
+結果を残す場合は `pnpm exec tsx src/cli.ts generate-summary REVISION_ID > result.json` のように保存できます。
+
+`dry-run REVISION_ID` は保存済み要約を各投稿先の形式でプレビューする読み取り操作です。新規収集・推論・送信は行いません。
+要約が未生成の場合は先に通常のdry-runパイプラインを動かしてください。一覧は直近50件で、詳細はIDで指定します。
+
+要約生成では各項目の意味と引用条件を明示し、本文の概要・影響・対策の原文抜粋を優先して入力します。
+JSON Modeだけで内容の正しさを保証せず、構造と引用・裏付けの検証を併用します。
+参考：[Workers AI JSON Mode](https://developers.cloudflare.com/workers-ai/features/json-mode/)・
+[Prompting](https://developers.cloudflare.com/workers-ai/features/prompting/)（確認日：2026-10-27）。
 
 ### 送信結果不明の復旧
 

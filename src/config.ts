@@ -16,12 +16,9 @@ const sourceSchema = z.object({
   apiKeySecret: z.string().optional(),
 });
 
-const targetSchema = z.object({
+const targetCommonSchema = z.object({
   id: z.string().regex(/^[a-z0-9_-]+$/),
-  provider: z.literal('misskey').default('misskey'),
   enabled: z.boolean().default(false),
-  baseUrl: httpsUrl,
-  tokenSecret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
   qualityGate: z.object({ enabled: z.boolean().default(true) }).default({ enabled: true }),
   maxCharacters: z.number().int().min(200).max(10000).default(500),
   normalIntervalSeconds: interval.default(3600),
@@ -31,6 +28,27 @@ const targetSchema = z.object({
   urgentDailyLimit: z.number().int().nonnegative().default(10),
   visibility: z.enum(['public', 'home', 'followers']).default('public'),
 });
+
+const targetSchema = z.preprocess(
+  (value) => {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return { provider: 'misskey', ...value };
+    }
+
+    return value;
+  },
+  z.discriminatedUnion('provider', [
+    targetCommonSchema.extend({
+      provider: z.literal('misskey'),
+      baseUrl: httpsUrl,
+      tokenSecret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
+    }),
+    targetCommonSchema.extend({
+      provider: z.literal('fake'),
+      baseUrl: httpsUrl.optional(),
+    }),
+  ]),
+);
 
 const presets = {
   free: { maxCalls: 20, concurrency: 1, neurons: 8000 },
@@ -53,6 +71,7 @@ export const configSchema = z.object({
     queueOperations: z.number().int().positive().default(8000),
   }),
   llm: z.object({
+    provider: z.enum(['workers-ai', 'fake']).default('workers-ai'),
     model: z.string().min(1),
     maxInputCharacters: z.number().int().min(1000).max(24000),
     maxOutputTokens: z.number().int().min(256).max(4096),
@@ -118,8 +137,10 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
 
   const budgetRaw = z.record(z.string(), z.unknown()).parse(raw.budget ?? {});
   const llmRaw = z.record(z.string(), z.unknown()).parse(raw.llm ?? {});
+  const llmProvider = z.enum(['workers-ai', 'fake']).parse(llmRaw.provider ?? 'workers-ai');
   const model = env.LLM_MODEL ?? llmRaw.model ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
   if (
+    llmProvider === 'workers-ai' &&
     model !== '@cf/meta/llama-3.3-70b-instruct-fp8-fast' &&
     (llmRaw.inputNeuronsPerMillion === undefined || llmRaw.outputNeuronsPerMillion === undefined)
   ) {
@@ -148,6 +169,7 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
       inputNeuronsPerMillion: 26668,
       outputNeuronsPerMillion: 204805,
       ...llmRaw,
+      provider: llmProvider,
       model,
     },
     freshnessSeconds: raw.freshnessSeconds ?? 259200,

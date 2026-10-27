@@ -19,6 +19,7 @@ export class FakeLlmProvider implements LlmProvider {
     const quote = evidence?.text.trim().slice(0, 180);
 
     return {
+      usage: { inputTokens: 0, outputTokens: 0 },
       value: schema.parse({
         overview: quote && evidence ? { text: quote, evidence: [{ id: evidence.id, quote }] } : null,
         impact: null,

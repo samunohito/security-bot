@@ -1,5 +1,30 @@
 {
   "mode": "free",
   "dryRun": true,
-  "targets": []
+  "pollIntervalSeconds": 60,
+  "sources": [
+    {
+      "id": "jvn",
+      "kind": "rss",
+      "url": "https://jvn.jp/rss/jvn.rdf",
+      "articleHosts": ["jvn.jp"]
+    },
+    {
+      "id": "jpcert",
+      "kind": "rss",
+      "url": "https://www.jpcert.or.jp/rss/jpcert.rdf",
+      "articleHosts": ["www.jpcert.or.jp"]
+    },
+    {
+      "id": "kev",
+      "kind": "kev",
+      "url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    }
+  ],
+  "targets": [
+    {
+      "id": "local",
+      "provider": "fake"
+    }
+  ]
 }

@@ -1,12 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { loadConfig } from './config';
+import { preview } from './preview';
+import { StdoutSocialProvider } from './social';
 
 async function main() {
   const { positionals: args, values } = parseArgs({
     allowPositionals: true,
     options: {
       config: { type: 'string' },
+      source: { type: 'string' },
+      item: { type: 'string' },
+      key: { type: 'string' },
       'post-id': { type: 'string' },
       'post-url': { type: 'string' },
       'ack-duplicate-risk': { type: 'boolean' },
@@ -14,6 +19,30 @@ async function main() {
     },
   });
   const [command, resource, id] = args;
+  if (command === 'preview') {
+    if (!values.source || args.length !== 1 || values.item === '' || values.key === '') {
+      throw new Error('Usage: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]');
+    }
+
+    const raw = JSON.parse(await readFile(values.config ?? 'bot.config.json', 'utf8')) as unknown;
+    const result = await preview(loadConfig(raw, process.env), {
+      source: values.source,
+      item: values.item,
+      key: values.key,
+    });
+    if (!result.validation.valid) {
+      console.log(JSON.stringify(result, null, 2));
+      process.exitCode = 1;
+      return;
+    }
+
+    const social = new StdoutSocialProvider(3000, (text) => {
+      console.log(JSON.stringify({ ...result, post: { ...result.post, text } }, null, 2));
+    });
+    await social.publish(result.post);
+    return;
+  }
+
   if (command === 'config') {
     const raw = JSON.parse(await readFile(values.config ?? 'bot.config.json', 'utf8')) as unknown;
     const config = loadConfig(raw, process.env);
@@ -39,7 +68,7 @@ async function main() {
 
   if (!command || command === 'help') {
     console.log(
-      'Commands: config validate|show; status; list jobs|deliveries|sources|targets|revisions; show jobs|deliveries|revisions ID; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
+      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions; show jobs|deliveries|revisions ID; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
     );
     return;
   }

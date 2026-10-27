@@ -191,6 +191,29 @@ RSSの保持件数には上限があるため、長期停止中にフィード�
 
 ## 管理CLI
 
+### ローカルで1件をプレビュー
+
+```sh
+npm run cli -- preview --source jvn
+npm run cli -- preview --source jvn --item ITEM_ID --key CVE-2026-1111
+```
+
+設定済み情報源を1回収集し、先頭1件（`--item` 指定時はIDが一致する項目）について、記事取得→Fake要約→
+根拠検証→投稿プレビューを実行します。RSSは記事本文も取得するため、HTTPリクエストは複数回になる場合があります。
+複数CVEを含む記事では正規化後の先頭キーを使用し、`--key` で変更できます。
+`--config path` で設定ファイルを指定できます。
+
+`FakeLlmProvider` は本文を引用付きで抜粋し、`StdoutSocialProvider` が投稿本文を含む診断結果をJSONで出力します。
+管理API認証・Cloudflare・D1・Queues・SNSトークンは不要で、実SNS投稿や永続状態の更新は行いません。
+情報源の取得にはネットワーク接続が必要です。ページ巡回は行わず、KEV・NVDの対象期間は設定の `initialLookbackSeconds`
+に従います。対象がなければ非ゼロ終了します。
+
+出力の `mode: "fake"` と `semanticVerification: "not_performed"` が示すとおり、実際のAI要約や意味的な裏付け検証は
+未実施です。`validation` は既存の引用・数値・複数CVEの根拠照合の結果で、不合格なら診断結果とともに非ゼロ終了します。
+日付・予算・配信間隔など本番の投稿可否は判定せず、文字数上限はstdout用の3000文字です。
+
+### 管理APIの操作
+
 ```sh
 export SECURITY_BOT_URL=https://security-bot.your-subdomain.workers.dev
 export SECURITY_BOT_ADMIN_TOKEN='your-admin-token'

@@ -62,6 +62,7 @@ function makeConfig(dryRun = false) {
   });
 }
 beforeAll(async () => {
+  // exec()は改行で文を分割するため、SQLファイルは1文1行の形式で読み込む。
   await db.exec(migration);
 });
 beforeEach(async () => {
@@ -126,7 +127,9 @@ function harness(
           return new UrlReferenceProvider(500).prepare(intent);
         },
         async publish() {
-          if (options.failure) throw new PublishError(options.failure, 'test_failure');
+          if (options.failure) {
+            throw new PublishError(options.failure, 'test_failure');
+          }
           return { id: 'note1', url: 'https://social.example/notes/note1' };
         },
       }),
@@ -142,8 +145,13 @@ async function processAll(bot: Bot, now: number) {
         .bind(now)
         .all<{ id: string }>()
     ).results;
-    if (!rows.length) break;
-    for (const row of rows) await bot.runJob(row.id, now);
+    if (!rows.length) {
+      break;
+    }
+
+    for (const row of rows) {
+      await bot.runJob(row.id, now);
+    }
   }
 }
 describe('complete pipeline', () => {
@@ -152,6 +160,7 @@ describe('complete pipeline', () => {
     await store.ingest(item, now);
     await bot.tick(now);
     await processAll(bot, now);
+
     const deliveries = await store.list('deliveries');
     expect(deliveries.map((d) => d.state)).toEqual(['sent', 'sent']);
     expect((await store.budgetStatus(now))?.calls).toBe(2);
@@ -159,32 +168,39 @@ describe('complete pipeline', () => {
     await processAll(bot, now + 60000);
     expect((await store.list('deliveries')).filter((d) => d.state === 'sent')).toHaveLength(2);
   });
+
   it('holds incomplete normal content but labels and publishes the relaxed target', async () => {
     const { bot, store, sent } = harness({ partial: true });
     await store.ingest(item, now);
     await bot.tick(now);
     await processAll(bot, now);
+
     const deliveries = await store.list('deliveries');
     expect(deliveries.find((d) => d.target_id === 'main')?.state).toBe('held');
     expect(deliveries.find((d) => d.target_id === 'unsafe')?.state).toBe('sent');
     expect(sent[0]?.summary.impact).toBeNull();
   });
+
   it('holds contradictions on both accounts', async () => {
     const { bot, store } = harness({ contradiction: true });
     await store.ingest(item, now);
     await bot.tick(now);
     await processAll(bot, now);
+
     expect((await store.list('deliveries')).every((d) => d.state === 'held')).toBe(true);
     expect(await db.prepare('SELECT COUNT(*) AS n FROM attempts').first<{ n: number }>()).toEqual({ n: 0 });
   });
+
   it('creates dry-run previews without sending or consuming publication slots', async () => {
     const { bot, store } = harness({ dryRun: true });
     await store.ingest(item, now);
     await bot.tick(now);
     await processAll(bot, now);
+
     expect((await store.list('deliveries')).map((d) => d.state)).toEqual(['preview', 'preview']);
     expect(await db.prepare('SELECT COUNT(*) AS n FROM quotas').first<{ n: number }>()).toEqual({ n: 0 });
   });
+
   it('does not summarize stale baseline information', async () => {
     const { bot, store } = harness();
     await store.ingest({ ...item, publishedAt: now - 864000000, modifiedAt: now - 864000000 }, now);
@@ -192,16 +208,19 @@ describe('complete pipeline', () => {
     await processAll(bot, now);
     expect((await store.budgetStatus(now))?.calls ?? 0).toBe(0);
   });
+
   it('does not replay a possibly accepted send even after Cron recovery', async () => {
     const { bot, store } = harness({ failure: 'unknown' });
     await store.ingest(item, now);
     await bot.tick(now);
     await processAll(bot, now);
+
     expect((await store.list('deliveries')).map((d) => d.state)).toEqual(['unknown', 'unknown']);
     await bot.tick(now + 400000);
     await processAll(bot, now + 400000);
     expect(await db.prepare('SELECT COUNT(*) AS n FROM attempts').first<{ n: number }>()).toEqual({ n: 2 });
   });
+
   it('does not pause retry B when expired attempt A returns an old authentication error', async () => {
     let rejectSend: ((reason: unknown) => void) | undefined;
     const config = { ...makeConfig(), targets: [makeConfig().targets[0]!] };
@@ -224,7 +243,9 @@ describe('complete pipeline', () => {
     const publish = (await store.list('jobs')).find((j) => j.type === 'publish')!;
     const running = bot.runJob(String(publish.id), now);
     const deliveryId = String((await store.list('deliveries'))[0]!.id);
-    for (let i = 0; i < 50 && !rejectSend; i++) await db.prepare('SELECT 1').first();
+    for (let i = 0; i < 50 && !rejectSend; i++) {
+      await db.prepare('SELECT 1').first();
+    }
     expect(rejectSend).toBeDefined();
     await store.recover(now + 301000);
     await store.retryDelivery(deliveryId, now + 302000);
@@ -233,6 +254,7 @@ describe('complete pipeline', () => {
     await running;
     expect((await store.list('targets'))[0]?.paused).toBe(0);
   });
+
   it('defers when the daily AI budget runs out instead of retrying in the Queue', async () => {
     const { bot, store } = harness();
     const budgetBot = new Bot(bot.env, { ...bot.config, budget: { ...bot.config.budget, maxCalls: 1 } }, bot.providers);
@@ -242,6 +264,7 @@ describe('complete pipeline', () => {
     expect((await store.list('jobs')).some((j) => j.state === 'deferred')).toBe(true);
     expect((await store.list('deliveries')).filter((d) => d.state === 'sent')).toHaveLength(0);
   });
+
   it('keeps the strict gate when shortening an otherwise valid post', async () => {
     const config = makeConfig();
     const llm: LlmProvider = {
@@ -260,16 +283,25 @@ describe('complete pipeline', () => {
         };
       },
     };
-    const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
-      llm,
-      social: () => ({
-        prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
-        publish: async () => ({
-          id: 'p',
-          url: 'https://social.example/notes/p',
+    const bot = new Bot(
+      {
+        DB: db,
+        JOBS: {
+          async send() {},
+        },
+      },
+      config,
+      {
+        llm,
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+          publish: async () => ({
+            id: 'p',
+            url: 'https://social.example/notes/p',
+          }),
         }),
-      }),
-    });
+      },
+    );
     const store = new Store(db);
     await store.ingest(item, now);
     await bot.tick(now);
@@ -277,6 +309,7 @@ describe('complete pipeline', () => {
     expect((await store.list('deliveries')).find((d) => d.target_id === 'main')?.state).toBe('held');
   });
 });
+
 describe('management boundary', () => {
   it('denies missing auth and permits authenticated status', async () => {
     const { bot } = harness();
@@ -291,6 +324,7 @@ describe('management boundary', () => {
     expect(response?.status).toBe(200);
     expect(await response?.json()).toHaveProperty('budget');
   });
+
   it('requires explicit acknowledgement to retry an unknown send', async () => {
     const { bot, store } = harness({ failure: 'unknown' });
     await store.ingest(item, now);
@@ -309,6 +343,7 @@ describe('management boundary', () => {
     expect(response?.status).toBe(409);
     expect((await store.getDelivery(id))?.state).toBe('unknown');
   });
+
   it('previews cached content without creating attempts even in live mode', async () => {
     const { bot, store } = harness();
     const [id] = await store.ingest(item, now);

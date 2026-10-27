@@ -3,6 +3,7 @@ export interface Score {
   version: string;
   issuer: string;
 }
+
 export interface SourceItem {
   sourceId: string;
   id: string;
@@ -22,10 +23,12 @@ export interface SourceItem {
   impact?: string | null;
   rejected: boolean;
 }
+
 export interface Evidence extends SourceItem {
   evidenceId: string;
   scope: 'cve' | 'article';
 }
+
 export interface ThreatSnapshot {
   key: string;
   evidence: Evidence[];
@@ -40,25 +43,30 @@ export interface ThreatSnapshot {
   impact?: string | null;
   eventAt: number;
 }
+
 export interface Claim {
   text: string;
   evidence: { id: string; quote: string }[];
 }
+
 export interface Summary {
   overview: Claim | null;
   impact: Claim | null;
   action: Claim | null;
   uncertainties: string[];
 }
+
 export interface Validation {
   valid: boolean;
   complete: boolean;
   reasons: string[];
 }
+
 export interface PublishedPost {
   id: string;
   url: string;
 }
+
 export interface PostIntent {
   kind: 'new' | 'update' | 'correction';
   key: string;
@@ -69,9 +77,11 @@ export interface PostIntent {
   previousPost?: PublishedPost;
 }
 
+/** 1件の収集データを脅威キー単位に分け、根拠として正規化する。 */
 export function normalizeItem(item: SourceItem): { key: string; evidence: Evidence }[] {
   const cves = [...new Set(item.cves.filter((c) => /^CVE-\d{4}-\d{4,}$/i.test(c)).map((c) => c.toUpperCase()))].sort();
   const keys = cves.length ? cves : [`${item.sourceId}:${item.id}`];
+
   return keys.map((key) => ({
     key,
     evidence: {
@@ -92,6 +102,8 @@ export function normalizeItem(item: SourceItem): { key: string; evidence: Eviden
     },
   }));
 }
+
+/** 脅威の適格性、優先度、重大度を根拠情報から判定する。 */
 export function classify(t: {
   scores: { score: number }[];
   exploited: boolean;
@@ -101,6 +113,7 @@ export function classify(t: {
 }) {
   const score = Math.max(0, ...t.scores.map((s) => s.score));
   const urgent = t.exploited || t.urgent;
+
   return {
     eligible: !t.rejected && (score >= 7 || urgent || t.advisory),
     priority: urgent ? 0 : score >= 9 ? 1 : score >= 7 ? 2 : 3,
@@ -108,6 +121,8 @@ export function classify(t: {
     urgent,
   };
 }
+
+/** 投稿内容の変更判定に使う、重要な属性の正規化キーを作る。 */
 export function materialKey<
   T extends {
     affected: string | null;
@@ -125,8 +140,11 @@ export function materialKey<
     t.impact?.replace(/\s+/g, ' ').trim() ?? null,
   ]);
 }
+
+/** 根拠群から脅威の現在状態を集約する。 */
 export function snapshot(key: string, evidence: Evidence[]): ThreatSnapshot {
   const latest = [...evidence].sort((a, b) => b.modifiedAt - a.modifiedAt || a.evidenceId.localeCompare(b.evidenceId));
+
   return {
     key,
     evidence: latest,
@@ -142,13 +160,20 @@ export function snapshot(key: string, evidence: Evidence[]): ThreatSnapshot {
     eventAt: Math.max(0, ...latest.map((e) => e.modifiedAt)),
   };
 }
+
+/** ミリ秒のUnix時刻を日本時間の投稿日（YYYY-MM-DD）に変換する。 */
 export function publicationDay(now: number): string {
   return new Date(now + 9 * 3600000).toISOString().slice(0, 10);
 }
+
+/** ミリ秒のUnix時刻をUTCの日付（YYYY-MM-DD）に変換する。 */
 export function utcDay(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
 }
+
+/** 文字列のSHA-256ダイジェストを小文字16進数で返す。 */
 export async function digest(value: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }

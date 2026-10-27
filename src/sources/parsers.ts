@@ -11,23 +11,31 @@ const parser = new XMLParser({
   processEntities: true,
   isArray: (name) => ['item', 'entry', 'link'].includes(name),
 });
+
 type Obj = Record<string, unknown>;
+
 const object = (v: unknown): Obj => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Obj) : {});
+
 const array = (v: unknown): unknown[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+
 const str = (v: unknown): string =>
   typeof v === 'string' || typeof v === 'number'
     ? String(v)
     : typeof object(v)['#text'] === 'string'
       ? String(object(v)['#text'])
       : '';
+
 const cves = (s: string): string[] => [...new Set((s.match(/CVE-\d{4}-\d{4,}/gi) ?? []).map((v) => v.toUpperCase()))];
+
 function timestamp(value: string): number {
   const t = Date.parse(
     value && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value) && /^\d{4}-\d{2}-\d{2}T/.test(value) ? `${value}Z` : value,
   );
+
   return Number.isFinite(t) ? t : 0;
 }
 
+/** HTML本文からスクリプト等を除き、解析用のプレーンテキストを抽出する。 */
 export function htmlText(html: string): string {
   return html
     .replace(/<(script|style|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
@@ -45,6 +53,7 @@ export function htmlText(html: string): string {
     .replace(/\n\s*\n/g, '\n')
     .trim();
 }
+
 function section(text: string, labels: string[]): string | null {
   for (const label of labels) {
     const match = text.match(
@@ -53,21 +62,28 @@ function section(text: string, labels: string[]): string | null {
         'i',
       ),
     );
-    if (match?.[1]?.trim()) return match[1].trim().slice(0, 3000);
+    if (match?.[1]?.trim()) {
+      return match[1].trim().slice(0, 3000);
+    }
   }
+
   return null;
 }
+
+/** 記事HTMLからCVSS、影響範囲、対策などを収集項目へ補う。 */
 export function enrichArticle(item: SourceItem, html: string): SourceItem {
   const text = htmlText(html);
   const scores: Score[] = [];
   for (const m of text.matchAll(
     /CVSS\s*[:：]?\s*(?:v(?:ersion)?\s*)?([234](?:\.\d)?)?(?:(?!CVSS)[\s\S]){0,180}?(?:基本値|基本スコア|Base Score|スコア|score|評価値)\s*[:：]?\s*(10(?:\.0)?|[0-9](?:\.\d)?)/gi,
-  ))
+  )) {
     scores.push({
       score: Number(m[2]),
       version: m[1] ?? 'unknown',
       issuer: item.sourceId,
     });
+  }
+
   return {
     ...item,
     impact: section(text, ['想定される影響', 'Impact']),
@@ -78,13 +94,19 @@ export function enrichArticle(item: SourceItem, html: string): SourceItem {
     remediation: section(text, ['対策方法', '対策', '対処方法', 'Solutions']),
   };
 }
+
+/** RSS/Atom XMLを検証し、許可された記事URLの項目へ変換する。 */
 export function parseFeed(xml: string, source: SourceConfig, now: number): SourceItem[] {
-  if (/<!DOCTYPE|<!ENTITY/i.test(xml) || XMLValidator.validate(xml) !== true) throw new Error('invalid_feed');
+  if (/<!DOCTYPE|<!ENTITY/i.test(xml) || XMLValidator.validate(xml) !== true) {
+    throw new Error('invalid_feed');
+  }
+
   const root = object(parser.parse(xml));
   const rdf = object(root.RDF),
     rss = object(object(root.rss).channel),
     atom = object(root.feed);
   const entries = array(rdf.item ?? rss.item ?? atom.entry);
+
   return entries.slice(0, 100).flatMap((entry) => {
     const o = object(entry),
       links = array(o.link);
@@ -96,14 +118,17 @@ export function parseFeed(xml: string, source: SourceConfig, now: number): Sourc
     } catch {
       return [];
     }
-    if (url.protocol !== 'https:' || (source.articleHosts.length && !source.articleHosts.includes(url.hostname)))
+    if (url.protocol !== 'https:' || (source.articleHosts.length && !source.articleHosts.includes(url.hostname))) {
       return [];
+    }
+
     url.hash = '';
     const title = str(o.title),
       text = htmlText(str(o.description ?? o.summary ?? o.content));
     const publishedAt = timestamp(str(o.published ?? o.pubDate ?? o.date ?? o.issued ?? o.updated));
     const modifiedAt = timestamp(str(o.modified ?? o.updated ?? o.date)) || publishedAt;
     const advisory = source.id === 'jpcert' && /^\/at\//.test(url.pathname);
+
     return [
       {
         sourceId: source.id,
@@ -126,6 +151,7 @@ export function parseFeed(xml: string, source: SourceConfig, now: number): Sourc
     ];
   });
 }
+
 const kevSchema = z.object({
   vulnerabilities: z.array(
     z.object({
@@ -140,6 +166,8 @@ const kevSchema = z.object({
     }),
   ),
 });
+
+/** CISA KEVカタログを検証し、脆弱性項目へ変換する。 */
 export function parseKev(raw: unknown, sourceId: string, now: number): SourceItem[] {
   return kevSchema.parse(raw).vulnerabilities.map((v) => ({
     sourceId,
@@ -161,12 +189,15 @@ export function parseKev(raw: unknown, sourceId: string, now: number): SourceIte
     rejected: false,
   }));
 }
+
+/** NVD CVE応答を検証し、脆弱性項目へ変換する。 */
 export function parseNvd(raw: unknown, sourceId: string, now: number): SourceItem[] {
   const records = z
     .object({
       vulnerabilities: z.array(z.object({ cve: z.record(z.string(), z.unknown()) })),
     })
     .parse(raw).vulnerabilities;
+
   return records.map(({ cve: c }) => {
     const id = z
       .string()
@@ -175,18 +206,22 @@ export function parseNvd(raw: unknown, sourceId: string, now: number): SourceIte
     const descriptions = array(c.descriptions).map(object);
     const text = str((descriptions.find((d) => d.lang === 'en') ?? descriptions[0])?.value);
     const scores: Score[] = [];
-    for (const metrics of Object.values(object(c.metrics)))
+    for (const metrics of Object.values(object(c.metrics))) {
       for (const metric of array(metrics)) {
         const m = object(metric),
           data = object(m.cvssData);
-        if (typeof data.baseScore === 'number' && data.baseScore >= 0 && data.baseScore <= 10)
+        if (typeof data.baseScore === 'number' && data.baseScore >= 0 && data.baseScore <= 10) {
           scores.push({
             score: data.baseScore,
             version: str(data.version),
             issuer: str(m.source),
           });
+        }
       }
+    }
+
     const affected = c.configurations ? JSON.stringify(c.configurations) : null;
+
     return {
       sourceId,
       id,

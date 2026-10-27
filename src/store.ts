@@ -27,6 +27,7 @@ export interface Job {
   lease_token: string;
   available_at: number;
 }
+
 export interface Revision {
   id: string;
   threat_key: string;
@@ -39,6 +40,7 @@ export interface Revision {
   eligible: number;
   created_at: number;
 }
+
 export interface Delivery {
   id: string;
   target_id: string;
@@ -52,11 +54,16 @@ export interface Delivery {
   error: string | null;
   available_at: number;
 }
+
 export class Store {
+  /** D1データベースを使ってジョブ・根拠・配信状態を管理する。 */
   constructor(public db: D1Database) {}
+
   private statement(sql: string, ...params: unknown[]) {
     return this.db.prepare(sql).bind(...params);
   }
+
+  /** 同一IDのジョブは再登録せず、指定した実行時刻でジョブを登録する。 */
   async enqueue(id: string, type: string, payload: unknown, now: number, availableAt = now) {
     await this.statement(
       'INSERT OR IGNORE INTO jobs(id,type,payload,available_at,created_at) VALUES(?,?,?,?,?)',
@@ -67,6 +74,8 @@ export class Store {
       now,
     ).run();
   }
+
+  /** 配信待ちのOutboxジョブを実行可能時刻順に取得する。 */
   async outbox(now: number, limit = 20): Promise<Job[]> {
     return (
       await this.statement(
@@ -77,6 +86,8 @@ export class Store {
       ).all<Job>()
     ).results;
   }
+
+  /** 未完了ジョブをキューへ送ったことを記録する。 */
   async markDispatched(id: string, now: number) {
     await this.statement(
       "UPDATE jobs SET dispatched_at=? WHERE id=? AND state IN ('pending','deferred')",
@@ -84,6 +95,8 @@ export class Store {
       id,
     ).run();
   }
+
+  /** 実行可能なジョブをリース付きで取得する。 */
   async claimJob(id: string, now: number): Promise<Job | null> {
     return this.statement(
       "UPDATE jobs SET state='running',lease_token=?,lease_until=?,attempts=attempts+1 WHERE id=? AND state IN ('pending','deferred') AND available_at<=? RETURNING *",
@@ -93,6 +106,8 @@ export class Store {
       now,
     ).first<Job>();
   }
+
+  /** リース所有者のジョブを完了状態にする。 */
   async finishJob(job: Job) {
     await this.statement(
       "UPDATE jobs SET state='done',lease_until=NULL WHERE id=? AND lease_token=?",
@@ -100,6 +115,8 @@ export class Store {
       job.lease_token,
     ).run();
   }
+
+  /** リース所有者のジョブを指定状態へ移し、次回実行時刻を記録する。 */
   async failJob(job: Job, state: 'deferred' | 'held' | 'failed', error: string, when: number) {
     await this.statement(
       'UPDATE jobs SET state=?,error=?,available_at=?,dispatched_at=NULL,lease_until=NULL WHERE id=? AND lease_token=?',
@@ -110,6 +127,8 @@ export class Store {
       job.lease_token,
     ).run();
   }
+
+  /** 期限切れリースを回復し、送信結果不明の配信は再送せずunknownにする。 */
   async recover(now: number) {
     await this.db.batch([
       this.statement(
@@ -126,6 +145,8 @@ export class Store {
       ),
     ]);
   }
+
+  /** 有効な情報源を登録し、期限到来分の収集ジョブを作成する。 */
   async syncSources(sources: SourceConfig[], now: number) {
     for (const source of sources.filter((s) => s.enabled)) {
       await this.statement('INSERT OR IGNORE INTO sources(id) VALUES(?)', source.id).run();
@@ -133,7 +154,10 @@ export class Store {
         next_poll_at: number;
         active_job: string | null;
       }>();
-      if (!row || row.active_job || row.next_poll_at > now) continue;
+
+      if (!row || row.active_job || row.next_poll_at > now) {
+        continue;
+      }
       const id = `collect:${source.id}:${row.next_poll_at}`;
       await this.db.batch([
         this.statement(
@@ -154,10 +178,15 @@ export class Store {
       ]);
     }
   }
+
+  /** 情報源の保存済み収集カーソルを返す。 */
   async sourceCursor(id: string): Promise<SourceCursor> {
     const row = await this.statement('SELECT cursor FROM sources WHERE id=?', id).first<{ cursor: string }>();
+
     return JSON.parse(row?.cursor ?? '{}') as SourceCursor;
   }
+
+  /** カーソル、実行中ジョブ、最終成功時刻を含む情報源状態を返す。 */
   async sourceState(id: string) {
     return this.statement('SELECT * FROM sources WHERE id=?', id).first<{
       cursor: string;
@@ -165,12 +194,17 @@ export class Store {
       last_success_at: number | null;
     }>();
   }
+
+  /** 初回起動時刻を一度だけ保存し、保存値を返す。 */
   async bootstrapTime(now: number): Promise<number> {
     await this.statement("INSERT OR IGNORE INTO settings(key,value) VALUES('started_at',?)", String(now)).run();
+
     return Number(
       (await this.statement("SELECT value FROM settings WHERE key='started_at'").first<{ value: string }>())!.value,
     );
   }
+
+  /** 現在の収集ジョブが所有者である場合にカーソルと継続ジョブを確定する。 */
   async completeSource(
     id: string,
     cursor: SourceCursor,
@@ -192,7 +226,8 @@ export class Store {
         owner.lease_token,
       ),
     ];
-    if (continuation)
+
+    if (continuation) {
       statements.push(
         this.statement(
           "INSERT OR IGNORE INTO jobs(id,type,payload,available_at,created_at) SELECT ?,'collect',?,?,? WHERE EXISTS(SELECT 1 FROM sources WHERE id=? AND active_job=?) AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND lease_token=? AND state='running')",
@@ -206,8 +241,12 @@ export class Store {
           owner.lease_token,
         ),
       );
+    }
+
     await this.db.batch(statements);
   }
+
+  /** 収集エラーを記録し、指定時にのみ次回ポーリングへ解放する。 */
   async sourceError(id: string, error: string, release: boolean, now: number, owner: Pick<Job, 'id' | 'lease_token'>) {
     await this.statement(
       'UPDATE sources SET last_error=?,active_job=CASE WHEN ? THEN NULL ELSE active_job END,next_poll_at=CASE WHEN ? THEN ? ELSE next_poll_at END WHERE id=? AND active_job=? AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND lease_token=?)',
@@ -221,12 +260,16 @@ export class Store {
       owner.lease_token,
     ).run();
   }
+
+  /** 新しい情報源データを取り込み、更新された脅威改訂IDを返す。 */
   async ingest(item: SourceItem, now: number): Promise<string[]> {
     const revisions: string[] = [];
     const normalized = normalizeItem(item),
       keys = new Set(normalized.map((r) => r.key)),
       identity = `${item.sourceId}:${item.id}`;
+
     const version = await digest(JSON.stringify({ ...item, fetchedAt: 0 }));
+
     await this.db.batch([
       this.statement(
         'INSERT INTO source_versions(id,version_hash,modified_at,fetched_at) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET version_hash=excluded.version_hash,modified_at=excluded.modified_at,fetched_at=excluded.fetched_at WHERE excluded.modified_at>source_versions.modified_at OR (excluded.modified_at=source_versions.modified_at AND excluded.fetched_at>=source_versions.fetched_at)',
@@ -235,7 +278,7 @@ export class Store {
         item.modifiedAt,
         item.fetchedAt,
       ),
-      // Invalidate prepared/verified content atomically with accepting a source version.
+      // 新しい情報源版の受け入れと同時に古い根拠ハッシュを変え、保存済み要約や準備済み投稿を無効化する。
       this.statement(
         'UPDATE revisions SET evidence_hash=? WHERE (threat_key IN (SELECT value FROM json_each(?)) OR threat_key IN (SELECT threat_key FROM evidence WHERE id=?)) AND EXISTS(SELECT 1 FROM source_versions WHERE id=? AND version_hash=?)',
         `updating:${version}`,
@@ -245,11 +288,15 @@ export class Store {
         version,
       ),
     ]);
+
     const ownsVersion = async () =>
       Boolean(
         await this.statement('SELECT 1 FROM source_versions WHERE id=? AND version_hash=?', identity, version).first(),
       );
-    if (!(await ownsVersion())) return [];
+    if (!(await ownsVersion())) {
+      return [];
+    }
+
     const memberships = (
       await this.statement(
         'SELECT threat_key FROM evidence WHERE id=? AND current=1 AND modified_at<=?',
@@ -258,7 +305,9 @@ export class Store {
       ).all<{ threat_key: string }>()
     ).results;
     for (const member of memberships) {
-      if (keys.has(member.threat_key)) continue;
+      if (keys.has(member.threat_key)) {
+        continue;
+      }
       await this.db.batch([
         this.statement(
           'UPDATE evidence SET current=0 WHERE threat_key=? AND id=? AND modified_at<=? AND EXISTS(SELECT 1 FROM source_versions WHERE id=? AND version_hash=?)',
@@ -276,9 +325,14 @@ export class Store {
           version,
         ),
       ]);
-      if (!(await ownsVersion())) return revisions;
+      if (!(await ownsVersion())) {
+        return revisions;
+      }
+
       const changed = await this.refreshThreat(member.threat_key, now);
-      if (changed) revisions.push(changed);
+      if (changed) {
+        revisions.push(changed);
+      }
     }
     for (const { key, evidence } of normalized) {
       const hash = await digest(JSON.stringify({ ...evidence, fetchedAt: 0 }));
@@ -323,12 +377,18 @@ export class Store {
         identity,
         version,
       ).run();
-      if (!(await ownsVersion())) return revisions;
+      if (!(await ownsVersion())) {
+        return revisions;
+      }
+
       const revision = await this.refreshThreat(key, now);
-      if (revision) revisions.push(revision);
+      if (revision) {
+        revisions.push(revision);
+      }
     }
     return revisions;
   }
+
   private async refreshThreat(key: string, now: number): Promise<string | null> {
     for (let attempt = 0; attempt < 5; attempt++) {
       const old = await this.statement('SELECT revision_id,material,generation FROM threats WHERE key=?', key).first<{
@@ -336,13 +396,17 @@ export class Store {
         material: string;
         generation: number;
       }>();
-      if (!old) return null;
+      if (!old) {
+        return null;
+      }
+
       const rows = (
         await this.statement(
           'SELECT e.data FROM evidence e JOIN source_versions s ON s.id=e.id AND s.version_hash=e.source_version WHERE e.threat_key=? AND e.current=1 ORDER BY e.id',
           key,
         ).all<{ data: string }>()
       ).results;
+
       const current = snapshot(
         key,
         rows.map((r) => JSON.parse(r.data) as Evidence),
@@ -355,6 +419,7 @@ export class Store {
       );
       const classification = classify(current);
       const kind = old.revision_id ? (current.rejected ? 'correction' : 'update') : 'new';
+
       const result = await this.db.batch([
         this.statement(
           'INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible',
@@ -387,16 +452,23 @@ export class Store {
           id,
         ),
       ]);
-      if (result[1]?.meta.changes) return id;
+      if (result[1]?.meta.changes) {
+        return id;
+      }
     }
     throw new Error('threat_concurrency_retry');
   }
+
+  /** 改訂IDに対応する脅威スナップショットを取得する。 */
   async getRevision(id: string): Promise<Revision | null> {
     const row = await this.statement('SELECT * FROM revisions WHERE id=?', id).first<
       Omit<Revision, 'snapshot'> & { snapshot: string }
     >();
+
     return row ? { ...row, snapshot: JSON.parse(row.snapshot) as ThreatSnapshot } : null;
   }
+
+  /** 現在有効な改訂を優先度順に取得する。 */
   async currentRevisions(limit = 50): Promise<{ id: string; evidence_hash: string }[]> {
     return (
       await this.statement(
@@ -405,9 +477,13 @@ export class Store {
       ).all<{ id: string; evidence_hash: string }>()
     ).results;
   }
+
+  /** 指定改訂が脅威の現在改訂かを判定する。 */
   async isCurrent(id: string) {
     return Boolean(await this.statement('SELECT 1 FROM threats WHERE revision_id=?', id).first());
   }
+
+  /** 要約と検証結果を改訂の根拠ハッシュにひも付けて保存する。 */
   async saveSummary(revision: Revision, summary: Summary, validation: Validation, now: number) {
     await this.statement(
       'INSERT INTO summaries(revision_id,evidence_hash,summary,validation,created_at) VALUES(?,?,?,?,?) ON CONFLICT(revision_id) DO UPDATE SET evidence_hash=excluded.evidence_hash,summary=excluded.summary,validation=excluded.validation,created_at=excluded.created_at',
@@ -418,12 +494,15 @@ export class Store {
       now,
     ).run();
   }
+
+  /** 根拠ハッシュが一致する要約と検証結果だけを返す。 */
   async getSummary(revision: Revision): Promise<{ summary: Summary; validation: Validation } | null> {
     const row = await this.statement(
       'SELECT summary,validation FROM summaries WHERE revision_id=? AND evidence_hash=?',
       revision.id,
       revision.evidence_hash,
     ).first<{ summary: string; validation: string }>();
+
     return row
       ? {
           summary: JSON.parse(row.summary) as Summary,
@@ -431,10 +510,15 @@ export class Store {
         }
       : null;
   }
+
+  /** 投稿先をデータベースへ登録する。 */
   async syncTargets(targets: TargetConfig[]) {
-    if (targets.length)
+    if (targets.length) {
       await this.db.batch(targets.map((t) => this.statement('INSERT OR IGNORE INTO targets(id) VALUES(?)', t.id)));
+    }
   }
+
+  /** 投稿先を停止または再開し、必要なら配信リースの所有者を確認する。 */
   async pauseTarget(
     id: string,
     paused: boolean,
@@ -451,6 +535,8 @@ export class Store {
       owner?.token ?? null,
     ).run();
   }
+
+  /** 投稿先と改訂の組に対する配信を作成または再評価する。 */
   async createDelivery(
     id: string,
     target: string,
@@ -473,9 +559,13 @@ export class Store {
       now,
     ).run();
   }
+
+  /** 配信状態をIDで取得する。 */
   async getDelivery(id: string) {
     return this.statement('SELECT * FROM deliveries WHERE id=?', id).first<Delivery>();
   }
+
+  /** 現在実行可能な配信を取得する。 */
   async dueDeliveries(now: number) {
     return (
       await this.statement(
@@ -484,6 +574,8 @@ export class Store {
       ).all<Delivery>()
     ).results;
   }
+
+  /** 同じ脅威について投稿先へ最後に送信した投稿を返す。 */
   async previousPost(target: string, key: string): Promise<PublishedPost | undefined> {
     const row = await this.statement(
       "SELECT d.post_id,d.post_url FROM deliveries d JOIN revisions r ON r.id=d.revision_id WHERE d.target_id=? AND r.threat_key=? AND d.state='sent' ORDER BY d.updated_at DESC LIMIT 1",
@@ -492,6 +584,8 @@ export class Store {
     ).first<{ post_id: string; post_url: string }>();
     return row ? { id: row.post_id, url: row.post_url } : undefined;
   }
+
+  /** 送信前の配信を理由付きで保留にする。 */
   async holdDelivery(id: string, reason: string, now: number) {
     await this.statement(
       "UPDATE deliveries SET state='held',error=?,updated_at=? WHERE id=? AND state IN ('ready','preview','held')",
@@ -500,6 +594,8 @@ export class Store {
       id,
     ).run();
   }
+
+  /** dry-run用の整形済み投稿を配信レコードへ保存する。 */
   async previewDelivery(id: string, prepared: PreparedPost, now: number) {
     await this.statement(
       "UPDATE deliveries SET state='preview',prepared=?,updated_at=? WHERE id=? AND state IN ('ready','preview')",
@@ -508,6 +604,8 @@ export class Store {
       id,
     ).run();
   }
+
+  /** 根拠ハッシュが一致する短縮要約と検証結果を取得する。 */
   async getShortened(id: string, hash: string): Promise<{ summary: Summary; validation: Validation } | null> {
     const row = await this.statement(
       'SELECT summary,validation FROM shortened_summaries WHERE delivery_id=? AND evidence_hash=?',
@@ -521,6 +619,8 @@ export class Store {
         }
       : null;
   }
+
+  /** 短縮要約を根拠ハッシュとともに保存する。 */
   async saveShortened(id: string, hash: string, summary: Summary, validation: Validation) {
     await this.statement(
       'INSERT INTO shortened_summaries(delivery_id,evidence_hash,summary,validation) VALUES(?,?,?,?) ON CONFLICT(delivery_id) DO UPDATE SET evidence_hash=excluded.evidence_hash,summary=excluded.summary,validation=excluded.validation',
@@ -530,6 +630,8 @@ export class Store {
       JSON.stringify(validation),
     ).run();
   }
+
+  /** 実行中でないジョブを運用者の再試行対象として初期化する。 */
   async retryJob(id: string, now: number) {
     await this.statement(
       "UPDATE jobs SET state='pending',available_at=?,dispatched_at=NULL,lease_until=NULL,attempts=0,error=NULL WHERE id=? AND state<>'running'",
@@ -537,6 +639,8 @@ export class Store {
       id,
     ).run();
   }
+
+  /** 現在改訂・投稿先枠・配信リースを原子的に確保する。 */
   async reserveDelivery(
     id: string,
     target: TargetConfig,
@@ -546,6 +650,7 @@ export class Store {
   ): Promise<Delivery | null> {
     const token = crypto.randomUUID(),
       day = publicationDay(now);
+
     await this.db.batch([
       this.statement(
         "INSERT OR IGNORE INTO quotas(target_id,day,bucket) VALUES(?,?,'normal'),(?,?,'urgent')",
@@ -604,8 +709,11 @@ export class Store {
         token,
       ),
     ]);
+
     return this.statement('SELECT * FROM deliveries WHERE id=? AND lease_token=?', id, token).first<Delivery>();
   }
+
+  /** 送信成功を記録し、所有中のリースと試行を完了させる。 */
   async finishDelivery(id: string, post: PublishedPost, now: number, token: string) {
     await this.db.batch([
       this.statement(
@@ -635,6 +743,8 @@ export class Store {
       ),
     ]);
   }
+
+  /** 送信結果と所有トークンに応じて配信を確定、再試行、保留する。 */
   async deliveryError(
     id: string,
     kind: 'unknown' | 'retry' | 'held',
@@ -680,6 +790,8 @@ export class Store {
       ),
     ]);
   }
+
+  /** 運用者がunknown・held・preview配信を明示的に再試行可能にする。 */
   async retryDelivery(id: string, now: number) {
     await this.db.batch([
       this.statement(
@@ -695,6 +807,8 @@ export class Store {
       ),
     ]);
   }
+
+  /** AI予算と同時実行枠を予約する。 */
   async reserveBudget(
     id: string,
     now: number,
@@ -727,8 +841,13 @@ export class Store {
     ]);
     return Boolean(await this.statement('SELECT 1 FROM budget_reservations WHERE id=?', id).first());
   }
+
+  /** AI実使用量で予約予算を精算する。 */
   async settleBudget(id: string, actual: number) {
-    if (!Number.isFinite(actual) || actual < 0) throw new Error('invalid_usage');
+    if (!Number.isFinite(actual) || actual < 0) {
+      throw new Error('invalid_usage');
+    }
+
     await this.db.batch([
       this.statement(
         "UPDATE budgets SET neurons=MAX(0,neurons+?-(SELECT amount FROM budget_reservations WHERE id=?)) WHERE day=(SELECT day FROM budget_reservations WHERE id=? AND state='reserved')",
@@ -739,6 +858,8 @@ export class Store {
       this.statement("UPDATE budget_reservations SET state='settled' WHERE id=? AND state='reserved'", id),
     ]);
   }
+
+  /** 指定日のAI・キュー使用状況を返す。 */
   async budgetStatus(now: number) {
     return this.statement('SELECT * FROM budgets WHERE day=?', utcDay(now)).first<{
       calls: number;
@@ -746,6 +867,8 @@ export class Store {
       queue_ops: number;
     }>();
   }
+
+  /** キュー操作予算を予約できたかを返す。 */
   async reserveQueueOperations(now: number, limit: number): Promise<boolean> {
     await this.statement('INSERT OR IGNORE INTO budgets(day) VALUES(?)', utcDay(now)).run();
     const row = await this.statement(
@@ -755,6 +878,8 @@ export class Store {
     ).first();
     return Boolean(row);
   }
+
+  /** 運用画面向けに許可されたテーブルの行を上限付きで取得する。 */
   async list(table: 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions', limit = 50) {
     const columns =
       table === 'sources'
@@ -764,11 +889,15 @@ export class Store {
           : table === 'revisions'
             ? 'id,threat_key,kind,event_at,priority,urgent,eligible,evidence_hash'
             : '*';
+
     const order = ['jobs', 'deliveries', 'revisions'].includes(table) ? 'created_at DESC' : 'id';
+
     return (
       await this.statement(`SELECT ${columns} FROM ${table} ORDER BY ${order} LIMIT ?`, Math.min(100, limit)).all()
     ).results;
   }
+
+  /** 古い非現行根拠と完了ジョブを少量ずつ削除する。 */
   async cleanup(now: number, days: number) {
     const cutoff = now - days * 86400000;
     await this.db.batch([

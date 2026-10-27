@@ -11,21 +11,29 @@ const { values } = parseArgs({
     save: { type: 'string' },
   },
 });
+
 const source = loadConfig().sources.find((s) => s.id === values.source);
-if (!source || source.kind === 'nvd') throw new Error('Use --source kev|jvn|jpcert');
+if (!source || source.kind === 'nvd') {
+  throw new Error('Use --source kev|jvn|jpcert');
+}
+
 const text = values.file
   ? await readFile(values.file, 'utf8')
   : await (async () => {
       const response = await fetch(source.url, {
         signal: AbortSignal.timeout(15000),
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       return response.text();
     })();
 if (values.save) {
   await mkdir('benchmark-data', { recursive: true });
   await writeFile(values.save, text);
 }
+
 const timings = [];
 let count = 0;
 for (let i = 0; i < 6; i++) {
@@ -34,12 +42,16 @@ for (let i = 0; i < 6; i++) {
     source.kind === 'kev' ? parseKev(JSON.parse(text), source.id, Date.now()) : parseFeed(text, source, Date.now());
   const elapsed = process.cpuUsage(start);
   count = items.length;
-  if (i) timings.push((elapsed.user + elapsed.system) / 1000);
+  if (i) {
+    timings.push((elapsed.user + elapsed.system) / 1000);
+  }
 }
+
 const cpu = timings.sort((a, b) => a - b)[2]!;
 const start = process.cpuUsage();
 const initial = await sourceProvider(source, {}, async () => new Response(text)).collect({}, Date.now());
 const elapsed = process.cpuUsage(start);
+
 console.log(
   JSON.stringify(
     {

@@ -13,6 +13,7 @@ describe('operator CLI', () => {
       dryRun: true,
     });
   });
+
   it('returns a useful error when remote credentials are absent', () => {
     const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'status'], {
       encoding: 'utf8',

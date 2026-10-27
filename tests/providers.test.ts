@@ -18,9 +18,11 @@ describe('source boundaries', () => {
     expect(items[0]?.modifiedAt).toBe(now);
     expect(items[0]?.url).toBe('https://jvn.jp/jp/1/');
   });
+
   it('rejects DTD/entity payloads', () => {
     expect(() => parseFeed('<!DOCTYPE x [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss/>', source, now)).toThrow();
   });
+
   it('extracts JVN image headings and preserves the CVSS vector version', () => {
     const feed =
       '<rss><channel><item><title>CVE-2026-1111</title><link>https://jvn.jp/1/</link><pubDate>2026-10-27</pubDate></item></channel></rss>';
@@ -33,6 +35,7 @@ describe('source boundaries', () => {
     expect(result.remediation).toBe('Upgrade to 2.0');
     expect(result.scores).toEqual([{ score: 9.8, version: '3.1', issuer: 'jvn' }]);
   });
+
   it('keeps KEV dateAdded as the event time and explicit action', () => {
     const items = parseKev(
       {
@@ -55,6 +58,7 @@ describe('source boundaries', () => {
     expect(items[0]?.modifiedAt).toBe(Date.parse('2026-10-26T00:00:00Z'));
     expect(items[0]?.remediation).toBe('Apply vendor updates');
   });
+
   it('preserves NVD issuer/version, unscored records and rejection', () => {
     const data = {
       vulnerabilities: [
@@ -82,6 +86,7 @@ describe('source boundaries', () => {
     expect(item.rejected).toBe(true);
     expect(item.remediation).toBeNull();
   });
+
   it('honors Retry-After and bounds downloaded data', async () => {
     await expect(
       getText(
@@ -98,6 +103,7 @@ describe('source boundaries', () => {
       'resource_limit',
     );
   });
+
   it('baselines old KEV entries without creating thousands of ingest jobs, then detects a real change', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'kev')!;
     const old = {
@@ -120,6 +126,7 @@ describe('source boundaries', () => {
     expect(updated.items).toHaveLength(1);
     expect(updated.items[0]?.modifiedAt).toBe(now + 900000);
   });
+
   it('keeps a fixed NVD window through pagination and commits its cursor only at the end', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'nvd')!;
     const requests: URL[] = [];
@@ -141,6 +148,7 @@ describe('source boundaries', () => {
     expect(second.more).toBe(false);
     expect(second.cursor.completedThrough).toBe(now);
   });
+
   it('resumes all NVD updates after a 48-hour outage instead of clamping to yesterday', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'nvd')!;
     let start = '';
@@ -157,6 +165,7 @@ describe('source boundaries', () => {
     expect(start).toBe('2026-10-24T23:55:00.000Z');
   });
 });
+
 describe('social adapters', () => {
   const target = loadConfig({
     targets: [{ id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' }],
@@ -187,21 +196,24 @@ describe('social adapters', () => {
     expect(payload.noExtractMentions).toBe(true);
     expect(String(payload.text)).toContain('未確認');
   });
+
   it('delegates URL fallback and complete length checking to the adapter', () => {
     const provider = new UrlReferenceProvider(500);
     expect(provider.prepare(intent).text).toContain('関連投稿: https://social.example/notes/old');
     expect(() => new UrlReferenceProvider(20).prepare(intent)).toThrow('post_too_long');
   });
+
   it('distinguishes definite rejection from ambiguous server failure', async () => {
-    const a = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 401 }));
-    await expect(a.publish(a.prepare(intent))).rejects.toMatchObject({
+    const rejectedProvider = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 401 }));
+    await expect(rejectedProvider.publish(rejectedProvider.prepare(intent))).rejects.toMatchObject({
       kind: 'auth',
     });
-    const b = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 500 }));
-    await expect(b.publish(b.prepare(intent))).rejects.toMatchObject({
+    const ambiguousProvider = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 500 }));
+    await expect(ambiguousProvider.publish(ambiguousProvider.prepare(intent))).rejects.toMatchObject({
       kind: 'unknown',
     });
   });
+
   it('falls back to a URL only after an explicit quote rejection', async () => {
     const bodies: Record<string, unknown>[] = [];
     const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {

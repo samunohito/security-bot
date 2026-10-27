@@ -28,6 +28,7 @@ const claim = (text: string, quote: string) => ({
   text,
   evidence: [{ id: 'jvn:1', quote }],
 });
+
 describe('quality validation', () => {
   it('permits incomplete information only through relaxed policy', () => {
     const summary = {
@@ -40,6 +41,7 @@ describe('quality validation', () => {
     expect(result.valid).toBe(true);
     expect(result.complete).toBe(false);
   });
+
   it('rejects invented versions, unknown sources and fabricated quotations', () => {
     const summary: Summary = {
       overview: claim('Acme 9.9に脆弱性', 'Acme 1.0 allows remote execution.'),
@@ -56,6 +58,7 @@ describe('quality validation', () => {
     };
     expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(false);
   });
+
   it('holds malformed output, contradictory review and unsupported multi-CVE claims', () => {
     expect(summarySchema.safeParse({ overview: 'trust me' }).success).toBe(false);
     expect(

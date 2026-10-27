@@ -133,8 +133,8 @@ export class Bot {
     };
   }
 
-  /** 保存済み根拠で生成と品質検証を診断し、予算以外の永続状態や投稿を変更しない。 */
-  async generateSummary(id: string, now = Date.now()) {
+  /** 保存済み根拠で要約を再生成・検証し、明示指定時だけ合格した現在改訂の要約を保存する。 */
+  async generateSummary(id: string, now = Date.now(), options: { save?: boolean } = {}) {
     const revision = await this.store.getRevision(id);
     if (!revision) {
       throw new Error('revision_not_found');
@@ -163,10 +163,20 @@ export class Bot {
       validation.reasons.push('evidence_changed');
     }
 
+    let saved = false;
+    if (options.save && validation.valid) {
+      saved = await this.store.saveCurrentSummary(revision, summary, validation, now);
+      if (!saved) {
+        validation.valid = false;
+        validation.reasons.push('evidence_changed');
+      }
+    }
+
     return {
       revisionId: id,
       key: revision.threat_key,
       evidenceHash: revision.evidence_hash,
+      saved,
       provider: this.config.llm.provider,
       model: this.config.llm.provider === 'fake' ? null : this.config.llm.model,
       summary,

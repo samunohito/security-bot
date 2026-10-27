@@ -245,6 +245,7 @@ pnpm run cli -- list sources
 pnpm run cli -- list jobs --state held
 pnpm run cli -- list deliveries --state unknown
 pnpm run cli -- list revisions
+pnpm exec tsx src/cli.ts list summaries
 pnpm run cli -- show jobs JOB_ID
 pnpm run cli -- show deliveries DELIVERY_ID
 pnpm run cli -- show revisions REVISION_ID
@@ -256,6 +257,13 @@ pnpm run cli -- resume main
 pnpm run cli -- retry-job JOB_ID
 ```
 
+`list summaries` は保存済み要約を保存日時が新しい順に直近50件返します。
+各項目には `revisionId`、`key`（CVE等の脅威キー）、`evidenceHash`、`status: "generated"`、
+`summary`（本文・引用根拠）、`validation`（品質検証結果）、`createdAt`（保存日時、Unixミリ秒）が含まれます。
+検証不合格の要約も含むため、`validation.valid` を確認してください。
+未生成の改訂と、改訂の根拠が更新されてハッシュが一致しなくなった要約は除外します。該当がなければ `[]` を返します。
+管理APIでは認証付きの `GET /admin/summaries` で同じ一覧を取得できます。新規の推論・投稿は行いません。
+
 `show revisions REVISION_ID` は収集した記事本文や出典、`show summaries REVISION_ID` は保存済みの構造化要約と
 引用根拠・品質検証結果を表示します。不合格の生成結果も確認できます。要約が未生成なら `status: "not_generated"` と
 `summary: null` を返し、改訂そのものが存在しない場合は404になります。
@@ -266,8 +274,22 @@ pnpm run cli -- retry-job JOB_ID
 Fakeの場合は本文抜粋とFakeを示す不合格結果を返し、実AIによる意味検証は行いません。
 `validation.valid`
 を確認してください。HTTP成功でも生成品質の合格を意味せず、生成中に根拠が更新された結果も不合格になります。
-診断結果で保存済み要約を上書きせず、ジョブや配信の状態も変更しません。既存の保留要約を自動で再生成する操作ではありません。
+`--save`を省略すると診断のみで、保存済み要約は上書きしません。返却される`saved`は`false`です。
 結果を残す場合は `pnpm exec tsx src/cli.ts generate-summary REVISION_ID > result.json` のように保存できます。
+
+再生成した要約を保存して`list summaries`へ反映する場合は、`--save`を指定します。
+
+```sh
+pnpm cli generate-summary REVISION_ID --save
+pnpm cli list summaries
+```
+
+引用検証と意味検証に合格し、保存時点でも現在改訂と根拠ハッシュが一致する場合だけ新規保存・上書きします。
+保存成功時は`saved: true`、不合格・Fake・根拠更新などで保存しなかった場合は`saved: false`となり、以前の保存内容を残します。
+`--save`指定時に保存できなければ、診断結果を表示してCLIは終了コード1を返します。
+管理APIは`POST /admin/summaries/generate`の本文に`{"id":"REVISION_ID","save":true}`を指定します。
+HTTP成功だけでは保存成功を意味しないため、`saved`と`validation`を確認してください。
+この操作ではジョブ・配信の状態変更や送信を行わず、保留中の処理も自動再開しません。
 
 `dry-run REVISION_ID` は保存済み要約を各投稿先の形式でプレビューする読み取り操作です。新規収集・推論・送信は行いません。
 要約が未生成の場合は先に通常のdry-runパイプラインを動かしてください。一覧は直近50件で、詳細はIDで指定します。

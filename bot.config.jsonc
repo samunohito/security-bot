@@ -3,7 +3,7 @@
   // 予算プリセット: "free"（既定）/ "balanced" / "performance"。
   "mode": "free",
   // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信。
-  "dryRun": true,
+  "dryRun": false,
   // 既定の取得間隔（秒）: 60以上の整数。省略時900。
   "pollIntervalSeconds": 60,
   // 情報源の配列。指定すると既定リスト全体を置き換える。[]も可。

@@ -373,6 +373,49 @@ describe('complete pipeline', () => {
 });
 
 describe('management boundary', () => {
+  it('保存済み要約を新しい順に直近50件返し、未生成と古い根拠の要約を除外する', async () => {
+    const { bot, store } = harness();
+    const get = () =>
+      adminRequest(
+        new Request('https://bot.example/admin/summaries', { headers: { Authorization: 'Bearer token' } }),
+        bot,
+        'token',
+      );
+    expect(await (await get())?.json()).toEqual([]);
+
+    const ids: string[] = [];
+    const invalid = { valid: false, complete: false, reasons: ['overview_missing'] };
+    for (let index = 0; index < 53; index++) {
+      const [id] = await store.ingest({ ...item, id: String(index), cves: [`CVE-2026-${1000 + index}`] }, now + index);
+      ids.push(id!);
+      if (index !== 52) {
+        await store.saveSummary(
+          (await store.getRevision(id!))!,
+          summary,
+          index === 50 ? invalid : { valid: true, complete: true, reasons: [] },
+          now + index,
+        );
+      }
+    }
+    await db.prepare('UPDATE revisions SET evidence_hash=? WHERE id=?').bind('updated', ids[51]).run();
+
+    const response = await get();
+    expect(response?.status).toBe(200);
+    expect(response?.headers.get('Cache-Control')).toBe('no-store');
+    const rows = (await response?.json()) as { revisionId: string }[];
+    expect(rows).toHaveLength(50);
+    expect(rows.map((row) => row.revisionId)).toEqual(ids.slice(1, 51).reverse());
+    expect(rows[0]).toMatchObject({
+      revisionId: ids[50],
+      key: 'CVE-2026-1050',
+      evidenceHash: (await store.getRevision(ids[50]!))!.evidence_hash,
+      status: 'generated',
+      summary,
+      validation: invalid,
+      createdAt: now + 50,
+    });
+  });
+
   it('不合格の生成結果も取得でき、未生成と改訂不存在を区別する', async () => {
     const { bot, store } = harness();
     const [id] = await store.ingest(item, now);
@@ -413,6 +456,7 @@ describe('management boundary', () => {
 
   it('生成結果の取得と診断には管理認証を要求する', async () => {
     const { bot } = harness();
+    expect((await adminRequest(new Request('https://bot.example/admin/summaries'), bot, 'token'))?.status).toBe(401);
     expect((await adminRequest(new Request('https://bot.example/admin/summaries/id'), bot, 'token'))?.status).toBe(401);
     expect(
       (
@@ -446,10 +490,99 @@ describe('management boundary', () => {
       summary,
       validation: { valid: true, complete: true },
       verdict: { supported: true },
+      saved: false,
     });
     expect((await store.getSummary(revision))?.summary).toEqual(saved);
     expect(await store.list('jobs')).toEqual([]);
     expect(await store.list('deliveries')).toEqual([]);
+  });
+
+  it.each([false, true])(
+    '保存を明示した合格要約を新規保存または上書きし、ジョブと配信を変更しない: 既存=%s',
+    async (existing) => {
+      const { bot, store } = harness();
+      const [id] = await store.ingest(item, now);
+      const revision = (await store.getRevision(id!))!;
+      if (existing) {
+        await store.saveSummary(
+          revision,
+          { ...summary, overview: null },
+          { valid: false, complete: false, reasons: ['overview_missing'] },
+          now,
+        );
+      }
+      await store.enqueue('held-analysis', 'analyze', { revisionId: id }, now);
+      await db.prepare("UPDATE jobs SET state='held' WHERE id='held-analysis'").run();
+      await store.createDelivery('unknown-delivery', 'main', id!, false, now);
+      await db.prepare("UPDATE deliveries SET state='unknown' WHERE id='unknown-delivery'").run();
+      const jobsBefore = await store.list('jobs');
+      const deliveriesBefore = await store.list('deliveries');
+
+      const response = await adminRequest(
+        new Request('https://bot.example/admin/summaries/generate', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer token' },
+          body: JSON.stringify({ id, save: true }),
+        }),
+        bot,
+        'token',
+      );
+      expect(response?.status).toBe(200);
+      expect(await response?.json()).toMatchObject({ saved: true, validation: { valid: true } });
+      expect((await store.list('summaries'))[0]).toMatchObject({
+        revisionId: id,
+        summary,
+        validation: { valid: true },
+      });
+      expect(await store.list('jobs')).toEqual(jobsBefore);
+      expect(await store.list('deliveries')).toEqual(deliveriesBefore);
+    },
+  );
+
+  it('意味検証が不合格なら保存を要求しても以前の要約を残す', async () => {
+    const { bot, store } = harness({ contradiction: true });
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    const previous = { ...summary, overview: null };
+    await store.saveSummary(revision, previous, { valid: false, complete: false, reasons: ['overview_missing'] }, now);
+    const result = await bot.generateSummary(id!, now + 1, { save: true });
+    expect(result).toMatchObject({ saved: false, validation: { valid: false } });
+    expect((await store.getSummary(revision))?.summary).toEqual(previous);
+  });
+
+  it('Fakeの診断結果は保存を要求しても保存しない', async () => {
+    const { bot: original, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const bot = new Bot(original.env, loadConfig({ llm: { provider: 'fake' } }));
+    const result = await bot.generateSummary(id!, now, { save: true });
+    expect(result).toMatchObject({
+      saved: false,
+      validation: { valid: false, reasons: expect.arrayContaining(['fake_provider']) },
+    });
+    expect(await store.getSummary((await store.getRevision(id!))!)).toBeNull();
+  });
+
+  it.each(['hash', 'current'])('事前確認後に根拠または現在改訂が変わっても保存時に拒否する: %s', async (change) => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    const previous = { ...summary, overview: null };
+    await store.saveSummary(revision, previous, { valid: false, complete: false, reasons: [] }, now);
+    const save = bot.store.saveCurrentSummary.bind(bot.store);
+    vi.spyOn(bot.store, 'saveCurrentSummary').mockImplementationOnce(async (...args) => {
+      if (change === 'hash') {
+        await db.prepare('UPDATE revisions SET evidence_hash=? WHERE id=?').bind('changed', id).run();
+      } else {
+        await db.prepare('UPDATE threats SET revision_id=NULL WHERE revision_id=?').bind(id).run();
+      }
+      return save(...args);
+    });
+    const result = await bot.generateSummary(id!, now + 1, { save: true });
+    expect(result).toMatchObject({
+      saved: false,
+      validation: { valid: false, reasons: expect.arrayContaining(['evidence_changed']) },
+    });
+    expect((await store.getSummary(revision))?.summary).toEqual(previous);
   });
 
   it('診断の予算が枯渇している場合はLLMを呼ばない', async () => {
@@ -498,7 +631,8 @@ describe('management boundary', () => {
         },
       },
     });
-    const result = await bot.generateSummary(id!, now);
+    const result = await bot.generateSummary(id!, now, { save: true });
+    expect(result.saved).toBe(false);
     expect(result.validation.valid).toBe(false);
     expect(result.validation.reasons).toContain('evidence_changed');
     expect(await store.list('deliveries')).toEqual([]);

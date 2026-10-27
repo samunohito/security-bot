@@ -16,9 +16,14 @@ async function main() {
       'post-url': { type: 'string' },
       'ack-duplicate-risk': { type: 'boolean' },
       state: { type: 'string' },
+      save: { type: 'boolean' },
     },
   });
   const [command, resource, id] = args;
+  if (values.save !== undefined && command !== 'generate-summary') {
+    throw new Error('--save is only supported for generate-summary');
+  }
+
   if (command === 'preview') {
     if (!values.source || args.length !== 1 || values.item === '' || values.key === '') {
       throw new Error('Usage: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]');
@@ -68,7 +73,7 @@ async function main() {
 
   if (!command || command === 'help') {
     console.log(
-      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
+      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions|summaries; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID [--save]; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
     );
     return;
   }
@@ -91,7 +96,10 @@ async function main() {
   let body: Record<string, unknown> | undefined;
   if (command === 'status') {
     path = '/admin/status';
-  } else if (command === 'list' && ['jobs', 'deliveries', 'sources', 'targets', 'revisions'].includes(resource ?? '')) {
+  } else if (
+    command === 'list' &&
+    ['jobs', 'deliveries', 'sources', 'targets', 'revisions', 'summaries'].includes(resource ?? '')
+  ) {
     path = `/admin/${resource}`;
   } else if (command === 'show' && ['jobs', 'deliveries', 'revisions', 'summaries'].includes(resource ?? '') && id) {
     path = `/admin/${resource}/${encodeURIComponent(id)}`;
@@ -113,6 +121,7 @@ async function main() {
     method = 'POST';
     body = {
       id: resource,
+      ...(values.save === undefined ? {} : { save: values.save }),
       ...(values['post-id'] ? { postId: values['post-id'] } : {}),
       ...(values['post-url'] ? { postUrl: values['post-url'] } : {}),
       ...(values['ack-duplicate-risk'] ? { acknowledgeDuplicateRisk: true } : {}),
@@ -139,6 +148,9 @@ async function main() {
   }
 
   console.log(JSON.stringify(data, null, 2));
+  if (values.save && !(typeof data === 'object' && data !== null && 'saved' in data && data.saved === true)) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {

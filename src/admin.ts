@@ -59,9 +59,13 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       return result ? json(result) : json({ error: 'not_found' }, 404);
     }
 
-    const tableMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|sources|targets|revisions)$/);
+    const tableMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|sources|targets|revisions|summaries)$/);
     if (request.method === 'GET' && tableMatch) {
-      return json(await bot.store.list(tableMatch[1] as 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions'));
+      return json(
+        await bot.store.list(
+          tableMatch[1] as 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions' | 'summaries',
+        ),
+      );
     }
 
     const detailMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|revisions)\/([^/]+)$/);
@@ -93,9 +97,14 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
         postId: z.string().max(200).optional(),
         postUrl: z.url().optional(),
         acknowledgeDuplicateRisk: z.boolean().optional(),
+        save: z.boolean().optional(),
       })
       .strict()
       .parse(JSON.parse(text));
+    if (body.save !== undefined && url.pathname !== '/admin/summaries/generate') {
+      return json({ error: 'invalid_request' }, 400);
+    }
+
     const now = Date.now();
 
     if (url.pathname === '/admin/summaries/generate') {
@@ -103,7 +112,7 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
         return json({ error: 'not_found' }, 404);
       }
 
-      return json(await bot.generateSummary(body.id));
+      return json(await bot.generateSummary(body.id, now, { save: body.save }));
     }
     if (url.pathname === '/admin/targets/pause' || url.pathname === '/admin/targets/resume') {
       await bot.store.pauseTarget(body.id, url.pathname.endsWith('/pause'));

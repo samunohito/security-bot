@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('operator CLI', () => {
   it.each([
+    { args: ['list', 'summaries'], path: '/admin/summaries', method: 'GET', body: null },
     { args: ['show', 'summaries', 'revision/id'], path: '/admin/summaries/revision%2Fid', method: 'GET', body: null },
     {
       args: ['generate-summary', 'revision/id'],
@@ -28,6 +29,41 @@ describe('operator CLI', () => {
     );
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual({ path, method, body });
+  });
+
+  it('generate-summary以外への--saveを通信前に拒否する', () => {
+    const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'list', 'summaries', '--save'], {
+      encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--save is only supported for generate-summary');
+  });
+
+  it.each([true, false])('--saveをAPIへ渡し、保存結果に応じた終了コードを返す: %s', (saved) => {
+    const setup = `globalThis.fetch = async (url, init) => {
+      if (new URL(url).pathname !== '/admin/summaries/generate') throw new Error('unexpected_path');
+      if (JSON.stringify(JSON.parse(init.body)) !== JSON.stringify({ id: 'revision', save: true })) throw new Error('unexpected_body');
+      return Response.json({ saved: ${saved} });
+    };`;
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--import',
+        'tsx',
+        '--import',
+        `data:text/javascript,${encodeURIComponent(setup)}`,
+        'src/cli.ts',
+        'generate-summary',
+        'revision',
+        '--save',
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, SECURITY_BOT_URL: 'http://localhost:8787', SECURITY_BOT_ADMIN_TOKEN: 'local-test' },
+      },
+    );
+    expect(result.status).toBe(saved ? 0 : 1);
+    expect(JSON.parse(result.stdout)).toEqual({ saved });
   });
 
   it.each([
@@ -80,9 +116,10 @@ describe('operator CLI', () => {
     },
   );
 
-  it('リモート認証情報なしで同梱の設定を検証する', () => {
+  it('リモート認証情報なしで同梱の設定に環境変数を反映して検証する', () => {
     const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'config', 'validate'], {
       encoding: 'utf8',
+      env: { ...process.env, BOT_MODE: 'free', DRY_RUN: 'true' },
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({

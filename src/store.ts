@@ -25,6 +25,15 @@ export type Revision = Omit<typeof tables.revisions.$inferSelect, 'snapshot'> & 
 export type Delivery = typeof tables.deliveries.$inferSelect;
 
 type ListedRows = {
+  summaries: {
+    revisionId: string;
+    key: string;
+    evidenceHash: string;
+    status: 'generated';
+    summary: Summary;
+    validation: Validation;
+    createdAt: number;
+  };
   jobs: Pick<Job, 'id' | 'type' | 'state' | 'available_at' | 'attempts' | 'error' | 'created_at' | 'lease_until'>;
   deliveries: Delivery;
   sources: Pick<
@@ -560,6 +569,35 @@ export class Store {
       .run();
   }
 
+  /** 検証合格の要約を、根拠ハッシュと現在改訂が保存時点でも一致する場合だけ保存する。 */
+  async saveCurrentSummary(
+    revision: Revision,
+    summary: Summary,
+    validation: Validation,
+    now: number,
+  ): Promise<boolean> {
+    if (!validation.valid) {
+      return false;
+    }
+
+    // 事前の読み取りだけでは、保存直前の収集更新を排除できない。
+    const row = await this.statement(
+      `INSERT INTO summaries(revision_id,evidence_hash,summary,validation,created_at)
+       SELECT r.id,r.evidence_hash,?,?,? FROM revisions r JOIN threats t ON t.revision_id=r.id
+       WHERE r.id=? AND r.evidence_hash=?
+       ON CONFLICT(revision_id) DO UPDATE SET evidence_hash=excluded.evidence_hash,
+         summary=excluded.summary,validation=excluded.validation,created_at=excluded.created_at
+       RETURNING revision_id`,
+      JSON.stringify(summary),
+      JSON.stringify(validation),
+      now,
+      revision.id,
+      revision.evidence_hash,
+    ).first<{ revision_id: string }>();
+
+    return row !== null;
+  }
+
   /** 根拠ハッシュが一致する要約と検証結果だけを返す。 */
   async getSummary(revision: Revision): Promise<{ summary: Summary; validation: Validation } | null> {
     const row = await this.orm
@@ -1012,6 +1050,35 @@ export class Store {
     const rowLimit = Math.min(100, limit);
 
     switch (table) {
+      case 'summaries': {
+        const rows = await this.orm
+          .select({
+            revisionId: tables.summaries.revision_id,
+            key: tables.revisions.threat_key,
+            evidenceHash: tables.summaries.evidence_hash,
+            summary: tables.summaries.summary,
+            validation: tables.summaries.validation,
+            createdAt: tables.summaries.created_at,
+          })
+          .from(tables.summaries)
+          .innerJoin(
+            tables.revisions,
+            and(
+              eq(tables.summaries.revision_id, tables.revisions.id),
+              eq(tables.summaries.evidence_hash, tables.revisions.evidence_hash),
+            ),
+          )
+          .orderBy(desc(tables.summaries.created_at), asc(tables.summaries.revision_id))
+          .limit(rowLimit)
+          .all();
+
+        return rows.map((row) => ({
+          ...row,
+          status: 'generated' as const,
+          summary: JSON.parse(row.summary) as Summary,
+          validation: JSON.parse(row.validation) as Validation,
+        }));
+      }
       case 'sources':
         return this.orm
           .select({

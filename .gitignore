@@ -8,3 +8,11 @@ coverage/
 !.env.example
 .superpowers/
 benchmark-data/
+
+# Ignore downloaded skills; keep explicitly listed repository-owned skills.
+/.agents/skills/*
+!/.agents/skills/review-pipeline-consistency/
+/skills-lock.json
+
+# Draft plans, scratch notes, and transient agent output.
+/docs/tmp/

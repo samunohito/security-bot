@@ -6,6 +6,8 @@ AIとMisskeyです。
 
 初期状態は **`dryRun: true`、投稿先なし** です。リポジトリをビルドしただけでは投稿しません。
 
+仕様書・補助資料・履歴・一時メモの分類と資料の索引は [`docs/README.md`](docs/README.md) を参照してください。
+
 ## 開発と検証
 
 Node.js 22以上を使用します（開発・検証はNode.js 24）。
@@ -22,6 +24,41 @@ npm run cli -- config validate
 `npm test`は実際のWorkersランタイムとローカルD1を使う統合テストを含みます。外部情報源・LLM・SNSへのアクセスはテストでは置き換え、SNSへの実送信は行いません。`npm run build`もWranglerのdry-runです。
 
 フォーマットにはBiomeを使用します。`npm run format`で対応ファイル全体を整形し、`npm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`は整形対象から除外します。
+
+## AIエージェント向けの開発環境
+
+作業規約は [`AGENTS.md`](AGENTS.md) にまとめています。外部skillsは、Cloudflare Workers・D1・Queues・Workers
+AIを使う現在の構成に合わせ、[Cloudflare公式](https://github.com/cloudflare/skills)から次の3つを選定しています。
+
+| Skill                                                                                | 主な用途                                            | 累計インストール数（2026-10-27調査） |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------- | -----------------------------------: |
+| [cloudflare](https://skills.sh/cloudflare/skills/cloudflare)                         | D1・Queues・Workers AI・Cronなどの参照資料          |                             約138.7K |
+| [workers-best-practices](https://skills.sh/cloudflare/skills/workers-best-practices) | Workersの実装・レビュー、非同期処理、bindingsの扱い |                             約127.1K |
+| [wrangler](https://skills.sh/cloudflare/skills/wrangler)                             | 既存Wrangler環境のローカル開発、設定・リソース操作  |                             約130.4K |
+
+Cloudflare公式リポジトリは調査時点で約3.2K starsです。各skillの本文と参照資料の構成を確認したうえで選定しました。
+`antfu/skills` のVitest用skillも調査しましたが、現行版はVitest
+5.1のベータ版を前提としているため、このプロジェクトのVitest 4.1系には導入していません。フロントエンドやDurable
+Objects向けのskillsも、現在の構成では使用しないため対象外です。
+
+Node.js 22以上、npm（npx）、Git、GitHubとnpmへのネットワーク接続が必要です。
+
+```sh
+sh scripts/install-skills.sh
+```
+
+スクリプトの場所を基準にリポジトリルートへ移動するため、別のディレクトリから絶対パスで実行することもできます。
+導入先はこのリポジトリ内の `.agents/skills/` のみで、グローバル環境やアプリの依存関係は変更しません。
+導入したskillsは次のターンから利用できます。
+
+外部skills本体とCLIが生成する `skills-lock.json` は `.gitignore` で除外しています。
+自作の [`review-pipeline-consistency`](.agents/skills/review-pipeline-consistency/SKILL.md) はGit管理し、
+ジョブ・配信・収集・根拠データの整合性を確認する際に利用します。外部skillsの再インストールでは上書きされません。
+コミットする導入定義は [`scripts/install-skills.sh`](scripts/install-skills.sh) です。
+再現性のため、Skills CLIは `1.7.4`、Cloudflareの導入元はコミット
+[`86505e44f87d801aa1864a3c4109e9a8ae5c409f`](https://github.com/cloudflare/skills/tree/86505e44f87d801aa1864a3c4109e9a8ae5c409f)
+に固定しています。更新する際は内容を確認してスクリプトの固定値を変更し、再実行してください。
+再実行すると選定した3つのskillsを固定リビジョンの内容で上書きするため、外部skillsへのローカル編集は避けてください。
 
 ## セットアップ
 

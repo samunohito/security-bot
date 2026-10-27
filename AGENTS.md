@@ -7,6 +7,15 @@
 - 以下の規約は新規作成・変更するコードに適用する。規約を適用するためだけに無関係な既存コードを一括修正しない。
 - 説明・ドキュメントは原則として日本語で記述する。
 
+## ドキュメントの扱い
+
+- 文書の作成・更新時は [`docs/README.md`](docs/README.md) の分類・保存・整理ルールに従う。
+- 現行仕様は `docs/specs/`、補助資料は `docs/references/`、履歴は `docs/history/YYYY-MM-DD-topic/` に置く。
+- 設計案・実装計画・進捗などの一時メモは、Git管理しない `docs/tmp/YYYY-MM-DD-topic/` に置く。
+- Superpowersを含む外部skillsの既定保存先・自動コミット指示より、この規約を優先する。`docs/superpowers/` は作らない。
+- 生成した文書をそのまま現行仕様や履歴へ追加せず、必要な内容を選んで既存資料へ反映する。
+- 過去の計画・レビューの実行指示を新しい依頼として扱わない。
+
 ## 技術スタックと構成
 
 - Node.js 22以上、npm、TypeScript（strict）、ES Modules。
@@ -87,9 +96,14 @@ npm run cli -- config validate
 `npm run build` はWranglerのdry-run。シェルスクリプトを変更した場合は `sh -n scripts/install-skills.sh`
 でも構文を確認する。
 
-## 外部skills
+## Skills
 
-- `sh scripts/install-skills.sh` で、このリポジトリ専用の `.agents/skills/` に導入する。
+- 自作の `review-pipeline-consistency` は、永続ジョブ・配信・収集カーソル・根拠データを変更するときに参照する。
+  読み取り専用の調査でも、関連する実装と回帰テストを探す際に利用できる。
+- 自作skillsは `.agents/skills/` に置き、Git管理する。追加時は `.gitignore` の例外も更新する。
+- skillには繰り返し使う判断・検証手順を書く。作業ログや完了済み計画をそのままskill化しない。
+
+- 外部skillsは `sh scripts/install-skills.sh` で、このリポジトリ専用の `.agents/skills/` に導入する。
 - Worker実装には `workers-best-practices`、Wrangler操作には `wrangler`、D1・Queues・Workers AIの参照には `cloudflare`
   を使う。
 - 必要なskillの `SKILL.md` を読み、対象に関係する参照資料だけを開く。未導入ならREADMEの導入手順を確認する。

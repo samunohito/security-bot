@@ -21,6 +21,9 @@
     }
   },
   "markdown": {
+    "parser": {
+      "frontmatter": true
+    },
     "formatter": {
       "enabled": true,
       "proseWrap": "always"

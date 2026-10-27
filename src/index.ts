@@ -1,10 +1,10 @@
-import bundledConfig from '../bot.config.json';
-import { loadConfig } from './config';
+import bundledConfig from '../bot.config.jsonc';
+import { parseConfig } from './config';
 import { adminRequest } from './admin';
 import { Bot, type BotEnv } from './pipeline';
 
 function createBot(env: BotEnv) {
-  return new Bot(env, loadConfig(bundledConfig, env));
+  return new Bot(env, parseConfig(bundledConfig, env));
 }
 
 export default {

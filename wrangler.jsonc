@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "security-bot",
   "main": "src/index.ts",
+  "rules": [{ "type": "Text", "globs": ["**/bot.config.jsonc"], "fallthrough": true }],
   "compatibility_date": "2026-10-27",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": { "crons": ["* * * * *"] },

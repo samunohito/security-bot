@@ -58,7 +58,7 @@ beforeEach(async () => {
 });
 
 describe('durable work', () => {
-  it('returns job details with JSON payload and null leases, or null for a missing ID', async () => {
+  it('JSONペイロードとnullのリースを含むジョブ詳細を返しIDが存在しなければnullを返す', async () => {
     const id = "job:'quoted";
     await store.enqueue(id, 'analyze', { revisionId: '日本語' }, now);
 
@@ -75,7 +75,7 @@ describe('durable work', () => {
     expect(await store.getRevision('missing')).toBeNull();
   });
 
-  it('recovers an enqueue crash and deduplicates a queue replay', async () => {
+  it('キュー投入時のクラッシュから復旧し再配信による重複を防ぐ', async () => {
     await store.enqueue('one', 'analyze', { revisionId: 'r' }, now);
     await store.enqueue('one', 'analyze', { revisionId: 'r' }, now);
 
@@ -87,7 +87,7 @@ describe('durable work', () => {
     expect([firstClaim, replayClaim].filter(Boolean)).toHaveLength(1);
   });
 
-  it('uses latest source evidence without making a revision for timestamps or score churn', async () => {
+  it('日時やスコアの変動では改訂を作らず情報源の最新の根拠を使う', async () => {
     const first = await store.ingest(item, now);
     await store.ingest({ ...item, fetchedAt: now + 1000 }, now + 1000);
 
@@ -110,7 +110,7 @@ describe('durable work', () => {
     expect(snapshot?.snapshot.evidence[0]?.text).not.toContain('2.0');
   });
 
-  it('reserves budgets atomically and preserves unknown consumption', async () => {
+  it('予算を原子的に予約し結果不明の消費量を保持する', async () => {
     const budget = { maxCalls: 1, neurons: 100, concurrency: 1 };
     const results = await Promise.all([
       store.reserveBudget('a', now, 60, budget),
@@ -124,14 +124,14 @@ describe('durable work', () => {
     expect((await store.budgetStatus(now))?.neurons).toBe(30);
   });
 
-  it('does not charge a repeated reservation ID twice', async () => {
+  it('同じ予約IDで二重に消費計上しない', async () => {
     const budget = { maxCalls: 10, neurons: 1000, concurrency: 2 };
     await store.reserveBudget('same', now, 60, budget);
     await store.reserveBudget('same', now, 60, budget);
     expect((await store.budgetStatus(now))?.calls).toBe(1);
   });
 
-  it('blocks concurrent sends, moves expired sending to unknown and never replays it', async () => {
+  it('同時送信を防ぎ期限切れの送信中状態をunknownに移して再送しない', async () => {
     await store.syncTargets([target]);
     const [revision] = await store.ingest(item, now);
     await store.createDelivery('d1', target.id, revision!, false, now);
@@ -150,7 +150,7 @@ describe('durable work', () => {
     expect(await store.reserveDelivery(delivery!.id, target, now + 400000)).toBeNull();
   });
 
-  it('counts normal and urgent slots separately and does not share quotas across targets', async () => {
+  it('通常枠と緊急枠を別々に数え投稿先間で割当量を共有しない', async () => {
     const t = { ...target, normalDailyLimit: 1, urgentDailyLimit: 1 };
     await store.syncTargets([t, { ...t, id: 'other' }]);
     await store.createDelivery('normal', t.id, 'r1', false, now);
@@ -169,7 +169,7 @@ describe('durable work', () => {
     expect(await store.reserveDelivery('independent', { ...t, id: 'other' }, now)).not.toBeNull();
   });
 
-  it('prioritizes a ready urgent delivery over a normal delivery on the same account', async () => {
+  it('同じアカウントでは準備済みの緊急配信を通常配信より優先する', async () => {
     await store.syncTargets([target]);
     await store.createDelivery('normal', target.id, 'r1', false, now);
     await store.createDelivery('urgent', target.id, 'r2', true, now);
@@ -177,7 +177,7 @@ describe('durable work', () => {
     expect(await store.reserveDelivery('urgent', target, now)).not.toBeNull();
   });
 
-  it('continues the normal quota after the separate urgent quota is exhausted', async () => {
+  it('独立した緊急枠を使い切った後も通常枠で配信を続ける', async () => {
     const t = { ...target, urgentDailyLimit: 1 };
     await store.syncTargets([t]);
     await store.createDelivery('urgent1', t.id, 'r1', true, now);
@@ -193,7 +193,7 @@ describe('durable work', () => {
     expect(await store.reserveDelivery('normal', t, now + 300001)).not.toBeNull();
   });
 
-  it('stops repeatedly killed jobs instead of endlessly replaying CPU-limit failures', async () => {
+  it('CPU制限で繰り返し強制終了されるジョブを無限に再実行せず停止する', async () => {
     await store.enqueue('killed', 'collect', {}, now);
     for (let i = 0; i < 5; i++) {
       await store.claimJob('killed', now + i * 200000);
@@ -202,7 +202,7 @@ describe('durable work', () => {
     expect((await store.list('jobs'))[0]?.state).toBe('held');
   });
 
-  it('retires source membership when an official multi-CVE article is corrected to one CVE', async () => {
+  it('公式の複数CVE記事が単一CVEに訂正されたら対象外のCVEと情報源の所属関係を終了する', async () => {
     await store.ingest({ ...item, cves: ['CVE-2026-1111', 'CVE-2026-2222'] }, now);
     const old = await db
       .prepare('SELECT revision_id FROM threats WHERE key=?')
@@ -236,7 +236,7 @@ describe('durable work', () => {
     ).toEqual({ n: 0 });
   });
 
-  it('fences completion and failure from expired attempt A after explicit retry B', async () => {
+  it('明示的な再試行Bの開始後は期限切れの試行Aによる完了と失敗の更新を拒否する', async () => {
     await store.syncTargets([target]);
     await store.createDelivery('fenced', target.id, 'r', false, now);
     const expiredLease = (await store.reserveDelivery('fenced', target, now))!;
@@ -268,7 +268,7 @@ describe('durable work', () => {
     ).toEqual({ used: 2 });
   });
 
-  it('atomically rejects prepared content whose evidence changed without a new material revision', async () => {
+  it('重要な改訂を伴わず根拠が変わった準備済み内容を原子的に拒否する', async () => {
     await store.syncTargets([target]);
     const [id] = await store.ingest(item, now);
     const revision = (await store.getRevision(id!))!;
@@ -285,7 +285,7 @@ describe('durable work', () => {
     expect(await store.reserveDelivery('changed', target, now + 1000, revision.evidence_hash)).toBeNull();
   });
 
-  it('does not let an expired collection owner overwrite a completed continuation', async () => {
+  it('期限切れの収集所有者による完了済みの継続処理の上書きを防ぐ', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'nvd')!;
     await store.syncSources([source], now);
     const id = (await store.outbox(now))[0]!.id;

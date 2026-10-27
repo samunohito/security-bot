@@ -10,7 +10,7 @@ const { DB: db, TEST_MIGRATIONS: migrations } = env as unknown as {
 const orm = drizzle(db);
 
 describe('generated migrations', () => {
-  it('retains descending index columns for priority and delivery history', async () => {
+  it('優先度と配信履歴のインデックス列の降順指定を保持する', async () => {
     for (const [name, columns] of [
       [
         'revisions_priority',
@@ -34,7 +34,7 @@ describe('generated migrations', () => {
     }
   });
 
-  it('keeps existing data when migrations are applied again', async () => {
+  it('マイグレーションを再適用しても既存データを保持する', async () => {
     await orm.insert(quotas).values({ target_id: 'repeat', day: '2026-10-27', bucket: 'normal', used: 2 });
 
     await applyD1Migrations(db, migrations);
@@ -48,7 +48,7 @@ describe('generated migrations', () => {
     expect(await db.prepare('SELECT COUNT(*) AS n FROM d1_migrations').first('n')).toBe(migrations.length);
   });
 
-  it('allows historical evidence but rejects two current versions of the same membership', async () => {
+  it('過去の根拠を許容し同じ所属関係に現行版が二つ存在することを拒否する', async () => {
     const row = {
       threat_key: 'CVE-2026-1111',
       id: 'source:1',
@@ -75,7 +75,7 @@ describe('generated migrations', () => {
     await orm.insert(evidence).values({ ...row, threat_key: 'CVE-2026-2222', hash: 'current' });
   });
 
-  it('rejects negative quotas and duplicate quota keys', async () => {
+  it('負の割当量と割当キーの重複を拒否する', async () => {
     const row = { target_id: 'constraint', day: '2026-10-27', bucket: 'normal' };
     await expect(
       orm
@@ -87,7 +87,7 @@ describe('generated migrations', () => {
     await expect(orm.insert(quotas).values(row).run()).rejects.toThrow();
   });
 
-  it('deduplicates deliveries by target and revision even when IDs differ', async () => {
+  it('IDが異なっても投稿先と改訂が同じ配信を重複させない', async () => {
     const row = {
       target_id: 'main',
       revision_id: 'revision',

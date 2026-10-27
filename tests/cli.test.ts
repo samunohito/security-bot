@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
 describe('operator CLI', () => {
-  it('validates bundled config without requiring remote credentials', () => {
+  it('リモート認証情報なしで同梱の設定を検証する', () => {
     const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'config', 'validate'], {
       encoding: 'utf8',
     });
@@ -14,7 +14,7 @@ describe('operator CLI', () => {
     });
   });
 
-  it('returns a useful error when remote credentials are absent', () => {
+  it('リモート認証情報がない場合は原因が分かるエラーを返す', () => {
     const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'status'], {
       encoding: 'utf8',
       env: {

@@ -23,13 +23,13 @@ const item = {
 };
 
 describe('security domain', () => {
-  it('splits CVEs but marks shared statements as article-wide evidence', () => {
+  it('CVEを分割し共通の記述を記事全体の根拠として扱う', () => {
     const records = normalizeItem(item);
     expect(records.map((r) => r.key)).toEqual(['CVE-2026-1111', 'CVE-2026-2222']);
     expect(records[0]?.evidence.scope).toBe('article');
   });
 
-  it('does not turn unscored advisories into Critical or urgent by inference', () => {
+  it('未採点の勧告を推測でCriticalや緊急扱いにしない', () => {
     expect(
       classify({
         scores: [],
@@ -64,22 +64,22 @@ describe('security domain', () => {
     ).toBe(0);
   });
 
-  it('material revisions ignore fetch time, scores and prose but capture official fixes', () => {
+  it('重要な改訂の判定では取得時刻、スコア、文面の変化を無視し公式の修正を検出する', () => {
     expect(materialKey(item)).toBe(materialKey({ ...item, fetchedAt: 999, text: 'Reformatted', scores: [] }));
     expect(materialKey(item)).not.toBe(materialKey({ ...item, remediation: 'Upgrade to 2.0' }));
   });
 
-  it('counts publications in Japan days', () => {
+  it('日本時間の日付で投稿数を集計する', () => {
     expect(publicationDay(Date.parse('2026-10-27T15:00:00Z'))).toBe('2026-10-28');
   });
 
-  it('treats an official impact correction as a material revision', () => {
+  it('公式の影響範囲の訂正を重要な改訂として扱う', () => {
     expect(materialKey({ ...item, impact: 'Remote code execution' })).not.toBe(
       materialKey({ ...item, impact: 'Denial of service only' }),
     );
   });
 
-  it('never promotes every CVE using article-wide scores or exploitation flags', () => {
+  it('記事全体のスコアや悪用フラグで全CVEの重要度を一律に引き上げない', () => {
     const records = normalizeItem({
       ...item,
       scores: [

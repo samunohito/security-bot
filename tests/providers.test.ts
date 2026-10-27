@@ -12,18 +12,18 @@ describe('source boundaries', () => {
     '<rdf:RDF xmlns:rdf="rdf" xmlns:dc="dc"><item rdf:about="x"><title>Flaw CVE-2026-1111</title><link>https://jvn.jp/jp/1/</link><dc:date>2026-10-27T00:00:00Z</dc:date></item></rdf:RDF>',
     '<rss><channel><item><guid>x</guid><title>Flaw CVE-2026-1111</title><link>https://jvn.jp/jp/1/</link><pubDate>Tue, 27 Oct 2026 00:00:00 GMT</pubDate></item></channel></rss>',
     '<feed xmlns="atom"><entry><id>x</id><title>Flaw CVE-2026-1111</title><link href="https://jvn.jp/jp/1/"/><updated>2026-10-27T00:00:00Z</updated></entry></feed>',
-  ])('parses supported feed format without inventing timestamps', (xml) => {
+  ])('対応するフィード形式を解析し日時を捏造しない', (xml) => {
     const items = parseFeed(xml, source, now);
     expect(items[0]?.cves).toEqual(['CVE-2026-1111']);
     expect(items[0]?.modifiedAt).toBe(now);
     expect(items[0]?.url).toBe('https://jvn.jp/jp/1/');
   });
 
-  it('rejects DTD/entity payloads', () => {
+  it('DTDやエンティティを含む入力を拒否する', () => {
     expect(() => parseFeed('<!DOCTYPE x [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss/>', source, now)).toThrow();
   });
 
-  it('extracts JVN image headings and preserves the CVSS vector version', () => {
+  it('JVNの画像見出しを抽出しCVSSベクトルのバージョンを保持する', () => {
     const feed =
       '<rss><channel><item><title>CVE-2026-1111</title><link>https://jvn.jp/1/</link><pubDate>2026-10-27</pubDate></item></channel></rss>';
     const item = parseFeed(feed, source, now)[0]!;
@@ -36,7 +36,7 @@ describe('source boundaries', () => {
     expect(result.scores).toEqual([{ score: 9.8, version: '3.1', issuer: 'jvn' }]);
   });
 
-  it('keeps KEV dateAdded as the event time and explicit action', () => {
+  it('KEVのdateAddedをイベント時刻として扱い明示された対応を保持する', () => {
     const items = parseKev(
       {
         vulnerabilities: [
@@ -59,7 +59,7 @@ describe('source boundaries', () => {
     expect(items[0]?.remediation).toBe('Apply vendor updates');
   });
 
-  it('preserves NVD issuer/version, unscored records and rejection', () => {
+  it('NVDの発行元とバージョン、未採点のレコード、却下状態を保持する', () => {
     const data = {
       vulnerabilities: [
         {
@@ -87,7 +87,7 @@ describe('source boundaries', () => {
     expect(item.remediation).toBeNull();
   });
 
-  it('honors Retry-After and bounds downloaded data', async () => {
+  it('Retry-Afterに従いダウンロード量を制限する', async () => {
     await expect(
       getText(
         'https://jvn.jp/',
@@ -104,7 +104,7 @@ describe('source boundaries', () => {
     );
   });
 
-  it('baselines old KEV entries without creating thousands of ingest jobs, then detects a real change', async () => {
+  it('古いKEV項目から大量の取り込みジョブを作らず初期基準を設定し実際の変更を検出する', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'kev')!;
     const old = {
       cveID: 'CVE-2020-1111',
@@ -127,7 +127,7 @@ describe('source boundaries', () => {
     expect(updated.items[0]?.modifiedAt).toBe(now + 900000);
   });
 
-  it('keeps a fixed NVD window through pagination and commits its cursor only at the end', async () => {
+  it('NVDのページ取得中は対象期間を固定し完了時にだけカーソルを確定する', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'nvd')!;
     const requests: URL[] = [];
     const provider = sourceProvider(source, {}, async (url) => {
@@ -149,7 +149,7 @@ describe('source boundaries', () => {
     expect(second.cursor.completedThrough).toBe(now);
   });
 
-  it('resumes all NVD updates after a 48-hour outage instead of clamping to yesterday', async () => {
+  it('48時間の停止後も取得範囲を前日に切り詰めずNVDの全更新を再開する', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'nvd')!;
     let start = '';
     const provider = sourceProvider(source, {}, async (url) => {
@@ -184,7 +184,7 @@ describe('social adapters', () => {
     sources: ['https://jvn.jp/'],
     previousPost: { id: 'old', url: 'https://social.example/notes/old' },
   };
-  it('prepares a quote and posts through Misskey without leaking its fields into the intent', async () => {
+  it('投稿意図にMisskey固有のフィールドを混入させず引用を準備して投稿する', async () => {
     let payload: Record<string, unknown> = {};
     const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {
       payload = JSON.parse(String(init?.body));
@@ -197,13 +197,13 @@ describe('social adapters', () => {
     expect(String(payload.text)).toContain('未確認');
   });
 
-  it('delegates URL fallback and complete length checking to the adapter', () => {
+  it('URLへの代替と投稿全体の文字数検証をアダプターに委ねる', () => {
     const provider = new UrlReferenceProvider(500);
     expect(provider.prepare(intent).text).toContain('関連投稿: https://social.example/notes/old');
     expect(() => new UrlReferenceProvider(20).prepare(intent)).toThrow('post_too_long');
   });
 
-  it('distinguishes definite rejection from ambiguous server failure', async () => {
+  it('明確な拒否と結果が曖昧なサーバー障害を区別する', async () => {
     const rejectedProvider = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 401 }));
     await expect(rejectedProvider.publish(rejectedProvider.prepare(intent))).rejects.toMatchObject({
       kind: 'auth',
@@ -214,7 +214,7 @@ describe('social adapters', () => {
     });
   });
 
-  it('falls back to a URL only after an explicit quote rejection', async () => {
+  it('引用が明示的に拒否された場合にのみURLで代替する', async () => {
     const bodies: Record<string, unknown>[] = [];
     const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {
       bodies.push(JSON.parse(String(init?.body)));

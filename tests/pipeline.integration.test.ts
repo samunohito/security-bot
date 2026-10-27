@@ -150,7 +150,7 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
-  it('shares one verified summary across targets and publishes each target once', async () => {
+  it('検証済みの要約を投稿先間で共有し各投稿先に一度だけ投稿する', async () => {
     const { bot, store } = harness();
     await store.ingest(item, now);
     await bot.tick(now);
@@ -164,7 +164,7 @@ describe('complete pipeline', () => {
     expect((await store.list('deliveries')).filter((d) => d.state === 'sent')).toHaveLength(2);
   });
 
-  it('holds incomplete normal content but labels and publishes the relaxed target', async () => {
+  it('不完全な内容は通常の投稿先では保留し緩和した投稿先では注記して投稿する', async () => {
     const { bot, store, sent } = harness({ partial: true });
     await store.ingest(item, now);
     await bot.tick(now);
@@ -176,7 +176,7 @@ describe('complete pipeline', () => {
     expect(sent[0]?.summary.impact).toBeNull();
   });
 
-  it('holds contradictions on both accounts', async () => {
+  it('矛盾する内容を両方のアカウントで保留する', async () => {
     const { bot, store } = harness({ contradiction: true });
     await store.ingest(item, now);
     await bot.tick(now);
@@ -186,7 +186,7 @@ describe('complete pipeline', () => {
     expect(await db.prepare('SELECT COUNT(*) AS n FROM attempts').first<{ n: number }>()).toEqual({ n: 0 });
   });
 
-  it('creates dry-run previews without sending or consuming publication slots', async () => {
+  it('dry-runでは送信や投稿枠の消費をせずプレビューを作成する', async () => {
     const { bot, store } = harness({ dryRun: true });
     await store.ingest(item, now);
     await bot.tick(now);
@@ -196,7 +196,7 @@ describe('complete pipeline', () => {
     expect(await db.prepare('SELECT COUNT(*) AS n FROM quotas').first<{ n: number }>()).toEqual({ n: 0 });
   });
 
-  it('does not summarize stale baseline information', async () => {
+  it('古い初期基準の情報を要約しない', async () => {
     const { bot, store } = harness();
     await store.ingest({ ...item, publishedAt: now - 864000000, modifiedAt: now - 864000000 }, now);
     await bot.tick(now);
@@ -204,7 +204,7 @@ describe('complete pipeline', () => {
     expect((await store.budgetStatus(now))?.calls ?? 0).toBe(0);
   });
 
-  it('does not replay a possibly accepted send even after Cron recovery', async () => {
+  it('受理された可能性がある送信はCronで復旧した後も再送しない', async () => {
     const { bot, store } = harness({ failure: 'unknown' });
     await store.ingest(item, now);
     await bot.tick(now);
@@ -216,7 +216,7 @@ describe('complete pipeline', () => {
     expect(await db.prepare('SELECT COUNT(*) AS n FROM attempts').first<{ n: number }>()).toEqual({ n: 2 });
   });
 
-  it('does not pause retry B when expired attempt A returns an old authentication error', async () => {
+  it('期限切れの試行Aが古い認証エラーを返しても再試行Bを停止しない', async () => {
     let rejectSend: ((reason: unknown) => void) | undefined;
     const config = { ...makeConfig(), targets: [makeConfig().targets[0]!] };
     const base = harness();
@@ -250,7 +250,7 @@ describe('complete pipeline', () => {
     expect((await store.list('targets'))[0]?.paused).toBe(0);
   });
 
-  it('defers when the daily AI budget runs out instead of retrying in the Queue', async () => {
+  it('AIの日次予算を使い切った場合はQueue内で再試行せず延期する', async () => {
     const { bot, store } = harness();
     const budgetBot = new Bot(bot.env, { ...bot.config, budget: { ...bot.config.budget, maxCalls: 1 } }, bot.providers);
     await store.ingest(item, now);
@@ -260,7 +260,7 @@ describe('complete pipeline', () => {
     expect((await store.list('deliveries')).filter((d) => d.state === 'sent')).toHaveLength(0);
   });
 
-  it('keeps the strict gate when shortening an otherwise valid post', async () => {
+  it('有効な投稿を短縮する際も厳格な品質ゲートを維持する', async () => {
     const config = makeConfig();
     const llm: LlmProvider = {
       async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
@@ -306,7 +306,7 @@ describe('complete pipeline', () => {
 });
 
 describe('management boundary', () => {
-  it('returns job and delivery details by ID and reports missing records', async () => {
+  it('IDでジョブと配信の詳細を返しレコードが存在しない場合は通知する', async () => {
     const { bot, store } = harness();
     const id = "quoted:'id";
     await store.enqueue(id, 'analyze', { revisionId: 'r' }, now);
@@ -332,7 +332,7 @@ describe('management boundary', () => {
     }
   });
 
-  it('denies missing auth and permits authenticated status', async () => {
+  it('認証のない要求を拒否し認証済みの状態取得を許可する', async () => {
     const { bot } = harness();
     expect((await adminRequest(new Request('https://bot.example/admin/status'), bot, 'token'))?.status).toBe(401);
     const response = await adminRequest(
@@ -346,7 +346,7 @@ describe('management boundary', () => {
     expect(await response?.json()).toHaveProperty('budget');
   });
 
-  it('requires explicit acknowledgement to retry an unknown send', async () => {
+  it('結果不明の送信を再試行するには明示的な確認を要求する', async () => {
     const { bot, store } = harness({ failure: 'unknown' });
     await store.ingest(item, now);
     await bot.tick(now);
@@ -365,7 +365,7 @@ describe('management boundary', () => {
     expect((await store.getDelivery(id))?.state).toBe('unknown');
   });
 
-  it('previews cached content without creating attempts even in live mode', async () => {
+  it('本番モードでも送信試行を作らずキャッシュ済み内容をプレビューする', async () => {
     const { bot, store } = harness();
     const [id] = await store.ingest(item, now);
     const revision = (await store.getRevision(id!))!;

@@ -69,16 +69,8 @@ export interface PostIntent {
   previousPost?: PublishedPost;
 }
 
-export function normalizeItem(
-  item: SourceItem,
-): { key: string; evidence: Evidence }[] {
-  const cves = [
-    ...new Set(
-      item.cves
-        .filter((c) => /^CVE-\d{4}-\d{4,}$/i.test(c))
-        .map((c) => c.toUpperCase()),
-    ),
-  ].sort();
+export function normalizeItem(item: SourceItem): { key: string; evidence: Evidence }[] {
+  const cves = [...new Set(item.cves.filter((c) => /^CVE-\d{4}-\d{4,}$/i.test(c)).map((c) => c.toUpperCase()))].sort();
   const keys = cves.length ? cves : [`${item.sourceId}:${item.id}`];
   return keys.map((key) => ({
     key,
@@ -112,14 +104,7 @@ export function classify(t: {
   return {
     eligible: !t.rejected && (score >= 7 || urgent || t.advisory),
     priority: urgent ? 0 : score >= 9 ? 1 : score >= 7 ? 2 : 3,
-    severity:
-      score >= 9
-        ? 'Critical'
-        : score >= 7
-          ? 'High'
-          : score > 0
-            ? 'Medium/Low'
-            : '未評価',
+    severity: score >= 9 ? 'Critical' : score >= 7 ? 'High' : score > 0 ? 'Medium/Low' : '未評価',
     urgent,
   };
 }
@@ -141,35 +126,19 @@ export function materialKey<
   ]);
 }
 export function snapshot(key: string, evidence: Evidence[]): ThreatSnapshot {
-  const latest = [...evidence].sort(
-    (a, b) =>
-      b.modifiedAt - a.modifiedAt || a.evidenceId.localeCompare(b.evidenceId),
-  );
+  const latest = [...evidence].sort((a, b) => b.modifiedAt - a.modifiedAt || a.evidenceId.localeCompare(b.evidenceId));
   return {
     key,
     evidence: latest,
-    impact:
-      [...new Set(latest.flatMap((e) => (e.impact ? [e.impact] : [])))]
-        .sort()
-        .join('\n') || null,
+    impact: [...new Set(latest.flatMap((e) => (e.impact ? [e.impact] : [])))].sort().join('\n') || null,
     title: latest[0]?.title ?? key,
     scores: latest.flatMap((e) => e.scores),
     exploited: latest.some((e) => e.exploited),
     urgent: latest.some((e) => e.urgent),
     advisory: latest.some((e) => e.advisory),
     rejected: latest.some((e) => e.rejected),
-    affected:
-      [...new Set(latest.flatMap((e) => (e.affected ? [e.affected] : [])))]
-        .sort()
-        .join('\n') || null,
-    remediation:
-      [
-        ...new Set(
-          latest.flatMap((e) => (e.remediation ? [e.remediation] : [])),
-        ),
-      ]
-        .sort()
-        .join('\n') || null,
+    affected: [...new Set(latest.flatMap((e) => (e.affected ? [e.affected] : [])))].sort().join('\n') || null,
+    remediation: [...new Set(latest.flatMap((e) => (e.remediation ? [e.remediation] : [])))].sort().join('\n') || null,
     eventAt: Math.max(0, ...latest.map((e) => e.modifiedAt)),
   };
 }
@@ -180,11 +149,6 @@ export function utcDay(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
 }
 export async function digest(value: string): Promise<string> {
-  const bytes = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(value),
-  );
-  return [...new Uint8Array(bytes)]
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }

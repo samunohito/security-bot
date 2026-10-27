@@ -44,11 +44,7 @@ export async function getText(
   if (response.status === 304) return { text: '', notModified: true };
   if (!response.ok) {
     const retry = response.headers.get('retry-after');
-    const ms = retry
-      ? /^\d+$/.test(retry)
-        ? Number(retry) * 1000
-        : Math.max(0, Date.parse(retry) - Date.now())
-      : 0;
+    const ms = retry ? (/^\d+$/.test(retry) ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - Date.now())) : 0;
     await response.body?.cancel();
     throw new HttpError(response.status, Number.isFinite(ms) ? ms : 0);
   }

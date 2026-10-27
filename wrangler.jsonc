@@ -12,8 +12,8 @@
       "binding": "DB",
       "database_name": "security-bot",
       "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations",
-    },
+      "migrations_dir": "migrations"
+    }
   ],
   "queues": {
     "producers": [{ "binding": "JOBS", "queue": "security-bot-jobs" }],
@@ -22,8 +22,8 @@
         "queue": "security-bot-jobs",
         "max_batch_size": 1,
         "max_concurrency": 5,
-        "max_retries": 3,
-      },
-    ],
-  },
+        "max_retries": 3
+      }
+    ]
+  }
 }

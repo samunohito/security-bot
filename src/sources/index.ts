@@ -33,8 +33,7 @@ export function sourceProvider(
       const url = new URL(config.url);
       const headers: Record<string, string> = {};
       if (cursor.etag) headers['If-None-Match'] = cursor.etag;
-      if (cursor.lastModified)
-        headers['If-Modified-Since'] = cursor.lastModified;
+      if (cursor.lastModified) headers['If-Modified-Since'] = cursor.lastModified;
       let start = 0,
         end = now;
       if (config.kind === 'nvd') {
@@ -64,9 +63,7 @@ export function sourceProvider(
           startIndex: number;
         };
         if (
-          ![data.totalResults, data.resultsPerPage, data.startIndex].every(
-            Number.isSafeInteger,
-          ) ||
+          ![data.totalResults, data.resultsPerPage, data.startIndex].every(Number.isSafeInteger) ||
           data.totalResults < 0 ||
           (data.totalResults > 0 && data.resultsPerPage <= 0) ||
           data.startIndex !== (cursor.startIndex ?? 0)
@@ -105,15 +102,8 @@ export function sourceProvider(
         signatures[item.id] = signature;
         const previous = cursor.kevSignatures?.[item.id];
         if (previous === signature) continue;
-        if (
-          !cursor.kevSignatures &&
-          item.modifiedAt <
-            now - (options.initialLookbackSeconds ?? 86400) * 1000
-        )
-          continue;
-        items.push(
-          previous === undefined ? item : { ...item, modifiedAt: now },
-        );
+        if (!cursor.kevSignatures && item.modifiedAt < now - (options.initialLookbackSeconds ?? 86400) * 1000) continue;
+        items.push(previous === undefined ? item : { ...item, modifiedAt: now });
       }
       for (const id of Object.keys(cursor.kevSignatures ?? {})) {
         if (signatures[id] !== undefined) continue;
@@ -137,19 +127,14 @@ export function sourceProvider(
         });
       }
       nextCursor.kevSignatures = signatures;
-      if (JSON.stringify(nextCursor).length > 1_500_000)
-        throw new Error('resource_limit: KEV baseline cursor');
+      if (JSON.stringify(nextCursor).length > 1_500_000) throw new Error('resource_limit: KEV baseline cursor');
       return { items, more: false, cursor: nextCursor };
     },
     ...(config.kind !== 'rss'
       ? {}
       : {
           async hydrate(item: SourceItem) {
-            const response = await getText(
-              item.url,
-              { allowedHosts: config.articleHosts, maxBytes: 512000 },
-              fetcher,
-            );
+            const response = await getText(item.url, { allowedHosts: config.articleHosts, maxBytes: 512000 }, fetcher);
             return enrichArticle(item, response.text);
           },
         }),

@@ -15,22 +15,15 @@ async function authorized(request: Request, token: string | undefined) {
   for (let i = 0; i < left.length; i++) diff |= left[i]! ^ right[i]!;
   return diff === 0;
 }
-export async function adminRequest(
-  request: Request,
-  bot: Bot,
-  token?: string,
-): Promise<Response | null> {
+export async function adminRequest(request: Request, bot: Bot, token?: string): Promise<Response | null> {
   const url = new URL(request.url);
   if (!url.pathname.startsWith('/admin/')) return null;
   const json = (data: unknown, status = 200) =>
     Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
-  if (!(await authorized(request, token)))
-    return json({ error: 'unauthorized' }, 401);
+  if (!(await authorized(request, token))) return json({ error: 'unauthorized' }, 401);
   try {
     if (request.method === 'GET' && url.pathname === '/admin/dry-run')
-      return json(
-        await bot.preview(z.string().min(1).parse(url.searchParams.get('id'))),
-      );
+      return json(await bot.preview(z.string().min(1).parse(url.searchParams.get('id'))));
     if (request.method === 'GET' && url.pathname === '/admin/status')
       return json({
         mode: bot.config.mode,
@@ -41,29 +34,17 @@ export async function adminRequest(
         jobs: await bot.store.list('jobs'),
         deliveries: await bot.store.list('deliveries'),
       });
-    const tableMatch = url.pathname.match(
-      /^\/admin\/(jobs|deliveries|sources|targets|revisions)$/,
-    );
+    const tableMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|sources|targets|revisions)$/);
     if (request.method === 'GET' && tableMatch)
-      return json(
-        await bot.store.list(
-          tableMatch[1] as
-            'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions',
-        ),
-      );
-    const detailMatch = url.pathname.match(
-      /^\/admin\/(jobs|deliveries|revisions)\/([^/]+)$/,
-    );
+      return json(await bot.store.list(tableMatch[1] as 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions'));
+    const detailMatch = url.pathname.match(/^\/admin\/(jobs|deliveries|revisions)\/([^/]+)$/);
     if (request.method === 'GET' && detailMatch) {
       const table = detailMatch[1]!,
         id = decodeURIComponent(detailMatch[2]!);
       const row =
         table === 'revisions'
           ? await bot.store.getRevision(id)
-          : await bot.store.db
-              .prepare(`SELECT * FROM ${table} WHERE id=?`)
-              .bind(id)
-              .first();
+          : await bot.store.db.prepare(`SELECT * FROM ${table} WHERE id=?`).bind(id).first();
       return row ? json(row) : json({ error: 'not_found' }, 404);
     }
     if (request.method !== 'POST') return json({ error: 'not_found' }, 404);
@@ -79,13 +60,9 @@ export async function adminRequest(
       .strict()
       .parse(JSON.parse(text));
     const now = Date.now();
-    if (
-      url.pathname === '/admin/targets/pause' ||
-      url.pathname === '/admin/targets/resume'
-    )
+    if (url.pathname === '/admin/targets/pause' || url.pathname === '/admin/targets/resume')
       await bot.store.pauseTarget(body.id, url.pathname.endsWith('/pause'));
-    else if (url.pathname === '/admin/jobs/retry')
-      await bot.store.retryJob(body.id, now);
+    else if (url.pathname === '/admin/jobs/retry') await bot.store.retryJob(body.id, now);
     else if (url.pathname === '/admin/deliveries/retry') {
       const delivery = await bot.store.getDelivery(body.id);
       if (!delivery) return json({ error: 'not_found' }, 404);
@@ -94,9 +71,7 @@ export async function adminRequest(
       await bot.store.retryDelivery(body.id, now);
     } else if (url.pathname === '/admin/deliveries/resolve') {
       const delivery = await bot.store.getDelivery(body.id);
-      const target = bot.config.targets.find(
-        (t) => t.id === delivery?.target_id,
-      );
+      const target = bot.config.targets.find((t) => t.id === delivery?.target_id);
       if (
         delivery?.state !== 'unknown' ||
         !target ||
@@ -106,12 +81,7 @@ export async function adminRequest(
         !new URL(body.postUrl).pathname.startsWith('/notes/')
       )
         return json({ error: 'invalid_resolution' }, 400);
-      await bot.store.finishDelivery(
-        body.id,
-        { id: body.postId, url: body.postUrl },
-        now,
-        delivery.lease_token!,
-      );
+      await bot.store.finishDelivery(body.id, { id: body.postId, url: body.postUrl }, now, delivery.lease_token!);
     } else return json({ error: 'not_found' }, 404);
     return json({ ok: true });
   } catch {

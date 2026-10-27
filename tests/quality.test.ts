@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  validateSummary,
-  summarySchema,
-  validateVerdict,
-} from '../src/quality';
+import { validateSummary, summarySchema, validateVerdict } from '../src/quality';
 import type { Evidence, Summary } from '../src/domain';
 
 const evidence: Evidence[] = [
@@ -51,25 +47,17 @@ describe('quality validation', () => {
       action: null,
       uncertainties: [],
     };
-    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(
-      false,
-    );
+    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(false);
     summary.overview = claim('脆弱性', 'not in source');
-    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(
-      false,
-    );
+    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(false);
     summary.overview = {
       text: '脆弱性',
       evidence: [{ id: 'evil', quote: 'Acme' }],
     };
-    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(
-      false,
-    );
+    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(false);
   });
   it('holds malformed output, contradictory review and unsupported multi-CVE claims', () => {
-    expect(summarySchema.safeParse({ overview: 'trust me' }).success).toBe(
-      false,
-    );
+    expect(summarySchema.safeParse({ overview: 'trust me' }).success).toBe(false);
     expect(
       validateVerdict({
         supported: true,
@@ -83,12 +71,6 @@ describe('quality validation', () => {
       action: null,
       uncertainties: [],
     };
-    expect(
-      validateSummary(
-        summary,
-        [{ ...evidence[0]!, scope: 'article' }],
-        'CVE-2026-1111',
-      ).valid,
-    ).toBe(false);
+    expect(validateSummary(summary, [{ ...evidence[0]!, scope: 'article' }], 'CVE-2026-1111').valid).toBe(false);
   });
 });

@@ -14,10 +14,7 @@ export interface LlmResult<T> {
   usage?: LlmUsage;
 }
 export interface LlmProvider {
-  generateStructured<T>(
-    input: LlmRequest,
-    schema: z.ZodType<T>,
-  ): Promise<LlmResult<T>>;
+  generateStructured<T>(input: LlmRequest, schema: z.ZodType<T>): Promise<LlmResult<T>>;
 }
 export interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
@@ -27,10 +24,7 @@ export class WorkersAiProvider implements LlmProvider {
     private ai: AiBinding,
     private config: Config['llm'],
   ) {}
-  async generateStructured<T>(
-    request: LlmRequest,
-    schema: z.ZodType<T>,
-  ): Promise<LlmResult<T>> {
+  async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>): Promise<LlmResult<T>> {
     const data = JSON.stringify(request.data);
     if (data.length + request.system.length > this.config.maxInputCharacters)
       throw new Error('resource_limit: LLM input');
@@ -53,15 +47,12 @@ export class WorkersAiProvider implements LlmProvider {
       usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
     const value = schema.parse(
-      typeof response.response === 'string'
-        ? JSON.parse(response.response)
-        : response.response,
+      typeof response.response === 'string' ? JSON.parse(response.response) : response.response,
     );
     const usage = response.usage;
     return {
       value,
-      ...(Number.isFinite(usage?.prompt_tokens) &&
-      Number.isFinite(usage?.completion_tokens)
+      ...(Number.isFinite(usage?.prompt_tokens) && Number.isFinite(usage?.completion_tokens)
         ? {
             usage: {
               inputTokens: usage!.prompt_tokens!,

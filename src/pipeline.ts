@@ -1,12 +1,6 @@
 import { z } from 'zod';
 import type { Config, Environment, SourceConfig, TargetConfig } from './config';
-import {
-  classify,
-  digest,
-  type PostIntent,
-  type Summary,
-  type Validation,
-} from './domain';
+import { classify, digest, type PostIntent, type Summary, type Validation } from './domain';
 import { HttpError } from './http';
 import {
   SUMMARY_SYSTEM,
@@ -16,18 +10,8 @@ import {
   type LlmProvider,
   type LlmRequest,
 } from './llm';
-import {
-  summarySchema,
-  validateSummary,
-  validateVerdict,
-  verdictSchema,
-} from './quality';
-import {
-  MisskeyProvider,
-  PublishError,
-  type PreparedPost,
-  type SocialProvider,
-} from './social';
+import { summarySchema, validateSummary, validateVerdict, verdictSchema } from './quality';
+import { MisskeyProvider, PublishError, type PreparedPost, type SocialProvider } from './social';
 import { sourceProvider, type SourceProvider } from './sources';
 import { Store, type Job, type Revision } from './store';
 
@@ -49,8 +33,7 @@ class Deferred extends Error {
     super(reason);
   }
 }
-const tomorrowUtc = (now: number) =>
-  Math.floor(now / 86400000) * 86400000 + 86400000;
+const tomorrowUtc = (now: number) => Math.floor(now / 86400000) * 86400000 + 86400000;
 
 export class Bot {
   readonly store: Store;
@@ -61,9 +44,7 @@ export class Bot {
     public providers: Providers = {},
   ) {
     this.store = new Store(env.DB);
-    this.llm =
-      providers.llm ??
-      (env.AI ? new WorkersAiProvider(env.AI, config.llm) : undefined);
+    this.llm = providers.llm ?? (env.AI ? new WorkersAiProvider(env.AI, config.llm) : undefined);
   }
   private async analyzeKey(revisionId: string, evidenceHash: string) {
     const policy = await digest(
@@ -99,20 +80,12 @@ export class Bot {
   }
   async flush(now: number) {
     for (const job of await this.store.outbox(now)) {
-      if (
-        !(await this.store.reserveQueueOperations(
-          now,
-          this.config.budget.queueOperations,
-        ))
-      )
-        break;
+      if (!(await this.store.reserveQueueOperations(now, this.config.budget.queueOperations))) break;
       try {
         await this.env.JOBS.send({ id: job.id });
         await this.store.markDispatched(job.id, now);
       } catch {
-        console.warn(
-          JSON.stringify({ event: 'queue_enqueue_failed', job: job.id }),
-        );
+        console.warn(JSON.stringify({ event: 'queue_enqueue_failed', job: job.id }));
         break;
       }
     }
@@ -130,22 +103,14 @@ export class Bot {
         title: revision.snapshot.title,
         severity: classify(revision.snapshot).severity,
         summary: cached.summary,
-        sources: [
-          ...new Set(revision.snapshot.evidence.map((e) => e.url)),
-        ].slice(0, 2),
-        previousPost: await this.store.previousPost(
-          target.id,
-          revision.threat_key,
-        ),
+        sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(0, 2),
+        previousPost: await this.store.previousPost(target.id, revision.threat_key),
       };
-      const provider =
-        this.providers.social?.(target) ?? new MisskeyProvider(target, '');
+      const provider = this.providers.social?.(target) ?? new MisskeyProvider(target, '');
       try {
         results.push({
           targetId: target.id,
-          allowed:
-            cached.validation.valid &&
-            (!target.qualityGate.enabled || cached.validation.complete),
+          allowed: cached.validation.valid && (!target.qualityGate.enabled || cached.validation.complete),
           ...provider.prepare(intent),
           reasons: cached.validation.reasons,
         });
@@ -165,18 +130,10 @@ export class Bot {
     try {
       const payload: unknown = JSON.parse(job.payload);
       if (job.type === 'collect')
-        await this.collect(
-          job,
-          z.object({ sourceId: z.string() }).parse(payload).sourceId,
-          now,
-        );
+        await this.collect(job, z.object({ sourceId: z.string() }).parse(payload).sourceId, now);
       else if (job.type === 'ingest') {
-        const parsed = z
-          .object({ sourceId: z.string(), item: z.unknown() })
-          .parse(payload);
-        const config = this.config.sources.find(
-          (s) => s.id === parsed.sourceId && s.enabled,
-        );
+        const parsed = z.object({ sourceId: z.string(), item: z.unknown() }).parse(payload);
+        const config = this.config.sources.find((s) => s.id === parsed.sourceId && s.enabled);
         if (config) {
           const provider =
             this.providers.source?.(config) ??
@@ -184,9 +141,7 @@ export class Bot {
               initialLookbackSeconds: this.config.initialLookbackSeconds,
             });
           const item = parsed.item as Parameters<Store['ingest']>[0];
-          const hydrated = provider.hydrate
-            ? await provider.hydrate(item)
-            : item;
+          const hydrated = provider.hydrate ? await provider.hydrate(item) : item;
           for (const revisionId of await this.store.ingest(hydrated, now)) {
             const revision = await this.store.getRevision(revisionId);
             if (revision)
@@ -199,46 +154,31 @@ export class Bot {
           }
         }
       } else if (job.type === 'analyze')
-        await this.analyze(
-          z.object({ revisionId: z.string() }).parse(payload).revisionId,
-          now,
-        );
+        await this.analyze(z.object({ revisionId: z.string() }).parse(payload).revisionId, now);
       else if (job.type === 'publish')
-        await this.publish(
-          z.object({ deliveryId: z.string() }).parse(payload).deliveryId,
-          now,
-        );
+        await this.publish(z.object({ deliveryId: z.string() }).parse(payload).deliveryId, now);
       else throw new Error('unknown_job_type');
       await this.store.finishJob(job);
     } catch (error) {
-      const reason =
-        error instanceof Error ? error.message.slice(0, 300) : 'unknown_error';
-      if (error instanceof Deferred)
-        await this.store.failJob(job, 'deferred', reason, error.until);
+      const reason = error instanceof Error ? error.message.slice(0, 300) : 'unknown_error';
+      if (error instanceof Deferred) await this.store.failJob(job, 'deferred', reason, error.until);
       else {
         const retry =
           error instanceof HttpError
             ? error.retryable
             : error instanceof TypeError ||
-              /network|fetch failed|temporarily|timeout|threat_concurrency_retry/i.test(
-                reason,
-              );
+              /network|fetch failed|temporarily|timeout|threat_concurrency_retry/i.test(reason);
         const state = retry && job.attempts < 5 ? 'deferred' : 'held';
         const delay =
           error instanceof HttpError
-            ? Math.max(
-                error.retryAfterMs,
-                60000 * 2 ** Math.min(job.attempts - 1, 6),
-              )
+            ? Math.max(error.retryAfterMs, 60000 * 2 ** Math.min(job.attempts - 1, 6))
             : 60000 * 2 ** Math.min(job.attempts - 1, 6);
         await this.store.failJob(job, state, reason, now + delay);
         if (job.type === 'collect') {
           const p = JSON.parse(job.payload) as { sourceId: string };
           await this.store.sourceError(p.sourceId, reason, false, now, job);
         }
-        console.warn(
-          JSON.stringify({ event: 'job_held_or_deferred', id, state, reason }),
-        );
+        console.warn(JSON.stringify({ event: 'job_held_or_deferred', id, state, reason }));
       }
     }
   }
@@ -259,12 +199,7 @@ export class Bot {
     ).collect(cursor, now);
     for (const item of batch.items) {
       const hash = await digest(JSON.stringify({ ...item, fetchedAt: 0 }));
-      await this.store.enqueue(
-        `ingest:${source.id}:${hash}`,
-        'ingest',
-        { sourceId: source.id, item },
-        now,
-      );
+      await this.store.enqueue(`ingest:${source.id}:${hash}`, 'ingest', { sourceId: source.id, item }, now);
     }
     const continuation = batch.more
       ? {
@@ -272,14 +207,7 @@ export class Bot {
           payload: { sourceId: id },
         }
       : undefined;
-    await this.store.completeSource(
-      id,
-      batch.cursor,
-      now + source.pollIntervalSeconds * 1000,
-      now,
-      continuation,
-      job,
-    );
+    await this.store.completeSource(id, batch.cursor, now + source.pollIntervalSeconds * 1000, now, continuation, job);
   }
   private promptEvidence(revision: Revision) {
     return {
@@ -289,33 +217,19 @@ export class Bot {
         scope: e.scope,
         cves: e.cves,
         url: e.url,
-        text: `${e.affected ?? ''}\n${e.remediation ?? ''}\n${e.text}`.slice(
-          0,
-          2200,
-        ),
+        text: `${e.affected ?? ''}\n${e.remediation ?? ''}\n${e.text}`.slice(0, 2200),
       })),
     };
   }
-  private async generate<T>(
-    request: LlmRequest,
-    schema: z.ZodType<T>,
-    now: number,
-  ): Promise<T> {
+  private async generate<T>(request: LlmRequest, schema: z.ZodType<T>, now: number): Promise<T> {
     if (!this.llm) throw new Error('missing_AI_binding');
     const input = JSON.stringify(request.data) + request.system;
-    if (input.length > this.config.llm.maxInputCharacters)
-      throw new Error('resource_limit: LLM input');
+    if (input.length > this.config.llm.maxInputCharacters) throw new Error('resource_limit: LLM input');
     const estimate =
-      ((new TextEncoder().encode(input).length + 1024) *
-        this.config.llm.inputNeuronsPerMillion) /
-        1e6 +
-      ((request.maxOutputTokens ?? this.config.llm.maxOutputTokens) *
-        this.config.llm.outputNeuronsPerMillion) /
-        1e6;
+      ((new TextEncoder().encode(input).length + 1024) * this.config.llm.inputNeuronsPerMillion) / 1e6 +
+      ((request.maxOutputTokens ?? this.config.llm.maxOutputTokens) * this.config.llm.outputNeuronsPerMillion) / 1e6;
     const id = crypto.randomUUID();
-    if (
-      !(await this.store.reserveBudget(id, now, estimate, this.config.budget))
-    ) {
+    if (!(await this.store.reserveBudget(id, now, estimate, this.config.budget))) {
       const used = await this.store.budgetStatus(now);
       const exhausted =
         (used?.calls ?? 0) >= this.config.budget.maxCalls ||
@@ -330,32 +244,23 @@ export class Bot {
       if (response.usage)
         await this.store.settleBudget(
           id,
-          (response.usage.inputTokens *
-            this.config.llm.inputNeuronsPerMillion) /
-            1e6 +
-            (response.usage.outputTokens *
-              this.config.llm.outputNeuronsPerMillion) /
-              1e6,
+          (response.usage.inputTokens * this.config.llm.inputNeuronsPerMillion) / 1e6 +
+            (response.usage.outputTokens * this.config.llm.outputNeuronsPerMillion) / 1e6,
         );
       return schema.parse(response.value);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        /quota|429|neurons|rate.limit/i.test(error.message)
-      )
+      if (error instanceof Error && /quota|429|neurons|rate.limit/i.test(error.message))
         throw new Deferred(tomorrowUtc(now), 'AI_provider_quota');
       throw error;
     }
   }
   private async analyze(id: string, now: number) {
     const revision = await this.store.getRevision(id);
-    if (!revision || !revision.eligible || !(await this.store.isCurrent(id)))
-      return;
+    if (!revision || !revision.eligible || !(await this.store.isCurrent(id))) return;
     const start = await this.store.bootstrapTime(now);
     if (
       revision.event_at < now - this.config.freshnessSeconds * 1000 ||
-      (revision.kind === 'new' &&
-        revision.event_at < start - this.config.initialLookbackSeconds * 1000)
+      (revision.kind === 'new' && revision.event_at < start - this.config.initialLookbackSeconds * 1000)
     )
       return;
     let cached = await this.store.getSummary(revision);
@@ -365,11 +270,7 @@ export class Bot {
         summarySchema,
         now,
       );
-      const validation = validateSummary(
-        summary,
-        revision.snapshot.evidence,
-        revision.threat_key,
-      );
+      const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key);
       if (validation.valid) validation.reasons = ['verification_pending'];
       validation.valid = false;
       await this.store.saveSummary(revision, summary, validation, now);
@@ -393,28 +294,16 @@ export class Bot {
           ...(!verdict.supported ? ['unsupported_summary'] : []),
         ],
       };
-      await this.store.saveSummary(
-        revision,
-        cached.summary,
-        cached.validation,
-        now,
-      );
+      await this.store.saveSummary(revision, cached.summary, cached.validation, now);
     }
     if (!(await this.store.isCurrent(id))) return;
     const current = await this.store.getRevision(id);
-    if (current?.evidence_hash !== revision.evidence_hash)
-      throw new Deferred(now + 60000, 'evidence_changed');
+    if (current?.evidence_hash !== revision.evidence_hash) throw new Deferred(now + 60000, 'evidence_changed');
     for (const target of this.config.targets) {
       if (!target.enabled && !this.config.dryRun) continue;
-      if (
-        revision.snapshot.rejected &&
-        !(await this.store.previousPost(target.id, revision.threat_key))
-      )
-        continue;
+      if (revision.snapshot.rejected && !(await this.store.previousPost(target.id, revision.threat_key))) continue;
       const deliveryId = await digest(`${target.id}:${id}`);
-      const allowed =
-        cached.validation.valid &&
-        (!target.qualityGate.enabled || cached.validation.complete);
+      const allowed = cached.validation.valid && (!target.qualityGate.enabled || cached.validation.complete);
       await this.store.createDelivery(
         deliveryId,
         target.id,
@@ -422,17 +311,9 @@ export class Bot {
         Boolean(revision.urgent),
         now,
         allowed ? 'ready' : 'held',
-        allowed
-          ? null
-          : cached.validation.reasons.join(';') || 'incomplete_information',
+        allowed ? null : cached.validation.reasons.join(';') || 'incomplete_information',
       );
-      if (allowed)
-        await this.store.enqueue(
-          `publish:${deliveryId}:${now}`,
-          'publish',
-          { deliveryId },
-          now,
-        );
+      if (allowed) await this.store.enqueue(`publish:${deliveryId}:${now}`, 'publish', { deliveryId }, now);
     }
   }
   private async prepare(
@@ -446,12 +327,8 @@ export class Bot {
     try {
       return provider.prepare(intent);
     } catch (error) {
-      if (!(error instanceof Error) || error.message !== 'post_too_long')
-        throw error;
-      let cached = await this.store.getShortened(
-        deliveryId,
-        revision.evidence_hash,
-      );
+      if (!(error instanceof Error) || error.message !== 'post_too_long') throw error;
+      let cached = await this.store.getShortened(deliveryId, revision.evidence_hash);
       if (!cached) {
         const shorter = await this.generate(
           {
@@ -466,11 +343,7 @@ export class Bot {
           summarySchema,
           now,
         );
-        const check = validateSummary(
-          shorter,
-          revision.snapshot.evidence,
-          revision.threat_key,
-        );
+        const check = validateSummary(shorter, revision.snapshot.evidence, revision.threat_key);
         cached = {
           summary: shorter,
           validation: {
@@ -479,12 +352,7 @@ export class Bot {
             reasons: check.valid ? ['verification_pending'] : check.reasons,
           },
         };
-        await this.store.saveShortened(
-          deliveryId,
-          revision.evidence_hash,
-          cached.summary,
-          cached.validation,
-        );
+        await this.store.saveShortened(deliveryId, revision.evidence_hash, cached.summary, cached.validation);
       }
       if (cached.validation.reasons.includes('verification_pending')) {
         const verdict = await this.generate(
@@ -500,12 +368,7 @@ export class Bot {
           valid: validateVerdict(verdict),
           reasons: [...verdict.contradictions, ...verdict.unsupportedClaims],
         };
-        await this.store.saveShortened(
-          deliveryId,
-          revision.evidence_hash,
-          cached.summary,
-          cached.validation,
-        );
+        await this.store.saveShortened(deliveryId, revision.evidence_hash, cached.summary, cached.validation);
       }
       if (!cached.validation.valid || (strict && !cached.validation.complete))
         throw new Error('shortened_summary_quality_gate');
@@ -528,71 +391,36 @@ export class Bot {
       return;
     }
     const cached = await this.store.getSummary(revision);
-    if (
-      !cached?.validation.valid ||
-      (target.qualityGate.enabled && !cached.validation.complete)
-    ) {
+    if (!cached?.validation.valid || (target.qualityGate.enabled && !cached.validation.complete)) {
       await this.store.holdDelivery(id, 'quality_gate', now);
       return;
     }
     const provider =
-      this.providers.social?.(target) ??
-      new MisskeyProvider(target, String(this.env[target.tokenSecret] ?? ''));
-    const previousPost = await this.store.previousPost(
-      target.id,
-      revision.threat_key,
-    );
+      this.providers.social?.(target) ?? new MisskeyProvider(target, String(this.env[target.tokenSecret] ?? ''));
+    const previousPost = await this.store.previousPost(target.id, revision.threat_key);
     const intent: PostIntent = {
-      kind: previousPost
-        ? revision.kind === 'correction'
-          ? 'correction'
-          : 'update'
-        : 'new',
+      kind: previousPost ? (revision.kind === 'correction' ? 'correction' : 'update') : 'new',
       key: revision.threat_key,
       title: revision.snapshot.title,
       severity: classify(revision.snapshot).severity,
       summary: cached.summary,
-      sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(
-        0,
-        2,
-      ),
+      sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(0, 2),
       previousPost,
     };
     let prepared: PreparedPost;
     try {
-      prepared = await this.prepare(
-        provider,
-        intent,
-        revision,
-        id,
-        target.qualityGate.enabled,
-        now,
-      );
+      prepared = await this.prepare(provider, intent, revision, id, target.qualityGate.enabled, now);
     } catch (error) {
       if (error instanceof Deferred) throw error;
-      await this.store.holdDelivery(
-        id,
-        error instanceof Error ? error.message : 'format_error',
-        now,
-      );
+      await this.store.holdDelivery(id, error instanceof Error ? error.message : 'format_error', now);
       return;
     }
     if (this.config.dryRun) {
       await this.store.previewDelivery(id, prepared, now);
       return;
     }
-    const reservation = await this.store.reserveDelivery(
-      id,
-      target,
-      now,
-      revision.evidence_hash,
-      prepared,
-    );
-    if (!reservation)
-      throw new Deferred(
-        now + 60000,
-        'publication_slot_or_current_evidence_unavailable',
-      );
+    const reservation = await this.store.reserveDelivery(id, target, now, revision.evidence_hash, prepared);
+    if (!reservation) throw new Deferred(now + 60000, 'publication_slot_or_current_evidence_unavailable');
     try {
       const post = await provider.publish(prepared);
       // A failure here remains unknown; success at SNS and D1 cannot be atomic.
@@ -601,11 +429,7 @@ export class Bot {
       if (error instanceof PublishError) {
         await this.store.deliveryError(
           id,
-          error.kind === 'unknown'
-            ? 'unknown'
-            : error.kind === 'retry'
-              ? 'retry'
-              : 'held',
+          error.kind === 'unknown' ? 'unknown' : error.kind === 'retry' ? 'retry' : 'held',
           error.message,
           now,
           now + Math.max(error.retryAfterMs, 60000),

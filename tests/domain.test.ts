@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  classify,
-  materialKey,
-  normalizeItem,
-  publicationDay,
-} from '../src/domain';
+import { classify, materialKey, normalizeItem, publicationDay } from '../src/domain';
 import { snapshot } from '../src/domain';
 import { formatPost } from '../src/social';
 
@@ -30,10 +25,7 @@ const item = {
 describe('security domain', () => {
   it('splits CVEs but marks shared statements as article-wide evidence', () => {
     const records = normalizeItem(item);
-    expect(records.map((r) => r.key)).toEqual([
-      'CVE-2026-1111',
-      'CVE-2026-2222',
-    ]);
+    expect(records.map((r) => r.key)).toEqual(['CVE-2026-1111', 'CVE-2026-2222']);
     expect(records[0]?.evidence.scope).toBe('article');
   });
   it('does not turn unscored advisories into Critical or urgent by inference', () => {
@@ -71,17 +63,11 @@ describe('security domain', () => {
     ).toBe(0);
   });
   it('material revisions ignore fetch time, scores and prose but capture official fixes', () => {
-    expect(materialKey(item)).toBe(
-      materialKey({ ...item, fetchedAt: 999, text: 'Reformatted', scores: [] }),
-    );
-    expect(materialKey(item)).not.toBe(
-      materialKey({ ...item, remediation: 'Upgrade to 2.0' }),
-    );
+    expect(materialKey(item)).toBe(materialKey({ ...item, fetchedAt: 999, text: 'Reformatted', scores: [] }));
+    expect(materialKey(item)).not.toBe(materialKey({ ...item, remediation: 'Upgrade to 2.0' }));
   });
   it('counts publications in Japan days', () => {
-    expect(publicationDay(Date.parse('2026-10-27T15:00:00Z'))).toBe(
-      '2026-10-28',
-    );
+    expect(publicationDay(Date.parse('2026-10-27T15:00:00Z'))).toBe('2026-10-28');
   });
   it('treats an official impact correction as a material revision', () => {
     expect(materialKey({ ...item, impact: 'Remote code execution' })).not.toBe(

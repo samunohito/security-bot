@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  enrichArticle,
-  parseFeed,
-  parseKev,
-  parseNvd,
-} from '../src/sources/parsers';
+import { enrichArticle, parseFeed, parseKev, parseNvd } from '../src/sources/parsers';
 import { getText, HttpError } from '../src/http';
 import { MisskeyProvider, UrlReferenceProvider } from '../src/social';
 import { loadConfig } from '../src/config';
@@ -24,13 +19,7 @@ describe('source boundaries', () => {
     expect(items[0]?.url).toBe('https://jvn.jp/jp/1/');
   });
   it('rejects DTD/entity payloads', () => {
-    expect(() =>
-      parseFeed(
-        '<!DOCTYPE x [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss/>',
-        source,
-        now,
-      ),
-    ).toThrow();
+    expect(() => parseFeed('<!DOCTYPE x [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss/>', source, now)).toThrow();
   });
   it('extracts JVN image headings and preserves the CVSS vector version', () => {
     const feed =
@@ -42,9 +31,7 @@ describe('source boundaries', () => {
     );
     expect(result.affected).toBe('Acme 1.0');
     expect(result.remediation).toBe('Upgrade to 2.0');
-    expect(result.scores).toEqual([
-      { score: 9.8, version: '3.1', issuer: 'jvn' },
-    ]);
+    expect(result.scores).toEqual([{ score: 9.8, version: '3.1', issuer: 'jvn' }]);
   });
   it('keeps KEV dateAdded as the event time and explicit action', () => {
     const items = parseKev(
@@ -91,9 +78,7 @@ describe('source boundaries', () => {
       ],
     };
     const item = parseNvd(data, 'nvd', now)[0]!;
-    expect(item.scores).toEqual([
-      { score: 8.1, version: '3.1', issuer: 'vendor' },
-    ]);
+    expect(item.scores).toEqual([{ score: 8.1, version: '3.1', issuer: 'vendor' }]);
     expect(item.rejected).toBe(true);
     expect(item.remediation).toBeNull();
   });
@@ -109,13 +94,9 @@ describe('source boundaries', () => {
           }),
       ),
     ).rejects.toMatchObject({ retryAfterMs: 120000, retryable: true });
-    await expect(
-      getText(
-        'https://jvn.jp/',
-        { maxBytes: 3 },
-        async () => new Response('large'),
-      ),
-    ).rejects.toThrow('resource_limit');
+    await expect(getText('https://jvn.jp/', { maxBytes: 3 }, async () => new Response('large'))).rejects.toThrow(
+      'resource_limit',
+    );
   });
   it('baselines old KEV entries without creating thousands of ingest jobs, then detects a real change', async () => {
     const source = loadConfig().sources.find((s) => s.id === 'kev')!;
@@ -129,15 +110,11 @@ describe('source boundaries', () => {
       dateAdded: '2020-01-01',
     };
     let data = { vulnerabilities: [old] };
-    const provider = sourceProvider(source, {}, async () =>
-      Response.json(data),
-    );
+    const provider = sourceProvider(source, {}, async () => Response.json(data));
     const initial = await provider.collect({}, now);
     expect(initial.items).toHaveLength(0);
     data = {
-      vulnerabilities: [
-        { ...old, requiredAction: 'Apply the newly released patch' },
-      ],
+      vulnerabilities: [{ ...old, requiredAction: 'Apply the newly released patch' }],
     };
     const updated = await provider.collect(initial.cursor, now + 900000);
     expect(updated.items).toHaveLength(1);
@@ -160,9 +137,7 @@ describe('source boundaries', () => {
     expect(first.more).toBe(true);
     expect(first.cursor.completedThrough).toBeUndefined();
     const second = await provider.collect(first.cursor, now + 900000);
-    expect(requests[1]?.searchParams.get('lastModEndDate')).toBe(
-      '2026-10-27T00:00:00.000Z',
-    );
+    expect(requests[1]?.searchParams.get('lastModEndDate')).toBe('2026-10-27T00:00:00.000Z');
     expect(second.more).toBe(false);
     expect(second.cursor.completedThrough).toBe(now);
   });
@@ -184,9 +159,7 @@ describe('source boundaries', () => {
 });
 describe('social adapters', () => {
   const target = loadConfig({
-    targets: [
-      { id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' },
-    ],
+    targets: [{ id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' }],
   }).targets[0]!;
   const intent = {
     kind: 'update' as const,
@@ -204,14 +177,10 @@ describe('social adapters', () => {
   };
   it('prepares a quote and posts through Misskey without leaking its fields into the intent', async () => {
     let payload: Record<string, unknown> = {};
-    const provider = new MisskeyProvider(
-      target,
-      'secret',
-      async (_url, init) => {
-        payload = JSON.parse(String(init?.body));
-        return Response.json({ createdNote: { id: 'new' } });
-      },
-    );
+    const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {
+      payload = JSON.parse(String(init?.body));
+      return Response.json({ createdNote: { id: 'new' } });
+    });
     const post = await provider.publish(provider.prepare(intent));
     expect(post.url).toBe('https://social.example/notes/new');
     expect(payload.renoteId).toBe('old');
@@ -220,50 +189,29 @@ describe('social adapters', () => {
   });
   it('delegates URL fallback and complete length checking to the adapter', () => {
     const provider = new UrlReferenceProvider(500);
-    expect(provider.prepare(intent).text).toContain(
-      '関連投稿: https://social.example/notes/old',
-    );
-    expect(() => new UrlReferenceProvider(20).prepare(intent)).toThrow(
-      'post_too_long',
-    );
+    expect(provider.prepare(intent).text).toContain('関連投稿: https://social.example/notes/old');
+    expect(() => new UrlReferenceProvider(20).prepare(intent)).toThrow('post_too_long');
   });
   it('distinguishes definite rejection from ambiguous server failure', async () => {
-    const a = new MisskeyProvider(
-      target,
-      'secret',
-      async () => new Response('', { status: 401 }),
-    );
+    const a = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 401 }));
     await expect(a.publish(a.prepare(intent))).rejects.toMatchObject({
       kind: 'auth',
     });
-    const b = new MisskeyProvider(
-      target,
-      'secret',
-      async () => new Response('', { status: 500 }),
-    );
+    const b = new MisskeyProvider(target, 'secret', async () => new Response('', { status: 500 }));
     await expect(b.publish(b.prepare(intent))).rejects.toMatchObject({
       kind: 'unknown',
     });
   });
   it('falls back to a URL only after an explicit quote rejection', async () => {
     const bodies: Record<string, unknown>[] = [];
-    const provider = new MisskeyProvider(
-      target,
-      'secret',
-      async (_url, init) => {
-        bodies.push(JSON.parse(String(init?.body)));
-        return bodies.length === 1
-          ? Response.json(
-              { error: { code: 'NO_SUCH_RENOTE_TARGET' } },
-              { status: 400 },
-            )
-          : Response.json({ createdNote: { id: 'new' } });
-      },
-    );
+    const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return bodies.length === 1
+        ? Response.json({ error: { code: 'NO_SUCH_RENOTE_TARGET' } }, { status: 400 })
+        : Response.json({ createdNote: { id: 'new' } });
+    });
     await provider.publish(provider.prepare(intent));
     expect(bodies[1]?.renoteId).toBeUndefined();
-    expect(String(bodies[1]?.text)).toContain(
-      '関連投稿: https://social.example/notes/old',
-    );
+    expect(String(bodies[1]?.text)).toContain('関連投稿: https://social.example/notes/old');
   });
 });

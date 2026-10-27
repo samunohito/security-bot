@@ -8,12 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": [
-      "@cloudflare/workers-types",
-      "node",
-      "vite/client",
-      "@cloudflare/vitest-plugin/types"
-    ]
+    "types": ["@cloudflare/workers-types", "node", "vite/client", "@cloudflare/vitest-plugin/types"]
   },
   "include": ["src", "tests", "scripts", "vitest.config.ts"]
 }

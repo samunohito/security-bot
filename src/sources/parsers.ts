@@ -12,26 +12,18 @@ const parser = new XMLParser({
   isArray: (name) => ['item', 'entry', 'link'].includes(name),
 });
 type Obj = Record<string, unknown>;
-const object = (v: unknown): Obj =>
-  typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Obj) : {};
-const array = (v: unknown): unknown[] =>
-  v === undefined ? [] : Array.isArray(v) ? v : [v];
+const object = (v: unknown): Obj => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Obj) : {});
+const array = (v: unknown): unknown[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 const str = (v: unknown): string =>
   typeof v === 'string' || typeof v === 'number'
     ? String(v)
     : typeof object(v)['#text'] === 'string'
       ? String(object(v)['#text'])
       : '';
-const cves = (s: string): string[] => [
-  ...new Set((s.match(/CVE-\d{4}-\d{4,}/gi) ?? []).map((v) => v.toUpperCase())),
-];
+const cves = (s: string): string[] => [...new Set((s.match(/CVE-\d{4}-\d{4,}/gi) ?? []).map((v) => v.toUpperCase()))];
 function timestamp(value: string): number {
   const t = Date.parse(
-    value &&
-      !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value) &&
-      /^\d{4}-\d{2}-\d{2}T/.test(value)
-      ? `${value}Z`
-      : value,
+    value && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value) && /^\d{4}-\d{2}-\d{2}T/.test(value) ? `${value}Z` : value,
   );
   return Number.isFinite(t) ? t : 0;
 }
@@ -82,22 +74,12 @@ export function enrichArticle(item: SourceItem, html: string): SourceItem {
     text,
     cves: cves(`${item.title}\n${text}`),
     scores: scores.length ? scores : item.scores,
-    affected: section(text, [
-      '影響を受けるシステム',
-      '影響を受ける製品',
-      '対象製品',
-      'Affected Products',
-    ]),
+    affected: section(text, ['影響を受けるシステム', '影響を受ける製品', '対象製品', 'Affected Products']),
     remediation: section(text, ['対策方法', '対策', '対処方法', 'Solutions']),
   };
 }
-export function parseFeed(
-  xml: string,
-  source: SourceConfig,
-  now: number,
-): SourceItem[] {
-  if (/<!DOCTYPE|<!ENTITY/i.test(xml) || XMLValidator.validate(xml) !== true)
-    throw new Error('invalid_feed');
+export function parseFeed(xml: string, source: SourceConfig, now: number): SourceItem[] {
+  if (/<!DOCTYPE|<!ENTITY/i.test(xml) || XMLValidator.validate(xml) !== true) throw new Error('invalid_feed');
   const root = object(parser.parse(xml));
   const rdf = object(root.RDF),
     rss = object(object(root.rss).channel),
@@ -107,31 +89,20 @@ export function parseFeed(
     const o = object(entry),
       links = array(o.link);
     const link =
-      links
-        .map((l) =>
-          object(l)['@rel'] === 'self' ? '' : str(object(l)['@href'] ?? l),
-        )
-        .find(Boolean) ?? '';
+      links.map((l) => (object(l)['@rel'] === 'self' ? '' : str(object(l)['@href'] ?? l))).find(Boolean) ?? '';
     let url: URL;
     try {
       url = new URL(link, source.url);
     } catch {
       return [];
     }
-    if (
-      url.protocol !== 'https:' ||
-      (source.articleHosts.length &&
-        !source.articleHosts.includes(url.hostname))
-    )
+    if (url.protocol !== 'https:' || (source.articleHosts.length && !source.articleHosts.includes(url.hostname)))
       return [];
     url.hash = '';
     const title = str(o.title),
       text = htmlText(str(o.description ?? o.summary ?? o.content));
-    const publishedAt = timestamp(
-      str(o.published ?? o.pubDate ?? o.date ?? o.issued ?? o.updated),
-    );
-    const modifiedAt =
-      timestamp(str(o.modified ?? o.updated ?? o.date)) || publishedAt;
+    const publishedAt = timestamp(str(o.published ?? o.pubDate ?? o.date ?? o.issued ?? o.updated));
+    const modifiedAt = timestamp(str(o.modified ?? o.updated ?? o.date)) || publishedAt;
     const advisory = source.id === 'jpcert' && /^\/at\//.test(url.pathname);
     return [
       {
@@ -169,11 +140,7 @@ const kevSchema = z.object({
     }),
   ),
 });
-export function parseKev(
-  raw: unknown,
-  sourceId: string,
-  now: number,
-): SourceItem[] {
+export function parseKev(raw: unknown, sourceId: string, now: number): SourceItem[] {
   return kevSchema.parse(raw).vulnerabilities.map((v) => ({
     sourceId,
     id: v.cveID,
@@ -194,16 +161,10 @@ export function parseKev(
     rejected: false,
   }));
 }
-export function parseNvd(
-  raw: unknown,
-  sourceId: string,
-  now: number,
-): SourceItem[] {
+export function parseNvd(raw: unknown, sourceId: string, now: number): SourceItem[] {
   const records = z
     .object({
-      vulnerabilities: z.array(
-        z.object({ cve: z.record(z.string(), z.unknown()) }),
-      ),
+      vulnerabilities: z.array(z.object({ cve: z.record(z.string(), z.unknown()) })),
     })
     .parse(raw).vulnerabilities;
   return records.map(({ cve: c }) => {
@@ -212,19 +173,13 @@ export function parseNvd(
       .regex(/^CVE-\d{4}-\d{4,}$/)
       .parse(c.id);
     const descriptions = array(c.descriptions).map(object);
-    const text = str(
-      (descriptions.find((d) => d.lang === 'en') ?? descriptions[0])?.value,
-    );
+    const text = str((descriptions.find((d) => d.lang === 'en') ?? descriptions[0])?.value);
     const scores: Score[] = [];
     for (const metrics of Object.values(object(c.metrics)))
       for (const metric of array(metrics)) {
         const m = object(metric),
           data = object(m.cvssData);
-        if (
-          typeof data.baseScore === 'number' &&
-          data.baseScore >= 0 &&
-          data.baseScore <= 10
-        )
+        if (typeof data.baseScore === 'number' && data.baseScore >= 0 && data.baseScore <= 10)
           scores.push({
             score: data.baseScore,
             version: str(data.version),

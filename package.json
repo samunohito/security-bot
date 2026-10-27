@@ -10,8 +10,8 @@
     "dev": "wrangler dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "build": "wrangler deploy --dry-run --outdir dist",
     "cli": "tsx src/cli.ts",
     "db:migrate:local": "wrangler d1 migrations apply security-bot --local",
@@ -23,10 +23,10 @@
     "zod": "^4.3.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.3",
     "@cloudflare/vitest-plugin": "1.4.8",
     "@cloudflare/workers-types": "latest",
     "@types/node": "^24.0.0",
-    "prettier": "^3.8.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.0",
     "vitest": "~4.1.0",

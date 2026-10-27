@@ -15,12 +15,9 @@ async function main() {
   });
   const [command, resource, id] = args;
   if (command === 'config') {
-    const raw = JSON.parse(
-      await readFile(values.config ?? 'bot.config.json', 'utf8'),
-    ) as unknown;
+    const raw = JSON.parse(await readFile(values.config ?? 'bot.config.json', 'utf8')) as unknown;
     const config = loadConfig(raw, process.env);
-    if (resource !== 'validate' && resource !== 'show')
-      throw new Error('Usage: config validate|show [--config path]');
+    if (resource !== 'validate' && resource !== 'show') throw new Error('Usage: config validate|show [--config path]');
     console.log(
       JSON.stringify(
         resource === 'show'
@@ -45,36 +42,22 @@ async function main() {
   }
   const base = process.env.SECURITY_BOT_URL,
     token = process.env.SECURITY_BOT_ADMIN_TOKEN;
-  if (!base || !token)
-    throw new Error('Set SECURITY_BOT_URL and SECURITY_BOT_ADMIN_TOKEN');
+  if (!base || !token) throw new Error('Set SECURITY_BOT_URL and SECURITY_BOT_ADMIN_TOKEN');
   const url = new URL(base);
   if (
     url.protocol !== 'https:' &&
-    !(
-      url.protocol === 'http:' &&
-      ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
-    )
+    !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
   )
     throw new Error('SECURITY_BOT_URL must use HTTPS (or local HTTP)');
   let path = '',
     method = 'GET';
   let body: Record<string, unknown> | undefined;
   if (command === 'status') path = '/admin/status';
-  else if (
-    command === 'list' &&
-    ['jobs', 'deliveries', 'sources', 'targets', 'revisions'].includes(
-      resource ?? '',
-    )
-  )
+  else if (command === 'list' && ['jobs', 'deliveries', 'sources', 'targets', 'revisions'].includes(resource ?? ''))
     path = `/admin/${resource}`;
-  else if (
-    command === 'show' &&
-    ['jobs', 'deliveries', 'revisions'].includes(resource ?? '') &&
-    id
-  )
+  else if (command === 'show' && ['jobs', 'deliveries', 'revisions'].includes(resource ?? '') && id)
     path = `/admin/${resource}/${encodeURIComponent(id)}`;
-  else if (command === 'dry-run' && resource)
-    path = `/admin/dry-run?id=${encodeURIComponent(resource)}`;
+  else if (command === 'dry-run' && resource) path = `/admin/dry-run?id=${encodeURIComponent(resource)}`;
   else {
     const paths: Record<string, string> = {
       'retry-job': '/admin/jobs/retry',
@@ -83,17 +66,14 @@ async function main() {
       pause: '/admin/targets/pause',
       resume: '/admin/targets/resume',
     };
-    if (!paths[command] || !resource)
-      throw new Error('Invalid command. Run npm run cli -- help');
+    if (!paths[command] || !resource) throw new Error('Invalid command. Run npm run cli -- help');
     path = paths[command]!;
     method = 'POST';
     body = {
       id: resource,
       ...(values['post-id'] ? { postId: values['post-id'] } : {}),
       ...(values['post-url'] ? { postUrl: values['post-url'] } : {}),
-      ...(values['ack-duplicate-risk']
-        ? { acknowledgeDuplicateRisk: true }
-        : {}),
+      ...(values['ack-duplicate-risk'] ? { acknowledgeDuplicateRisk: true } : {}),
     };
   }
   const response = await fetch(new URL(path, url), {
@@ -106,13 +86,9 @@ async function main() {
     signal: AbortSignal.timeout(30000),
     redirect: 'error',
   });
-  if (!response.ok)
-    throw new Error(
-      `Management API ${response.status}: ${await response.text()}`,
-    );
+  if (!response.ok) throw new Error(`Management API ${response.status}: ${await response.text()}`);
   let data: unknown = await response.json();
-  if (values.state && Array.isArray(data))
-    data = data.filter((row) => row.state === values.state);
+  if (values.state && Array.isArray(data)) data = data.filter((row) => row.state === values.state);
   console.log(JSON.stringify(data, null, 2));
 }
 main().catch((error) => {

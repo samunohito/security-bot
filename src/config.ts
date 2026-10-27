@@ -2,9 +2,7 @@ import { z } from 'zod';
 
 const interval = z.number().int().min(60);
 const positive = z.number().positive();
-const httpsUrl = z
-  .url()
-  .refine((s) => new URL(s).protocol === 'https:', 'HTTPS required');
+const httpsUrl = z.url().refine((s) => new URL(s).protocol === 'https:', 'HTTPS required');
 const sourceSchema = z.object({
   id: z.string().regex(/^[a-z0-9_-]+$/),
   kind: z.enum(['rss', 'kev', 'nvd']),
@@ -20,9 +18,7 @@ const targetSchema = z.object({
   enabled: z.boolean().default(false),
   baseUrl: httpsUrl,
   tokenSecret: z.string().regex(/^[A-Z][A-Z0-9_]*$/),
-  qualityGate: z
-    .object({ enabled: z.boolean().default(true) })
-    .default({ enabled: true }),
+  qualityGate: z.object({ enabled: z.boolean().default(true) }).default({ enabled: true }),
   maxCharacters: z.number().int().min(200).max(10000).default(500),
   normalIntervalSeconds: interval.default(3600),
   urgentIntervalSeconds: interval.default(300),
@@ -76,9 +72,7 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
   const raw = z.record(z.string(), z.unknown()).parse(input);
   const mode = modeSchema.parse(env.BOT_MODE ?? raw.mode ?? 'free');
   const poll = interval.parse(
-    env.POLL_INTERVAL_SECONDS === undefined
-      ? (raw.pollIntervalSeconds ?? 900)
-      : Number(env.POLL_INTERVAL_SECONDS),
+    env.POLL_INTERVAL_SECONDS === undefined ? (raw.pollIntervalSeconds ?? 900) : Number(env.POLL_INTERVAL_SECONDS),
   );
   const defaults = [
     {
@@ -108,19 +102,13 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
   ];
   const budgetRaw = z.record(z.string(), z.unknown()).parse(raw.budget ?? {});
   const llmRaw = z.record(z.string(), z.unknown()).parse(raw.llm ?? {});
-  const model =
-    env.LLM_MODEL ?? llmRaw.model ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+  const model = env.LLM_MODEL ?? llmRaw.model ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
   if (
     model !== '@cf/meta/llama-3.3-70b-instruct-fp8-fast' &&
-    (llmRaw.inputNeuronsPerMillion === undefined ||
-      llmRaw.outputNeuronsPerMillion === undefined)
+    (llmRaw.inputNeuronsPerMillion === undefined || llmRaw.outputNeuronsPerMillion === undefined)
   )
-    throw new Error(
-      'Custom model requires explicit neuron pricing coefficients',
-    );
-  const sourceRaw = z
-    .array(z.record(z.string(), z.unknown()))
-    .parse(raw.sources ?? defaults);
+    throw new Error('Custom model requires explicit neuron pricing coefficients');
+  const sourceRaw = z.array(z.record(z.string(), z.unknown())).parse(raw.sources ?? defaults);
   const config = configSchema.parse({
     mode,
     dryRun: booleanEnv(env.DRY_RUN, z.boolean().parse(raw.dryRun ?? true)),
@@ -133,12 +121,8 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
     budget: {
       ...presets[mode],
       ...budgetRaw,
-      ...(env.LLM_MAX_CALLS === undefined
-        ? {}
-        : { maxCalls: Number(env.LLM_MAX_CALLS) }),
-      ...(env.LLM_NEURON_BUDGET === undefined
-        ? {}
-        : { neurons: Number(env.LLM_NEURON_BUDGET) }),
+      ...(env.LLM_MAX_CALLS === undefined ? {} : { maxCalls: Number(env.LLM_MAX_CALLS) }),
+      ...(env.LLM_NEURON_BUDGET === undefined ? {} : { neurons: Number(env.LLM_NEURON_BUDGET) }),
     },
     llm: {
       maxInputCharacters: 16000,
@@ -153,7 +137,6 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
     retentionDays: raw.retentionDays ?? 90,
   });
   for (const entries of [config.sources, config.targets])
-    if (new Set(entries.map((s) => s.id)).size !== entries.length)
-      throw new Error('Duplicate source or target id');
+    if (new Set(entries.map((s) => s.id)).size !== entries.length) throw new Error('Duplicate source or target id');
   return config;
 }

@@ -57,13 +57,7 @@ export class Store {
   private statement(sql: string, ...params: unknown[]) {
     return this.db.prepare(sql).bind(...params);
   }
-  async enqueue(
-    id: string,
-    type: string,
-    payload: unknown,
-    now: number,
-    availableAt = now,
-  ) {
+  async enqueue(id: string, type: string, payload: unknown, now: number, availableAt = now) {
     await this.statement(
       'INSERT OR IGNORE INTO jobs(id,type,payload,available_at,created_at) VALUES(?,?,?,?,?)',
       id,
@@ -106,12 +100,7 @@ export class Store {
       job.lease_token,
     ).run();
   }
-  async failJob(
-    job: Job,
-    state: 'deferred' | 'held' | 'failed',
-    error: string,
-    when: number,
-  ) {
+  async failJob(job: Job, state: 'deferred' | 'held' | 'failed', error: string, when: number) {
     await this.statement(
       'UPDATE jobs SET state=?,error=?,available_at=?,dispatched_at=NULL,lease_until=NULL WHERE id=? AND lease_token=?',
       state,
@@ -139,14 +128,11 @@ export class Store {
   }
   async syncSources(sources: SourceConfig[], now: number) {
     for (const source of sources.filter((s) => s.enabled)) {
-      await this.statement(
-        'INSERT OR IGNORE INTO sources(id) VALUES(?)',
-        source.id,
-      ).run();
-      const row = await this.statement(
-        'SELECT next_poll_at,active_job FROM sources WHERE id=?',
-        source.id,
-      ).first<{ next_poll_at: number; active_job: string | null }>();
+      await this.statement('INSERT OR IGNORE INTO sources(id) VALUES(?)', source.id).run();
+      const row = await this.statement('SELECT next_poll_at,active_job FROM sources WHERE id=?', source.id).first<{
+        next_poll_at: number;
+        active_job: string | null;
+      }>();
       if (!row || row.active_job || row.next_poll_at > now) continue;
       const id = `collect:${source.id}:${row.next_poll_at}`;
       await this.db.batch([
@@ -169,10 +155,7 @@ export class Store {
     }
   }
   async sourceCursor(id: string): Promise<SourceCursor> {
-    const row = await this.statement(
-      'SELECT cursor FROM sources WHERE id=?',
-      id,
-    ).first<{ cursor: string }>();
+    const row = await this.statement('SELECT cursor FROM sources WHERE id=?', id).first<{ cursor: string }>();
     return JSON.parse(row?.cursor ?? '{}') as SourceCursor;
   }
   async sourceState(id: string) {
@@ -183,14 +166,9 @@ export class Store {
     }>();
   }
   async bootstrapTime(now: number): Promise<number> {
-    await this.statement(
-      "INSERT OR IGNORE INTO settings(key,value) VALUES('started_at',?)",
-      String(now),
-    ).run();
+    await this.statement("INSERT OR IGNORE INTO settings(key,value) VALUES('started_at',?)", String(now)).run();
     return Number(
-      (await this.statement(
-        "SELECT value FROM settings WHERE key='started_at'",
-      ).first<{ value: string }>())!.value,
+      (await this.statement("SELECT value FROM settings WHERE key='started_at'").first<{ value: string }>())!.value,
     );
   }
   async completeSource(
@@ -230,13 +208,7 @@ export class Store {
       );
     await this.db.batch(statements);
   }
-  async sourceError(
-    id: string,
-    error: string,
-    release: boolean,
-    now: number,
-    owner: Pick<Job, 'id' | 'lease_token'>,
-  ) {
+  async sourceError(id: string, error: string, release: boolean, now: number, owner: Pick<Job, 'id' | 'lease_token'>) {
     await this.statement(
       'UPDATE sources SET last_error=?,active_job=CASE WHEN ? THEN NULL ELSE active_job END,next_poll_at=CASE WHEN ? THEN ? ELSE next_poll_at END WHERE id=? AND active_job=? AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND lease_token=?)',
       error,
@@ -275,11 +247,7 @@ export class Store {
     ]);
     const ownsVersion = async () =>
       Boolean(
-        await this.statement(
-          'SELECT 1 FROM source_versions WHERE id=? AND version_hash=?',
-          identity,
-          version,
-        ).first(),
+        await this.statement('SELECT 1 FROM source_versions WHERE id=? AND version_hash=?', identity, version).first(),
       );
     if (!(await ownsVersion())) return [];
     const memberships = (
@@ -319,10 +287,7 @@ export class Store {
         key,
         evidence.evidenceId,
       ).first<{ hash: string; modified_at: number }>();
-      if (
-        existing?.hash !== hash &&
-        (!existing || existing.modified_at <= item.modifiedAt)
-      ) {
+      if (existing?.hash !== hash && (!existing || existing.modified_at <= item.modifiedAt)) {
         await this.db.batch([
           this.statement('INSERT OR IGNORE INTO threats(key) VALUES(?)', key),
           this.statement(
@@ -364,15 +329,9 @@ export class Store {
     }
     return revisions;
   }
-  private async refreshThreat(
-    key: string,
-    now: number,
-  ): Promise<string | null> {
+  private async refreshThreat(key: string, now: number): Promise<string | null> {
     for (let attempt = 0; attempt < 5; attempt++) {
-      const old = await this.statement(
-        'SELECT revision_id,material,generation FROM threats WHERE key=?',
-        key,
-      ).first<{
+      const old = await this.statement('SELECT revision_id,material,generation FROM threats WHERE key=?', key).first<{
         revision_id: string | null;
         material: string;
         generation: number;
@@ -390,20 +349,12 @@ export class Store {
       );
       const material = materialKey(current);
       const changed = !old.revision_id || material !== old.material;
-      const id = changed
-        ? await digest(`${key}:${material}:${current.eventAt}`)
-        : old.revision_id!;
+      const id = changed ? await digest(`${key}:${material}:${current.eventAt}`) : old.revision_id!;
       const evidenceHash = await digest(
-        JSON.stringify(
-          current.evidence.map((e) => ({ ...e, fetchedAt: 0, modifiedAt: 0 })),
-        ),
+        JSON.stringify(current.evidence.map((e) => ({ ...e, fetchedAt: 0, modifiedAt: 0 }))),
       );
       const classification = classify(current);
-      const kind = old.revision_id
-        ? current.rejected
-          ? 'correction'
-          : 'update'
-        : 'new';
+      const kind = old.revision_id ? (current.rejected ? 'correction' : 'update') : 'new';
       const result = await this.db.batch([
         this.statement(
           'INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible',
@@ -415,10 +366,7 @@ export class Store {
           current.eventAt,
           classification.priority,
           classification.urgent ? 1 : 0,
-          classification.eligible ||
-            (current.rejected && Boolean(old.revision_id))
-            ? 1
-            : 0,
+          classification.eligible || (current.rejected && Boolean(old.revision_id)) ? 1 : 0,
           now,
           key,
           old.generation,
@@ -444,17 +392,12 @@ export class Store {
     throw new Error('threat_concurrency_retry');
   }
   async getRevision(id: string): Promise<Revision | null> {
-    const row = await this.statement(
-      'SELECT * FROM revisions WHERE id=?',
-      id,
-    ).first<Omit<Revision, 'snapshot'> & { snapshot: string }>();
-    return row
-      ? { ...row, snapshot: JSON.parse(row.snapshot) as ThreatSnapshot }
-      : null;
+    const row = await this.statement('SELECT * FROM revisions WHERE id=?', id).first<
+      Omit<Revision, 'snapshot'> & { snapshot: string }
+    >();
+    return row ? { ...row, snapshot: JSON.parse(row.snapshot) as ThreatSnapshot } : null;
   }
-  async currentRevisions(
-    limit = 50,
-  ): Promise<{ id: string; evidence_hash: string }[]> {
+  async currentRevisions(limit = 50): Promise<{ id: string; evidence_hash: string }[]> {
     return (
       await this.statement(
         'SELECT r.id,r.evidence_hash FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.eligible=1 ORDER BY r.priority,r.event_at DESC LIMIT ?',
@@ -463,19 +406,9 @@ export class Store {
     ).results;
   }
   async isCurrent(id: string) {
-    return Boolean(
-      await this.statement(
-        'SELECT 1 FROM threats WHERE revision_id=?',
-        id,
-      ).first(),
-    );
+    return Boolean(await this.statement('SELECT 1 FROM threats WHERE revision_id=?', id).first());
   }
-  async saveSummary(
-    revision: Revision,
-    summary: Summary,
-    validation: Validation,
-    now: number,
-  ) {
+  async saveSummary(revision: Revision, summary: Summary, validation: Validation, now: number) {
     await this.statement(
       'INSERT INTO summaries(revision_id,evidence_hash,summary,validation,created_at) VALUES(?,?,?,?,?) ON CONFLICT(revision_id) DO UPDATE SET evidence_hash=excluded.evidence_hash,summary=excluded.summary,validation=excluded.validation,created_at=excluded.created_at',
       revision.id,
@@ -485,9 +418,7 @@ export class Store {
       now,
     ).run();
   }
-  async getSummary(
-    revision: Revision,
-  ): Promise<{ summary: Summary; validation: Validation } | null> {
+  async getSummary(revision: Revision): Promise<{ summary: Summary; validation: Validation } | null> {
     const row = await this.statement(
       'SELECT summary,validation FROM summaries WHERE revision_id=? AND evidence_hash=?',
       revision.id,
@@ -502,11 +433,7 @@ export class Store {
   }
   async syncTargets(targets: TargetConfig[]) {
     if (targets.length)
-      await this.db.batch(
-        targets.map((t) =>
-          this.statement('INSERT OR IGNORE INTO targets(id) VALUES(?)', t.id),
-        ),
-      );
+      await this.db.batch(targets.map((t) => this.statement('INSERT OR IGNORE INTO targets(id) VALUES(?)', t.id)));
   }
   async pauseTarget(
     id: string,
@@ -547,10 +474,7 @@ export class Store {
     ).run();
   }
   async getDelivery(id: string) {
-    return this.statement(
-      'SELECT * FROM deliveries WHERE id=?',
-      id,
-    ).first<Delivery>();
+    return this.statement('SELECT * FROM deliveries WHERE id=?', id).first<Delivery>();
   }
   async dueDeliveries(now: number) {
     return (
@@ -560,10 +484,7 @@ export class Store {
       ).all<Delivery>()
     ).results;
   }
-  async previousPost(
-    target: string,
-    key: string,
-  ): Promise<PublishedPost | undefined> {
+  async previousPost(target: string, key: string): Promise<PublishedPost | undefined> {
     const row = await this.statement(
       "SELECT d.post_id,d.post_url FROM deliveries d JOIN revisions r ON r.id=d.revision_id WHERE d.target_id=? AND r.threat_key=? AND d.state='sent' ORDER BY d.updated_at DESC LIMIT 1",
       target,
@@ -587,10 +508,7 @@ export class Store {
       id,
     ).run();
   }
-  async getShortened(
-    id: string,
-    hash: string,
-  ): Promise<{ summary: Summary; validation: Validation } | null> {
+  async getShortened(id: string, hash: string): Promise<{ summary: Summary; validation: Validation } | null> {
     const row = await this.statement(
       'SELECT summary,validation FROM shortened_summaries WHERE delivery_id=? AND evidence_hash=?',
       id,
@@ -603,12 +521,7 @@ export class Store {
         }
       : null;
   }
-  async saveShortened(
-    id: string,
-    hash: string,
-    summary: Summary,
-    validation: Validation,
-  ) {
+  async saveShortened(id: string, hash: string, summary: Summary, validation: Validation) {
     await this.statement(
       'INSERT INTO shortened_summaries(delivery_id,evidence_hash,summary,validation) VALUES(?,?,?,?) ON CONFLICT(delivery_id) DO UPDATE SET evidence_hash=excluded.evidence_hash,summary=excluded.summary,validation=excluded.validation',
       id,
@@ -691,18 +604,9 @@ export class Store {
         token,
       ),
     ]);
-    return this.statement(
-      'SELECT * FROM deliveries WHERE id=? AND lease_token=?',
-      id,
-      token,
-    ).first<Delivery>();
+    return this.statement('SELECT * FROM deliveries WHERE id=? AND lease_token=?', id, token).first<Delivery>();
   }
-  async finishDelivery(
-    id: string,
-    post: PublishedPost,
-    now: number,
-    token: string,
-  ) {
+  async finishDelivery(id: string, post: PublishedPost, now: number, token: string) {
     await this.db.batch([
       this.statement(
         "UPDATE deliveries SET state='sent',post_id=?,post_url=?,updated_at=?,error=NULL WHERE id=? AND lease_token=? AND state IN ('sending','unknown')",
@@ -821,16 +725,10 @@ export class Store {
       ),
       this.statement('UPDATE budget_reservations SET charged=1 WHERE id=?', id),
     ]);
-    return Boolean(
-      await this.statement(
-        'SELECT 1 FROM budget_reservations WHERE id=?',
-        id,
-      ).first(),
-    );
+    return Boolean(await this.statement('SELECT 1 FROM budget_reservations WHERE id=?', id).first());
   }
   async settleBudget(id: string, actual: number) {
-    if (!Number.isFinite(actual) || actual < 0)
-      throw new Error('invalid_usage');
+    if (!Number.isFinite(actual) || actual < 0) throw new Error('invalid_usage');
     await this.db.batch([
       this.statement(
         "UPDATE budgets SET neurons=MAX(0,neurons+?-(SELECT amount FROM budget_reservations WHERE id=?)) WHERE day=(SELECT day FROM budget_reservations WHERE id=? AND state='reserved')",
@@ -838,23 +736,18 @@ export class Store {
         id,
         id,
       ),
-      this.statement(
-        "UPDATE budget_reservations SET state='settled' WHERE id=? AND state='reserved'",
-        id,
-      ),
+      this.statement("UPDATE budget_reservations SET state='settled' WHERE id=? AND state='reserved'", id),
     ]);
   }
   async budgetStatus(now: number) {
-    return this.statement(
-      'SELECT * FROM budgets WHERE day=?',
-      utcDay(now),
-    ).first<{ calls: number; neurons: number; queue_ops: number }>();
+    return this.statement('SELECT * FROM budgets WHERE day=?', utcDay(now)).first<{
+      calls: number;
+      neurons: number;
+      queue_ops: number;
+    }>();
   }
   async reserveQueueOperations(now: number, limit: number): Promise<boolean> {
-    await this.statement(
-      'INSERT OR IGNORE INTO budgets(day) VALUES(?)',
-      utcDay(now),
-    ).run();
+    await this.statement('INSERT OR IGNORE INTO budgets(day) VALUES(?)', utcDay(now)).run();
     const row = await this.statement(
       'UPDATE budgets SET queue_ops=queue_ops+3 WHERE day=? AND queue_ops+3<=? RETURNING queue_ops',
       utcDay(now),
@@ -862,10 +755,7 @@ export class Store {
     ).first();
     return Boolean(row);
   }
-  async list(
-    table: 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions',
-    limit = 50,
-  ) {
+  async list(table: 'jobs' | 'deliveries' | 'sources' | 'targets' | 'revisions', limit = 50) {
     const columns =
       table === 'sources'
         ? 'id,next_poll_at,active_job,last_success_at,last_error'
@@ -874,14 +764,9 @@ export class Store {
           : table === 'revisions'
             ? 'id,threat_key,kind,event_at,priority,urgent,eligible,evidence_hash'
             : '*';
-    const order = ['jobs', 'deliveries', 'revisions'].includes(table)
-      ? 'created_at DESC'
-      : 'id';
+    const order = ['jobs', 'deliveries', 'revisions'].includes(table) ? 'created_at DESC' : 'id';
     return (
-      await this.statement(
-        `SELECT ${columns} FROM ${table} ORDER BY ${order} LIMIT ?`,
-        Math.min(100, limit),
-      ).all()
+      await this.statement(`SELECT ${columns} FROM ${table} ORDER BY ${order} LIMIT ?`, Math.min(100, limit)).all()
     ).results;
   }
   async cleanup(now: number, days: number) {

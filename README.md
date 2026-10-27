@@ -1,6 +1,8 @@
 # Security Bot
 
-JVN・JPCERT/CC・CISA KEV・NVDを収集し、日本語で脆弱性や公的な注意喚起を要約してSNSへ発信するCloudflare Workersアプリです。D1を処理状態の正本にし、Queuesで収集・記事取得・要約・投稿を分離します。初期対応はWorkers AIとMisskeyです。
+JVN・JPCERT/CC・CISA KEV・NVDを収集し、日本語で脆弱性や公的な注意喚起を要約してSNSへ発信するCloudflare
+Workersアプリです。D1を処理状態の正本にし、Queuesで収集・記事取得・要約・投稿を分離します。初期対応はWorkers
+AIとMisskeyです。
 
 初期状態は **`dryRun: true`、投稿先なし** です。リポジトリをビルドしただけでは投稿しません。
 
@@ -18,6 +20,8 @@ npm run cli -- config validate
 ```
 
 `npm test`は実際のWorkersランタイムとローカルD1を使う統合テストを含みます。外部情報源・LLM・SNSへのアクセスはテストでは置き換え、SNSへの実送信は行いません。`npm run build`もWranglerのdry-runです。
+
+フォーマットにはBiomeを使用します。`npm run format`で対応ファイル全体を整形し、`npm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`は整形対象から除外します。
 
 ## セットアップ
 
@@ -68,11 +72,13 @@ npx wrangler deploy
 
 最初はdry-runのまま動かし、CLIで`preview`状態の投稿本文と検証結果を確認します。実投稿を始める際に`dryRun: false`と対象アカウントの`enabled: true`を設定してデプロイしてください。CLIで停止したアカウントは`resume`も必要です。
 
-ローカル起動には`.dev.vars.example`を`.dev.vars`へコピーして値を設定し、`npm run dev`を使用します。Workers AIの呼び出しはローカル起動でもクラウド側の推論・利用量を伴うため、オフラインでの検証にはテストを使ってください。
+ローカル起動には`.dev.vars.example`を`.dev.vars`へコピーして値を設定し、`npm run dev`を使用します。Workers
+AIの呼び出しはローカル起動でもクラウド側の推論・利用量を伴うため、オフラインでの検証にはテストを使ってください。
 
 ## 設定
 
-適用順は、既定値 → モードのプリセット → `bot.config.json` → 対応する環境変数です。Secretsの値は設定ファイルへ書かず、名前だけを参照します。
+適用順は、既定値 → モードのプリセット → `bot.config.json` →
+対応する環境変数です。Secretsの値は設定ファイルへ書かず、名前だけを参照します。
 
 | モード         | LLM呼び出し/UTC日 | LLM並列数 | 推定Neurons/UTC日 |
 | -------------- | ----------------: | --------: | ----------------: |
@@ -171,8 +177,10 @@ npm run benchmark -- --source jvn --save benchmark-data/jvn.rdf
 npm run benchmark -- --source kev --file benchmark-data/kev.json
 ```
 
-公式データを使ってローカルNode.jsのCPU時間を計測します。Cloudflare本番のCPU時間を再現・保証する測定ではありません。無料Workersの10ms制限に対しては、実際のInvocation Metricsも確認してください。
+公式データを使ってローカルNode.jsのCPU時間を計測します。Cloudflare本番のCPU時間を再現・保証する測定ではありません。無料Workersの10ms制限に対しては、実際のInvocation
+Metricsも確認してください。
 
 開発時の参考値では、KEV約1.81MB/1,758件の解析中央値が約3.8ms、取得結果の処理と基準情報作成を含むローカルCPU時間が約14.8msでした。JVN約16.8KB/20件の解析中央値は約7.4msでした。無料プランで余裕があると断定できないため、初回はdry-runで実測してください。処理が継続的に上限を超える場合は、対象ソースを停止して間隔・処理方法・契約プランを見直します。有料契約へ自動切り替えはしません。
 
-状態・保留理由はCLI、CPU超過などのランタイム障害はCloudflare Logs/Invocation Metricsで確認します。ログに認証トークンやLLMへの入力全文は出しません。`retentionDays`（既定90）は完了ジョブと非現行の証拠レコードの整理期間です。改訂スナップショット・要約・投稿履歴は監査用に残すため、D1の容量も継続監視してください。
+状態・保留理由はCLI、CPU超過などのランタイム障害はCloudflare Logs/Invocation
+Metricsで確認します。ログに認証トークンやLLMへの入力全文は出しません。`retentionDays`（既定90）は完了ジョブと非現行の証拠レコードの整理期間です。改訂スナップショット・要約・投稿履歴は監査用に残すため、D1の容量も継続監視してください。

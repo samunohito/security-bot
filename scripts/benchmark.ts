@@ -12,8 +12,7 @@ const { values } = parseArgs({
   },
 });
 const source = loadConfig().sources.find((s) => s.id === values.source);
-if (!source || source.kind === 'nvd')
-  throw new Error('Use --source kev|jvn|jpcert');
+if (!source || source.kind === 'nvd') throw new Error('Use --source kev|jvn|jpcert');
 const text = values.file
   ? await readFile(values.file, 'utf8')
   : await (async () => {
@@ -32,20 +31,14 @@ let count = 0;
 for (let i = 0; i < 6; i++) {
   const start = process.cpuUsage();
   const items =
-    source.kind === 'kev'
-      ? parseKev(JSON.parse(text), source.id, Date.now())
-      : parseFeed(text, source, Date.now());
+    source.kind === 'kev' ? parseKev(JSON.parse(text), source.id, Date.now()) : parseFeed(text, source, Date.now());
   const elapsed = process.cpuUsage(start);
   count = items.length;
   if (i) timings.push((elapsed.user + elapsed.system) / 1000);
 }
 const cpu = timings.sort((a, b) => a - b)[2]!;
 const start = process.cpuUsage();
-const initial = await sourceProvider(
-  source,
-  {},
-  async () => new Response(text),
-).collect({}, Date.now());
+const initial = await sourceProvider(source, {}, async () => new Response(text)).collect({}, Date.now());
 const elapsed = process.cpuUsage(start);
 console.log(
   JSON.stringify(

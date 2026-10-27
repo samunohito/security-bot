@@ -1,0 +1,39 @@
+{
+  "name": "security-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.14.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "cli": "tsx src/cli.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply security-bot --local",
+    "db:migrate:remote": "wrangler d1 migrations apply security-bot --remote",
+    "benchmark": "tsx scripts/benchmark.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "fast-xml-parser": "5.11.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "@cloudflare/vitest-plugin": "1.4.8",
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "24.0.0",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "wrangler": "4.153.0"
+  }
+}

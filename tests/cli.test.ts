@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('operator CLI', () => {
   it.each([
+    { args: ['skip-before', '--hours', '6'], path: '/admin/backlog/skip', method: 'POST', body: { hours: 6 } },
     { args: ['list', 'summaries'], path: '/admin/summaries', method: 'GET', body: null },
     { args: ['show', 'summaries', 'revision/id'], path: '/admin/summaries/revision%2Fid', method: 'GET', body: null },
     {
@@ -14,7 +15,7 @@ describe('operator CLI', () => {
       method: 'POST',
       body: { id: 'revision/id' },
     },
-  ])('生成結果の確認と再生成を管理APIへ送る: $method $path', ({ args, path, method, body }) => {
+  ])('管理コマンドを認証付きで対応するAPIへ送る: $method $path', ({ args, path, method, body }) => {
     const setup = `globalThis.fetch = async (url, init) => {
       if (init.headers.Authorization !== 'Bearer local-test') throw new Error('missing_auth');
       return Response.json({ path: new URL(url).pathname, method: init.method, body: init.body ? JSON.parse(init.body) : null });
@@ -29,6 +30,16 @@ describe('operator CLI', () => {
     );
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual({ path, method, body });
+  });
+
+  it.each(
+    [[], ['--hours', '0'], ['--hours=-1'], ['--hours', 'Infinity'], ['--hours', 'oops']].map((args) => ({ args })),
+  )('足切りコマンドは不正な時間数を通信前に拒否する: %j', ({ args }) => {
+    const result = spawnSync(process.execPath, ['--import', 'tsx', 'src/cli.ts', 'skip-before', ...args], {
+      encoding: 'utf8',
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Usage: skip-before --hours HOURS');
   });
 
   it('generate-summary以外への--saveを通信前に拒否する', () => {

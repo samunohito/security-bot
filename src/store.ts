@@ -24,6 +24,9 @@ export type Job = typeof tables.jobs.$inferSelect;
 export type Revision = Omit<typeof tables.revisions.$inferSelect, 'snapshot'> & { snapshot: ThreatSnapshot };
 export type Delivery = typeof tables.deliveries.$inferSelect;
 
+const eventCutoffQuery = "COALESCE((SELECT CAST(value AS INTEGER) FROM settings WHERE key='event_cutoff'),0)";
+const eventTimeQuery = (alias: string) => `COALESCE(json_extract(${alias}.snapshot,'$.eventAt'),${alias}.event_at)`;
+
 type ListedRows = {
   summaries: {
     revisionId: string;
@@ -57,6 +60,70 @@ export class Store {
 
   private statement(sql: string, ...params: unknown[]) {
     return this.db.prepare(sql).bind(...params);
+  }
+
+  private skipJobsStatement(id?: string) {
+    const payload = "CASE WHEN json_valid(jobs.payload) THEN jobs.payload ELSE '{}' END";
+
+    return this.statement(
+      `UPDATE jobs SET state='done',error='skipped_before_cutoff',lease_token=NULL,lease_until=NULL,dispatched_at=NULL
+       WHERE state IN ('pending','deferred','held','failed') ${id === undefined ? '' : 'AND id=?'} AND (
+         (type='ingest' AND json_type(${payload},'$.item.modifiedAt') IN ('integer','real')
+           AND json_extract(${payload},'$.item.modifiedAt')<${eventCutoffQuery})
+         OR (type='analyze' AND EXISTS(SELECT 1 FROM revisions r
+           WHERE r.id=json_extract(${payload},'$.revisionId') AND ${eventTimeQuery('r')}<${eventCutoffQuery}))
+         OR (type='publish' AND EXISTS(SELECT 1 FROM deliveries d JOIN revisions r ON r.id=d.revision_id
+           WHERE d.id=json_extract(${payload},'$.deliveryId') AND ${eventTimeQuery('r')}<${eventCutoffQuery}))
+       )`,
+      ...(id === undefined ? [] : [id]),
+    );
+  }
+
+  private skipDeliveriesStatement(now: number) {
+    return this.statement(
+      `UPDATE deliveries SET state='stale',error='skipped_before_cutoff',updated_at=?
+       WHERE state IN ('ready','held','preview') AND EXISTS(
+         SELECT 1 FROM revisions r WHERE r.id=deliveries.revision_id AND ${eventTimeQuery('r')}<${eventCutoffQuery}
+       )`,
+      now,
+    );
+  }
+
+  /** 初回滞留などを除外する固定境界を返す。未設定時は0。 */
+  async eventCutoff(): Promise<number> {
+    return (await this.db.prepare(`SELECT ${eventCutoffQuery} AS cutoff`).first<number>('cutoff')) ?? 0;
+  }
+
+  /** 固定境界より古い公開・更新日時かを判定する。 */
+  async isBeforeCutoff(eventAt: number): Promise<boolean> {
+    return eventAt < (await this.eventCutoff());
+  }
+
+  /** 固定境界を前進させ、古い未実行ジョブと未送信配信を原子的に対象外にする。 */
+  async skipBefore(cutoff: number, now: number) {
+    if (!Number.isSafeInteger(cutoff) || cutoff < 0 || cutoff > now) {
+      throw new Error('invalid_event_cutoff');
+    }
+
+    const result = await this.db.batch([
+      this.statement(
+        "INSERT INTO settings(key,value) VALUES('event_cutoff',?) ON CONFLICT(key) DO UPDATE SET value=CAST(MAX(CAST(settings.value AS INTEGER),CAST(excluded.value AS INTEGER)) AS TEXT)",
+        String(cutoff),
+      ),
+      this.skipJobsStatement(),
+      this.skipDeliveriesStatement(now),
+    ]);
+
+    return {
+      cutoff: await this.eventCutoff(),
+      jobsSkipped: result[1]!.meta.changes,
+      deliveriesSkipped: result[2]!.meta.changes,
+    };
+  }
+
+  /** 境界保存後に再投入された古い未実行ジョブと未送信配信も対象外にする。 */
+  async skipOldWork(now: number) {
+    await this.db.batch([this.skipJobsStatement(), this.skipDeliveriesStatement(now)]);
   }
 
   /** 同一IDのジョブは再登録せず、指定した実行時刻でジョブを登録する。 */
@@ -130,6 +197,8 @@ export class Store {
 
   /** 実行可能なジョブをリース付きで取得する。 */
   async claimJob(id: string, now: number): Promise<Job | null> {
+    await this.skipJobsStatement(id).run();
+
     return (
       (await this.orm
         .update(tables.jobs)
@@ -477,8 +546,10 @@ export class Store {
           revision_id: tables.threats.revision_id,
           material: tables.threats.material,
           generation: tables.threats.generation,
+          event_at: sql<number | null>`${sql.raw(eventTimeQuery('revisions'))}`,
         })
         .from(tables.threats)
+        .leftJoin(tables.revisions, eq(tables.revisions.id, tables.threats.revision_id))
         .where(eq(tables.threats.key, key))
         .get();
       if (!old) {
@@ -504,7 +575,9 @@ export class Store {
         rows.map((r) => JSON.parse(r.data) as Evidence),
       );
       const material = materialKey(current);
-      const changed = !old.revision_id || material !== old.material;
+      const cutoff = await this.eventCutoff();
+      const crossesCutoff = old.event_at !== null && old.event_at < cutoff && current.eventAt >= cutoff;
+      const changed = !old.revision_id || material !== old.material || crossesCutoff;
       const id = changed ? await digest(`${key}:${material}:${current.eventAt}`) : old.revision_id!;
       const evidenceHash = await digest(
         JSON.stringify(current.evidence.map((e) => ({ ...e, fetchedAt: 0, modifiedAt: 0 }))),
@@ -514,7 +587,7 @@ export class Store {
 
       const result = await this.db.batch([
         this.statement(
-          'INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible',
+          `INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) AND ${eventCutoffQuery}=? ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible`,
           id,
           key,
           JSON.stringify(current),
@@ -527,21 +600,24 @@ export class Store {
           now,
           key,
           old.generation,
+          cutoff,
         ),
         this.statement(
-          'UPDATE threats SET revision_id=?,material=?,generation=generation+1 WHERE key=? AND generation=?',
+          `UPDATE threats SET revision_id=?,material=?,generation=generation+1 WHERE key=? AND generation=? AND ${eventCutoffQuery}=?`,
           id,
           material,
           key,
           old.generation,
+          cutoff,
         ),
         this.statement(
-          "UPDATE deliveries SET state='stale',error='superseded',updated_at=? WHERE state IN ('ready','held','preview') AND revision_id IN (SELECT id FROM revisions WHERE threat_key=? AND id<>?) AND EXISTS(SELECT 1 FROM threats WHERE key=? AND revision_id=?)",
+          `UPDATE deliveries SET state='stale',error='superseded',updated_at=? WHERE state IN ('ready','held','preview') AND revision_id IN (SELECT id FROM revisions WHERE threat_key=? AND id<>?) AND EXISTS(SELECT 1 FROM threats WHERE key=? AND revision_id=?) AND ${eventCutoffQuery}=?`,
           now,
           key,
           id,
           key,
           id,
+          cutoff,
         ),
       ]);
       if (result[1]?.meta.changes) {
@@ -564,7 +640,12 @@ export class Store {
       .select({ id: tables.revisions.id, evidence_hash: tables.revisions.evidence_hash })
       .from(tables.revisions)
       .innerJoin(tables.threats, eq(tables.threats.revision_id, tables.revisions.id))
-      .where(eq(tables.revisions.eligible, 1))
+      .where(
+        and(
+          eq(tables.revisions.eligible, 1),
+          sql`${sql.raw(eventTimeQuery('revisions'))}>=${sql.raw(eventCutoffQuery)}`,
+        ),
+      )
       .orderBy(asc(tables.revisions.priority), desc(tables.revisions.event_at))
       .limit(limit)
       .all();
@@ -682,27 +763,23 @@ export class Store {
     state = 'ready',
     reason: string | null = null,
   ) {
-    await this.orm
-      .insert(tables.deliveries)
-      .values({
-        id,
-        target_id: target,
-        revision_id: revision,
-        state,
-        urgent: urgent ? 1 : 0,
-        available_at: now,
-        error: reason,
-        created_at: now,
-        updated_at: now,
-      })
-      .onConflictDoUpdate({
-        target: [tables.deliveries.target_id, tables.deliveries.revision_id],
-        set: {
-          state: sql`CASE WHEN ${tables.deliveries.state} IN ('held','preview') THEN ${state} ELSE ${tables.deliveries.state} END`,
-          error: sql`CASE WHEN ${tables.deliveries.state} IN ('held','preview') THEN ${reason} ELSE ${tables.deliveries.error} END`,
-        },
-      })
-      .run();
+    await this.statement(
+      `INSERT INTO deliveries(id,target_id,revision_id,state,urgent,available_at,error,created_at,updated_at)
+       SELECT ?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM revisions r WHERE r.id=? AND ${eventTimeQuery('r')}<${eventCutoffQuery})
+       ON CONFLICT(target_id,revision_id) DO UPDATE SET
+         state=CASE WHEN deliveries.state IN ('held','preview') THEN excluded.state ELSE deliveries.state END,
+         error=CASE WHEN deliveries.state IN ('held','preview') THEN excluded.error ELSE deliveries.error END`,
+      id,
+      target,
+      revision,
+      state,
+      urgent ? 1 : 0,
+      now,
+      reason,
+      now,
+      now,
+      revision,
+    ).run();
   }
 
   /** 配信状態をIDで取得する。 */
@@ -830,7 +907,7 @@ export class Store {
         day,
       ),
       this.statement(
-        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
+        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND NOT EXISTS(SELECT 1 FROM revisions cr WHERE cr.id=deliveries.revision_id AND ${eventTimeQuery('cr')}<${eventCutoffQuery}) AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
         token,
         now + 300000,
         day,

@@ -151,6 +151,100 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('改訂の保存日時が古くても最新更新が新しければ要約して投稿する', async () => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    await db
+      .prepare('UPDATE revisions SET event_at=? WHERE id=?')
+      .bind(now - 5 * 86400000, id)
+      .run();
+    await store.skipBefore(now - 6 * 3600000, now);
+    await bot.tick(now);
+
+    await processAll(bot, now);
+
+    expect((await store.list('deliveries')).filter((delivery) => delivery.state === 'sent')).toHaveLength(2);
+    expect((await store.budgetStatus(now))?.calls).toBe(2);
+  });
+
+  it('改訂の保存日時が新しくても最新更新が鮮度期限より古ければ要約しない', async () => {
+    const { bot, store } = harness();
+    const old = now - 5 * 86400000;
+    const [id] = await store.ingest({ ...item, publishedAt: old, modifiedAt: old }, now);
+    await db.prepare('UPDATE revisions SET event_at=? WHERE id=?').bind(now, id).run();
+    await bot.tick(now);
+
+    await processAll(bot, now);
+
+    expect(await store.list('deliveries')).toEqual([]);
+    expect((await store.budgetStatus(now))?.calls ?? 0).toBe(0);
+  });
+
+  it('足切りAPIは固定境界を保存し古いQueue配送を無視して新しい更新は処理する', async () => {
+    const { bot, store } = harness();
+    const clock = Date.now();
+    const [oldId] = await store.ingest({ ...item, modifiedAt: clock - 7 * 3600000 }, clock);
+    const response = await adminRequest(
+      new Request('https://bot.example/admin/backlog/skip', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify({ hours: 6 }),
+      }),
+      bot,
+      'token',
+    );
+    expect(response?.status).toBe(200);
+    const result = (await response!.json()) as { cutoff: number };
+    expect(result.cutoff).toBeGreaterThanOrEqual(clock - 6 * 3600000);
+    await store.enqueue('old-queued', 'analyze', { revisionId: oldId }, clock);
+    await bot.runJob('old-queued', clock);
+    expect(await store.getJob('old-queued')).toMatchObject({ state: 'done', error: 'skipped_before_cutoff' });
+    expect(await store.budgetStatus(clock)).toBeNull();
+    const [newId] = await store.ingest({ ...item, modifiedAt: clock, remediation: 'Upgrade to 3.0' }, clock);
+    expect(newId).toBeDefined();
+    await store.enqueue('new-queued', 'analyze', { revisionId: newId }, clock);
+    await bot.runJob('new-queued', clock);
+    expect((await store.budgetStatus(clock))?.calls).toBeGreaterThan(0);
+  });
+
+  it('要約生成中に境界が進んだら意味検証や配信作成へ進まない', async () => {
+    const { bot: original, store } = harness();
+    const [id] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    let calls = 0;
+    const bot = new Bot(original.env, original.config, {
+      ...original.providers,
+      llm: {
+        async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+          calls++;
+          await store.skipBefore(now - 1, now);
+          return original.providers.llm!.generateStructured(request, schema);
+        },
+      },
+    });
+    await store.enqueue('running-cutoff', 'analyze', { revisionId: id }, now);
+
+    await bot.runJob('running-cutoff', now);
+
+    expect(calls).toBe(1);
+    expect(await store.list('deliveries')).toEqual([]);
+    expect(await store.getJob('running-cutoff')).toMatchObject({ state: 'done' });
+  });
+
+  it.each([0, -1, '6', null])('足切りAPIは不正な時間数を拒否し境界を保存しない: %s', async (hours) => {
+    const { bot, store } = harness();
+    const response = await adminRequest(
+      new Request('https://bot.example/admin/backlog/skip', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify({ hours }),
+      }),
+      bot,
+      'token',
+    );
+    expect(response?.status).toBe(400);
+    expect(await store.eventCutoff()).toBe(0);
+  });
+
   it('収集と要約が先に大量登録されても投稿を先にキューへ送る', async () => {
     const { bot, store, queue } = harness();
     bot.config.budget.queueOperations = 3;

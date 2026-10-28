@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Store } from '../src/store';
 import { loadConfig } from '../src/config';
 import type { SourceItem } from '../src/domain';
@@ -58,6 +58,108 @@ beforeEach(async () => {
 });
 
 describe('durable work', () => {
+  it('固定境界より古い未実行ジョブと配信だけを終了し履歴と所有権を保持する', async () => {
+    const cutoff = now - 6 * 3600000;
+    const [oldId] = await store.ingest({ ...item, modifiedAt: cutoff - 1 }, now);
+    const [newId] = await store.ingest({ ...item, id: 'new', cves: ['CVE-2026-2222'], modifiedAt: cutoff }, now);
+    await store.enqueue('old', 'analyze', { revisionId: oldId }, now);
+    await store.enqueue('new', 'analyze', { revisionId: newId }, now);
+    await store.enqueue('running', 'analyze', { revisionId: oldId }, now);
+    const running = await store.claimJob('running', now);
+    await store.enqueue('ingest', 'ingest', { sourceId: 'jvn', item: { ...item, modifiedAt: cutoff - 1 } }, now);
+    await store.enqueue('collect', 'collect', { sourceId: 'jvn' }, now);
+    for (const state of ['ready', 'held', 'preview', 'sending', 'unknown', 'sent']) {
+      await store.createDelivery(state, state, oldId!, false, now, state);
+    }
+    await store.enqueue('publish', 'publish', { deliveryId: 'ready' }, now);
+
+    const result = await store.skipBefore(cutoff, now);
+
+    expect(result).toMatchObject({ cutoff, jobsSkipped: 3, deliveriesSkipped: 3 });
+    expect(await store.getJob('old')).toMatchObject({ state: 'done', error: 'skipped_before_cutoff' });
+    expect(await store.getJob('running')).toEqual(running);
+    expect((await store.outbox(now)).map((job) => job.id).sort()).toEqual(['collect', 'new']);
+    for (const state of ['sending', 'unknown', 'sent']) {
+      expect((await store.getDelivery(state))?.state).toBe(state);
+    }
+    expect((await store.currentRevisions()).map((revision) => revision.id)).toEqual([newId]);
+    expect(await store.getRevision(oldId!)).not.toBeNull();
+    expect(await store.skipBefore(cutoff - 1, now)).toMatchObject({ cutoff, jobsSkipped: 0 });
+  });
+
+  it('足切り後に再投入された古いQueueジョブを取得せず理由付きで終了する', async () => {
+    await store.skipBefore(now - 1, now);
+    const [id] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    await store.enqueue('late', 'analyze', { revisionId: id }, now);
+
+    expect(await store.claimJob('late', now)).toBeNull();
+    expect(await store.getJob('late')).toMatchObject({ state: 'done', attempts: 0, error: 'skipped_before_cutoff' });
+    await store.createDelivery('late-delivery', 'main', id!, false, now);
+    expect(await store.getDelivery('late-delivery')).toBeNull();
+  });
+
+  it('足切りした脅威の新しいスコア更新は別改訂として配信対象になる', async () => {
+    const [oldId] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    await store.createDelivery('old', 'main', oldId!, false, now);
+    await store.skipBefore(now - 1, now);
+
+    const [newId] = await store.ingest(
+      { ...item, modifiedAt: now, scores: [{ score: 9.8, version: '3.1', issuer: 'JVN' }] },
+      now,
+    );
+
+    expect(newId).not.toBe(oldId);
+    expect((await store.currentRevisions()).map((revision) => revision.id)).toEqual([newId]);
+    await store.createDelivery('new', 'main', newId!, false, now);
+    expect((await store.getDelivery('new'))?.state).toBe('ready');
+    expect((await store.getDelivery('old'))?.state).toBe('stale');
+  });
+
+  it('境界保存前に更新済みの根拠は古い改訂作成日時でも対象外にしない', async () => {
+    const [id] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    await store.ingest({ ...item, modifiedAt: now, scores: [{ score: 9.8, version: '3.1', issuer: 'JVN' }] }, now);
+    await store.enqueue('updated', 'analyze', { revisionId: id }, now);
+
+    await store.skipBefore(now - 1, now);
+
+    expect((await store.currentRevisions()).map((revision) => revision.id)).toEqual([id]);
+    expect(await store.getJob('updated')).toMatchObject({ state: 'pending' });
+  });
+
+  it('取り込みの境界読み取り後に足切りされても新しい更新を再判定する', async () => {
+    const [oldId] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    await store.createDelivery('old', 'main', oldId!, false, now);
+    const spy = vi.spyOn(store, 'eventCutoff').mockImplementationOnce(async () => {
+      await new Store(db).skipBefore(now - 1, now);
+      return 0;
+    });
+
+    const [newId] = await store.ingest({ ...item, modifiedAt: now }, now);
+
+    spy.mockRestore();
+    expect(newId).not.toBe(oldId);
+    await store.createDelivery('new', 'main', newId!, false, now);
+    expect((await store.getDelivery('new'))?.state).toBe('ready');
+    expect((await store.getDelivery('old'))?.state).toBe('stale');
+  });
+
+  it('境界設定と送信準備が競合しても古い配信の予約を拒否し予算と枠を消費しない', async () => {
+    const [id] = await store.ingest({ ...item, modifiedAt: now - 2 }, now);
+    await store.syncTargets([target]);
+    await store.createDelivery('old', target.id, id!, false, now);
+    await store.skipBefore(now - 1, now);
+    await db.prepare("UPDATE deliveries SET state='ready' WHERE id='old'").run();
+
+    expect(await store.reserveDelivery('old', target, now, (await store.getRevision(id!))!.evidence_hash)).toBeNull();
+    expect((await store.list('targets'))[0]?.active_delivery).toBeNull();
+    expect(await store.budgetStatus(now)).toBeNull();
+  });
+
+  it.each([NaN, Infinity, -1, now + 1])('不正な境界を保存せず拒否する: %s', async (cutoff) => {
+    await expect(store.skipBefore(cutoff, now)).rejects.toThrow('invalid_event_cutoff');
+    expect(await store.eventCutoff()).toBe(0);
+  });
+
   it('JSONペイロードとnullのリースを含むジョブ詳細を返しIDが存在しなければnullを返す', async () => {
     const id = "job:'quoted";
     await store.enqueue(id, 'analyze', { revisionId: '日本語' }, now);
@@ -108,6 +210,15 @@ describe('durable work', () => {
     expect(snapshot?.snapshot.evidence[0]?.text).toContain('3.0');
     expect(snapshot?.snapshot.evidence).toHaveLength(1);
     expect(snapshot?.snapshot.evidence[0]?.text).not.toContain('2.0');
+  });
+
+  it('新しい改訂を作成すると旧改訂の未送信配信を無効化する', async () => {
+    const [oldId] = await store.ingest(item, now);
+    await store.createDelivery('old-revision', 'main', oldId!, false, now);
+
+    await store.ingest({ ...item, remediation: 'Upgrade to 3.0', modifiedAt: now + 1 }, now + 1);
+
+    expect(await store.getDelivery('old-revision')).toMatchObject({ state: 'stale', error: 'superseded' });
   });
 
   it('予算を原子的に予約し結果不明の消費量を保持する', async () => {

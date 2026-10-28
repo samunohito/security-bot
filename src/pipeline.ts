@@ -100,6 +100,7 @@ export class Bot {
 
   /** OutboxのジョブをQueuesへ送り、送信結果を記録する。 */
   async flush(now: number) {
+    await this.store.skipOldWork(now);
     await this.store.deferAiJobs(now, this.config.budget, this.config.llm.provider === 'fake' && !this.providers.llm);
 
     for (const job of await this.store.outbox(now)) {
@@ -383,14 +384,19 @@ export class Bot {
 
   private async analyze(id: string, now: number) {
     const revision = await this.store.getRevision(id);
-    if (!revision || !revision.eligible || !(await this.store.isCurrent(id))) {
+    if (
+      !revision ||
+      !revision.eligible ||
+      !(await this.store.isCurrent(id)) ||
+      (await this.store.isBeforeCutoff(revision.snapshot.eventAt))
+    ) {
       return;
     }
 
     const start = await this.store.bootstrapTime(now);
     if (
-      revision.event_at < now - this.config.freshnessSeconds * 1000 ||
-      (revision.kind === 'new' && revision.event_at < start - this.config.initialLookbackSeconds * 1000)
+      revision.snapshot.eventAt < now - this.config.freshnessSeconds * 1000 ||
+      (revision.kind === 'new' && revision.snapshot.eventAt < start - this.config.initialLookbackSeconds * 1000)
     ) {
       return;
     }
@@ -419,6 +425,9 @@ export class Bot {
     }
 
     if (cached.validation.reasons.includes('verification_pending')) {
+      if (await this.store.isBeforeCutoff(revision.snapshot.eventAt)) {
+        return;
+      }
       const verdict = await this.generate(
         {
           system: VERIFY_SYSTEM,
@@ -549,7 +558,8 @@ export class Bot {
       (!target.enabled && !this.config.dryRun) ||
       !revision ||
       !(await this.store.isCurrent(revision.id)) ||
-      revision.event_at < now - this.config.freshnessSeconds * 1000
+      (await this.store.isBeforeCutoff(revision.snapshot.eventAt)) ||
+      revision.snapshot.eventAt < now - this.config.freshnessSeconds * 1000
     ) {
       await this.store.holdDelivery(id, 'disabled_superseded_or_stale', now);
       return;

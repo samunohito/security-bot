@@ -17,11 +17,21 @@ async function main() {
       'ack-duplicate-risk': { type: 'boolean' },
       state: { type: 'string' },
       save: { type: 'boolean' },
+      hours: { type: 'string' },
     },
   });
   const [command, resource, id] = args;
   if (values.save !== undefined && command !== 'generate-summary') {
     throw new Error('--save is only supported for generate-summary');
+  }
+  if (values.hours !== undefined && command !== 'skip-before') {
+    throw new Error('--hours is only supported for skip-before');
+  }
+  if (
+    command === 'skip-before' &&
+    (args.length !== 1 || !values.hours || !Number.isFinite(Number(values.hours)) || Number(values.hours) <= 0)
+  ) {
+    throw new Error('Usage: skip-before --hours HOURS');
   }
 
   if (command === 'preview') {
@@ -73,7 +83,7 @@ async function main() {
 
   if (!command || command === 'help') {
     console.log(
-      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions|summaries; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID [--save]; dry-run REVISION_ID; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
+      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions|summaries; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID [--save]; dry-run REVISION_ID; skip-before --hours HOURS; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
     );
     return;
   }
@@ -96,6 +106,10 @@ async function main() {
   let body: Record<string, unknown> | undefined;
   if (command === 'status') {
     path = '/admin/status';
+  } else if (command === 'skip-before') {
+    path = '/admin/backlog/skip';
+    method = 'POST';
+    body = { hours: Number(values.hours) };
   } else if (
     command === 'list' &&
     ['jobs', 'deliveries', 'sources', 'targets', 'revisions', 'summaries'].includes(resource ?? '')

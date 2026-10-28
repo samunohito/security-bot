@@ -66,20 +66,20 @@
         "enabled": true
       },
       // 通常投稿の間隔（秒）: 60以上の整数。省略時3600。
-      "normalIntervalSeconds": 900,
+      "normalIntervalSeconds": 600,
       // 緊急投稿の間隔（秒）: 60以上の整数。省略時300。
-      "urgentIntervalSeconds": 300,
+      "urgentIntervalSeconds": 60,
       // 通常・緊急を問わない全投稿間の最低間隔（秒）: 60以上の整数。省略時300。
-      "minimumIntervalSeconds": 300,
+      "minimumIntervalSeconds": 60,
       // 通常投稿の日本時間1日あたりの上限: 0以上の整数。省略時10。0は通常投稿を許可しない。
-      "normalDailyLimit": 30,
+      "normalDailyLimit": 100,
       // 緊急投稿の日本時間1日あたりの上限（通常と別枠）: 0以上の整数。省略時10。
-      "urgentDailyLimit": 30,
+      "urgentDailyLimit": 100,
       // 投稿本文の文字数上限: 200〜10000の整数。省略時500。投稿先の制限に合わせる。
-      "maxCharacters": 1000,
+      "maxCharacters": 2000,
       // 公開範囲: "public"（既定）/ "home" / "followers"。
       "visibility": "public"
-    },
+    }
     // {
     //   // 不足のある投稿も許可する投稿先の例。同じSecretを使う必要はない。
     //   "id": "unsafe",
@@ -96,22 +96,19 @@
   "budget": {
     // UTC日ごとのLLM呼び出し上限: 1以上の整数。省略時はmodeのプリセット。
     // Neurons枠を使い切る前に呼び出し回数だけで止まらないよう、余裕を持たせる。
-    "maxCalls": 500,
+    "maxCalls": 5000,
     // 同時に処理するLLM呼び出し数: 1〜20の整数。省略時はmodeのプリセット。
     // wrangler.jsoncのQueue consumerのmax_concurrency（5）に合わせる。
     "concurrency": 5,
     // UTC日ごとの推定Neurons上限: 0より大きい数。省略時はmodeのプリセット。
     // Workers AIの含まれる利用枠は10000 Neurons/UTC日。これはアプリ内の推定上限。
-    "neurons": 10000,
+    "neurons": 50000,
     // UTC日ごとのキュー操作数の概算上限: 1以上の整数。省略時8000。通常配送1件を3操作と見積もる。
     // Workers Paidの月100万操作に対し、31日で概算93万操作。再配送・他の利用分の余裕を残す。
-    "queueOperations": 30000
+    "queueOperations": 180000
   },
   "llm": {
-    // "workers-ai"（既定）/ "fake"（ローカル検証用。意味検証は行わず品質ゲートを通過しない）。
     "provider": "workers-ai",
-    // モデル名: 1文字以上の文字列。省略時は以下のモデル。
-    // workers-aiでモデルを変更する場合は、入力・出力の料金係数を両方とも明示する。
     "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     // LLM入力の最大文字数: 1000〜24000の整数。省略時16000。
     "maxInputCharacters": 16000,

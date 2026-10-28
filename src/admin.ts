@@ -45,6 +45,7 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
         mode: bot.config.mode,
         dryRun: bot.config.dryRun,
         budget: await bot.store.budgetStatus(Date.now()),
+        eventCutoff: await bot.store.eventCutoff(),
         sources: await bot.store.list('sources'),
         targets: await bot.store.list('targets'),
         jobs: await bot.store.list('jobs'),
@@ -89,6 +90,13 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
     const text = await request.text();
     if (text.length > 16384) {
       return json({ error: 'body_too_large' }, 413);
+    }
+
+    if (url.pathname === '/admin/backlog/skip') {
+      const { hours } = z.object({ hours: z.number().positive().finite() }).strict().parse(JSON.parse(text));
+      const now = Date.now();
+
+      return json(await bot.store.skipBefore(Math.floor(now - hours * 3600000), now));
     }
 
     const body = z

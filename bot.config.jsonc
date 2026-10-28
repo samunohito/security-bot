@@ -1,7 +1,7 @@
 {
   // 予算プリセット: "free"（既定）/ "balanced" / "performance"。契約プランは変更しない。
   // maxCalls / concurrency / neurons は順に free: 20/1/8000、balanced: 100/2/30000、performance: 500/5/100000。
-  "mode": "free",
+  "mode": "performance",
   // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信する。
   "dryRun": false,
   // 情報源の既定取得間隔（秒）: 60以上の整数。省略時900。実行は毎分のCronに従う。
@@ -95,13 +95,17 @@
   // プリセットを使う項目は削除する。空オブジェクト{}やbudget全体の省略も可。
   "budget": {
     // UTC日ごとのLLM呼び出し上限: 1以上の整数。省略時はmodeのプリセット。
-    "maxCalls": 40,
+    // Neurons枠を使い切る前に呼び出し回数だけで止まらないよう、余裕を持たせる。
+    "maxCalls": 500,
     // 同時に処理するLLM呼び出し数: 1〜20の整数。省略時はmodeのプリセット。
-    "concurrency": 1,
+    // wrangler.jsoncのQueue consumerのmax_concurrency（5）に合わせる。
+    "concurrency": 5,
     // UTC日ごとの推定Neurons上限: 0より大きい数。省略時はmodeのプリセット。
+    // Workers AIの含まれる利用枠は10000 Neurons/UTC日。これはアプリ内の推定上限。
     "neurons": 10000,
     // UTC日ごとのキュー操作数の概算上限: 1以上の整数。省略時8000。通常配送1件を3操作と見積もる。
-    "queueOperations": 24000
+    // Workers Paidの月100万操作に対し、31日で概算93万操作。再配送・他の利用分の余裕を残す。
+    "queueOperations": 30000
   },
   "llm": {
     // "workers-ai"（既定）/ "fake"（ローカル検証用。意味検証は行わず品質ゲートを通過しない）。

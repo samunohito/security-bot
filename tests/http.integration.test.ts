@@ -37,6 +37,15 @@ describe('Workersの外部HTTP通信', () => {
     });
   });
 
+  it('Workers標準fetchを差し替えずにMisskeyへ送信できる', async () => {
+    const target = loadConfig({ targets: [{ id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' }] })
+      .targets[0]!;
+    expect(await new MisskeyProvider(target, 'test-token').publish({ text: 'local mock only' })).toEqual({
+      id: 'native-fetch',
+      url: 'https://social.example/notes/native-fetch',
+    });
+  });
+
   it('Misskeyのリダイレクトを追従や再送可能な失敗として扱わない', async () => {
     const target = loadConfig({ targets: [{ id: 'main', baseUrl: 'https://social.example', tokenSecret: 'TOKEN' }] })
       .targets[0]!;

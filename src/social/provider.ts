@@ -1,4 +1,5 @@
 import type { PostIntent, PublishedPost } from '../domain';
+import type { PublishDiagnostics } from './diagnostics';
 
 export interface PreparedPost {
   text: string;
@@ -20,6 +21,7 @@ export class PublishError extends Error {
     public kind: 'auth' | 'retry' | 'rejected' | 'unknown',
     message: string,
     public retryAfterMs = 0,
+    public diagnostics?: PublishDiagnostics,
   ) {
     super(message);
   }

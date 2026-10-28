@@ -271,6 +271,66 @@ describe('complete pipeline', () => {
     expect((await store.budgetStatus(now))?.calls ?? 0).toBe(0);
   });
 
+  it.each(['request', 'recording'] as const)(
+    '配信失敗の段階と安全な診断情報をD1・ログに残し、unknownを再送しない: %s',
+    async (phase) => {
+      const { bot: original, store } = harness();
+      let calls = 0;
+      const bot = new Bot(original.env, original.config, {
+        ...original.providers,
+        social: (target) => ({
+          ...original.providers.social!(target),
+          async publish() {
+            calls++;
+            if (phase === 'request') {
+              throw new PublishError('unknown', 'send_result_unknown', 0, {
+                phase,
+                reason: 'dns',
+                exception: 'TypeError',
+                code: 'ENOTFOUND',
+              });
+            }
+            return { id: 'posted', url: 'https://social.example/notes/posted' };
+          },
+        }),
+      });
+      if (phase === 'recording') {
+        vi.spyOn(bot.store, 'finishDelivery').mockRejectedValue(
+          new Error('sensitive SQL or secret-token private-post'),
+        );
+      }
+      const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        await store.ingest(item, now);
+        await bot.tick(now);
+        await processAll(bot, now);
+        const rows = await store.list('deliveries');
+        for (const row of rows) {
+          expect(row.state).toBe('unknown');
+          expect(JSON.parse(row.error!)).toMatchObject({
+            reason: phase === 'request' ? 'send_result_unknown' : 'publication_or_recording_result_unknown',
+            diagnostics: {
+              phase,
+              ...(phase === 'request' ? { reason: 'dns', code: 'ENOTFOUND' } : { exception: 'Error' }),
+            },
+          });
+        }
+        const messages = log.mock.calls.map(([text]) => JSON.parse(String(text)));
+        expect(messages).toHaveLength(2);
+        expect(messages[0]).toMatchObject({ event: 'publication_failed', kind: 'unknown', diagnostics: { phase } });
+        expect(JSON.stringify(messages)).not.toContain('secret-token');
+        expect(JSON.stringify(rows)).not.toContain('sensitive SQL');
+        const attempts = await db.prepare('SELECT error FROM attempts').all<{ error: string }>();
+        expect(attempts.results.map((row) => JSON.parse(row.error).diagnostics.phase)).toEqual([phase, phase]);
+        await bot.tick(now + 400000);
+        await processAll(bot, now + 400000);
+        expect(calls).toBe(2);
+      } finally {
+        log.mockRestore();
+      }
+    },
+  );
+
   it('受理された可能性がある送信はCronで復旧した後も再送しない', async () => {
     const { bot, store } = harness({ failure: 'unknown' });
     await store.ingest(item, now);

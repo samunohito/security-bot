@@ -2,22 +2,39 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "security-bot",
   "main": "src/index.ts",
-  "rules": [{ "type": "Text", "globs": ["**/bot.config.jsonc"], "fallthrough": true }],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/bot.config.jsonc"],
+      "fallthrough": true
+    }
+  ],
   "compatibility_date": "2026-10-27",
   "compatibility_flags": ["nodejs_compat"],
-  "triggers": { "crons": ["* * * * *"] },
-  "observability": { "enabled": true },
-  "ai": { "binding": "AI" },
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "ai": {
+    "binding": "AI"
+  },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "security-bot",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "2cd1aa02-33b6-4217-b43e-5729ed2d199d",
       "migrations_dir": "migrations"
     }
   ],
   "queues": {
-    "producers": [{ "binding": "JOBS", "queue": "security-bot-jobs" }],
+    "producers": [
+      {
+        "binding": "JOBS",
+        "queue": "security-bot-jobs"
+      }
+    ],
     "consumers": [
       {
         "queue": "security-bot-jobs",

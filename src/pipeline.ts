@@ -9,6 +9,7 @@ import { evidencePrompt } from './llm/evidence';
 import { summarySchema, validateSummary, validateVerdict, verdictSchema, type Verdict } from './quality';
 import { createSocialProvider } from './social';
 import { PublishError, type PreparedPost, type SocialProvider } from './social/provider';
+import { describePublishFailure } from './social/diagnostics';
 import { sourceProvider } from './sources';
 import type { SourceProvider } from './sources/provider';
 import { Store, type Job, type Revision } from './store';
@@ -590,35 +591,52 @@ export class Bot {
       throw new Deferred(now + 60000, 'publication_slot_or_current_evidence_unavailable');
     }
 
+    let phase: 'request' | 'recording' = 'request';
+    const started = Date.now();
     try {
       const post = await provider.publish(prepared);
+      phase = 'recording';
       // SNSの受理とD1記録は同一トランザクションにできないため、この記録で失敗した場合も送信結果は不明として扱う。
       await this.store.finishDelivery(id, post, now, reservation.lease_token!);
     } catch (error) {
-      if (error instanceof PublishError) {
-        await this.store.deliveryError(
-          id,
-          error.kind === 'unknown' ? 'unknown' : error.kind === 'retry' ? 'retry' : 'held',
-          error.message,
-          now,
-          now + Math.max(error.retryAfterMs, 60000),
-          reservation.lease_token!,
-        );
-        if (error.kind === 'auth') {
-          await this.store.pauseTarget(target.id, true, 'social_auth_failed', {
-            deliveryId: id,
-            token: reservation.lease_token!,
-          });
-        }
-      } else {
-        await this.store.deliveryError(
-          id,
-          'unknown',
-          'publication_or_recording_result_unknown',
-          now,
-          now + 60000,
-          reservation.lease_token!,
-        );
+      const failure =
+        error instanceof PublishError
+          ? error
+          : new PublishError(
+              'unknown',
+              'publication_or_recording_result_unknown',
+              0,
+              describePublishFailure(error, phase),
+            );
+      const detail = failure.diagnostics
+        ? JSON.stringify({ reason: failure.message, diagnostics: failure.diagnostics })
+        : failure.message;
+      console.warn(
+        JSON.stringify({
+          event: 'publication_failed',
+          deliveryId: id,
+          targetId: target.id,
+          revisionId: revision.id,
+          kind: failure.kind,
+          reason: failure.message,
+          diagnostics: failure.diagnostics,
+          elapsedMs: Date.now() - started,
+        }),
+      );
+
+      await this.store.deliveryError(
+        id,
+        failure.kind === 'unknown' ? 'unknown' : failure.kind === 'retry' ? 'retry' : 'held',
+        detail,
+        now,
+        now + Math.max(failure.retryAfterMs, 60000),
+        reservation.lease_token!,
+      );
+      if (failure.kind === 'auth') {
+        await this.store.pauseTarget(target.id, true, 'social_auth_failed', {
+          deliveryId: id,
+          token: reservation.lease_token!,
+        });
       }
     }
   }

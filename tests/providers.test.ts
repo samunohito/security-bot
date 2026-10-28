@@ -215,6 +215,151 @@ describe('social adapters', () => {
     });
   });
 
+  it.each([
+    { error: new Error('DNS resolution failed: secret-token'), reason: 'dns', exception: 'Error' },
+    { error: new Error('TLS handshake failed: secret-token'), reason: 'tls', exception: 'Error' },
+    {
+      error: new TypeError('Illegal invocation: function called with incorrect this reference'),
+      reason: 'illegal_invocation',
+      exception: 'TypeError',
+    },
+    {
+      error: new DOMException('timeout with sensitive body', 'TimeoutError'),
+      reason: 'timeout',
+      exception: 'TimeoutError',
+    },
+    { error: new DOMException('aborted secret', 'AbortError'), reason: 'aborted', exception: 'AbortError' },
+    {
+      error: new TypeError('fetch failed', { cause: Object.assign(new Error('private URL'), { code: 'ENOTFOUND' }) }),
+      reason: 'dns',
+      exception: 'TypeError',
+      code: 'ENOTFOUND',
+    },
+    {
+      error: new TypeError('fetch failed', {
+        cause: Object.assign(new Error('private URL'), { code: 'CERT_HAS_EXPIRED' }),
+      }),
+      reason: 'tls',
+      exception: 'TypeError',
+      code: 'CERT_HAS_EXPIRED',
+    },
+    {
+      error: new TypeError('fetch failed', { cause: Object.assign(new Error('private URL'), { code: 'ECONNRESET' }) }),
+      reason: 'connection',
+      exception: 'TypeError',
+      code: 'ECONNRESET',
+    },
+    {
+      error: Object.assign(new Error('secret token and private post'), { name: 'secret-name', code: 'secret-code' }),
+      reason: 'unknown',
+      exception: 'Error',
+    },
+  ])(
+    '送信例外を分類し、秘密のメッセージや未知の識別子を診断情報へ含めない: $reason',
+    async ({ error, reason, exception, code }) => {
+      const provider = new MisskeyProvider(target, 'secret-token', async () => {
+        throw error;
+      });
+      const failure = await provider.publish({ text: 'private-post' }).catch((value: unknown) => value);
+      expect(failure).toMatchObject({
+        kind: 'unknown',
+        message: 'send_result_unknown',
+        diagnostics: { phase: 'request', reason, exception, ...(code ? { code } : {}) },
+      });
+      const serialized = JSON.stringify(failure);
+      for (const sensitive of [
+        'secret-token',
+        'private-post',
+        'secret-name',
+        'secret-code',
+        'private URL',
+        'sensitive body',
+      ]) {
+        expect(serialized).not.toContain(sensitive);
+      }
+    },
+  );
+
+  it.each([
+    { status: 403, kind: 'auth', reason: 'social_auth_failed' },
+    { status: 429, kind: 'retry', reason: 'social_rate_limited' },
+    { status: 502, kind: 'unknown', reason: 'social_server_result_unknown' },
+    { status: 307, kind: 'unknown', reason: 'social_redirect_result_unknown' },
+    { status: 400, kind: 'rejected', reason: 'social_rejected' },
+  ])('HTTP失敗のステータスを診断情報へ記録する: $status', async ({ status, kind, reason }) => {
+    const provider = new MisskeyProvider(target, 'secret-token', async () =>
+      Response.json({ error: { code: 'INVALID_PARAM', message: 'private-post secret-token' } }, { status }),
+    );
+    const failure = await provider.publish({ text: 'private-post' }).catch((value: unknown) => value);
+    expect(failure).toMatchObject({ kind, message: reason, diagnostics: { phase: 'response', status } });
+    expect(JSON.stringify(failure)).not.toContain('secret-token');
+    expect(JSON.stringify(failure)).not.toContain('private-post');
+  });
+
+  it.each([200, 400])('応答JSONの解析失敗はステータスと例外種別を残す: %s', async (status) => {
+    const provider = new MisskeyProvider(
+      target,
+      'secret-token',
+      async () => new Response('secret-token private-post', { status }),
+    );
+    const failure = await provider.publish({ text: 'private-post' }).catch((value: unknown) => value);
+    expect(failure).toMatchObject({
+      kind: status === 200 ? 'unknown' : 'rejected',
+      diagnostics: { phase: 'response_body', status, exception: 'SyntaxError' },
+    });
+    expect(JSON.stringify(failure)).not.toContain('secret-token');
+  });
+
+  it.each([
+    { status: 401, code: 'INVALID_TOKEN', kind: 'auth' },
+    { status: 403, code: 'PERMISSION_DENIED', kind: 'auth' },
+    { status: 429, code: 'RATE_LIMIT_EXCEEDED', kind: 'retry' },
+    { status: 500, code: 'INTERNAL_ERROR', kind: 'unknown' },
+  ])('認証・レート制限・サーバー障害でも既知APIコードを取得する: $status', async ({ status, code, kind }) => {
+    const provider = new MisskeyProvider(target, 'secret-token', async () =>
+      Response.json({ error: { code } }, { status }),
+    );
+    await expect(provider.publish({ text: 'private-post' })).rejects.toMatchObject({
+      kind,
+      diagnostics: { phase: 'response', status, apiCode: code },
+    });
+  });
+
+  it.each(['invalid JSON', 'x'.repeat(17000)])(
+    'エラー本文が不正または大きくてもHTTPによる分類を維持する: %#',
+    async (body) => {
+      const provider = new MisskeyProvider(target, 'secret-token', async () => new Response(body, { status: 403 }));
+      await expect(provider.publish({ text: 'private-post' })).rejects.toMatchObject({
+        kind: 'auth',
+        diagnostics: { phase: 'response', status: 403 },
+      });
+    },
+  );
+
+  it.each([
+    { code: 'INVALID_PARAM', expected: 'INVALID_PARAM' },
+    { code: 'TOKEN_secret-token_PRIVATE_POST', expected: 'unrecognized' },
+  ])('Misskeyの既知APIコードだけを診断情報へ残す: $expected', async ({ code, expected }) => {
+    const provider = new MisskeyProvider(target, 'secret-token', async () =>
+      Response.json({ error: { code } }, { status: 400 }),
+    );
+    const failure = await provider.publish({ text: 'private-post' }).catch((value: unknown) => value);
+    expect(failure).toMatchObject({ diagnostics: { phase: 'response', status: 400, apiCode: expected } });
+    expect(JSON.stringify(failure)).not.toContain('secret-token');
+  });
+
+  it.each([null, [], { createdNote: { id: 123 } }])(
+    '不正な成功応答の構造を送信結果不明として扱う: %j',
+    async (body) => {
+      const provider = new MisskeyProvider(target, 'secret-token', async () => Response.json(body));
+      await expect(provider.publish({ text: 'private-post' })).rejects.toMatchObject({
+        kind: 'unknown',
+        message: 'invalid_social_response',
+        diagnostics: { phase: 'response_body', status: 200, exception: 'ZodError' },
+      });
+    },
+  );
+
   it('引用が明示的に拒否された場合にのみURLで代替する', async () => {
     const bodies: Record<string, unknown>[] = [];
     const provider = new MisskeyProvider(target, 'secret', async (_url, init) => {

@@ -5,7 +5,7 @@
   // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信する。
   "dryRun": false,
   // 情報源の既定取得間隔（秒）: 60以上の整数。省略時900。実行は毎分のCronに従う。
-  "pollIntervalSeconds": 900,
+  "pollIntervalSeconds": 300,
 
   // 情報源の配列。指定すると既定のJVN・JPCERT・KEV・NVDを全置換する。[]も可。
   "sources": [

@@ -7,6 +7,7 @@ import { loadConfig } from '../src/config';
 import { Store } from '../src/store';
 import { PublishError } from '../src/social/provider';
 import { UrlReferenceProvider } from '../src/social/url-reference';
+import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
 import type { LlmProvider, LlmRequest } from '../src/llm/provider';
 import type { PostIntent, SourceItem } from '../src/domain';
 
@@ -38,6 +39,7 @@ const summary = {
   overview: claim('Acmeに脆弱性', 'Acme 1.0 allows remote execution.'),
   impact: claim('Acme 1.0が対象', 'Acme 1.0'),
   action: claim('2.0へ更新', 'Upgrade to 2.0.'),
+  actionKind: 'routine_update' as const,
   uncertainties: [],
 };
 function makeConfig(dryRun = false) {
@@ -92,7 +94,7 @@ function harness(
       const value = schema.safeParse(summary).success
         ? {
             ...summary,
-            ...(options.partial ? { impact: null, action: null } : {}),
+            ...(options.partial ? { impact: null, action: null, actionKind: null } : {}),
           }
         : {
             supported: !options.contradiction,
@@ -151,6 +153,87 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it.each([null, undefined])('新しく生成した対策に種別がなければ非表示のまま送らず保留する: %s', async (actionKind) => {
+    const { bot: original, store } = harness();
+    const bot = new Bot(original.env, original.config, {
+      ...original.providers,
+      llm: {
+        async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+          if (request.system === SUMMARY_SYSTEM) {
+            return {
+              value: schema.parse({ ...summary, subject: claim('Acme', 'Acme 1.0'), actionKind }),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          }
+          return original.providers.llm!.generateStructured(request, schema);
+        },
+      },
+    });
+    await store.ingest(item, now);
+    await bot.tick(now);
+    await processAll(bot, now);
+    expect((await store.list('deliveries')).map((delivery) => delivery.state)).toEqual(['held', 'held']);
+  });
+
+  it.each(['routine_update', 'workaround'] as const)(
+    '対象・分類と対策種別を保存して意味検証し、投稿へ反映する: %s',
+    async (actionKind) => {
+      const { bot: original, store } = harness();
+      const quoted = 'Acme is a VPN product. Disable its management interface as a workaround.';
+      const metadata = {
+        ...summary,
+        subject: claim('Acme', 'Acme 1.0'),
+        overview: claim('任意コード実行の脆弱性', 'Acme 1.0 allows remote execution.'),
+        actionKind,
+        action: actionKind === 'workaround' ? claim('管理画面を無効にしてください。', quoted) : summary.action,
+        tags: [
+          { kind: 'usage', ...claim('ネットワーク', quoted) },
+          { kind: 'product', ...claim('Acme', 'Acme 1.0') },
+        ],
+      };
+      const texts: string[] = [];
+      const verified: unknown[] = [];
+      const bot = new Bot(original.env, original.config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            if (request.system === VERIFY_SYSTEM) {
+              verified.push(request.data);
+            } else {
+              expect(request.system).toBe(SUMMARY_SYSTEM);
+            }
+            return {
+              value: schema.parse(
+                request.system === VERIFY_SYSTEM
+                  ? { supported: true, contradictions: [], unsupportedClaims: [] }
+                  : metadata,
+              ),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+          async publish(post) {
+            texts.push(post.text);
+            return { id: 'metadata', url: 'https://social.example/notes/metadata' };
+          },
+        }),
+      });
+      const [id] = await store.ingest({ ...item, text: `${item.text} ${quoted}` }, now);
+      await bot.tick(now);
+      await processAll(bot, now);
+
+      expect(texts).toHaveLength(2);
+      expect(texts[0]).toContain('[High] CVE-2026-1111\nAcme\n任意コード実行の脆弱性');
+      expect(texts[0]).toContain('#ネットワーク #ACME');
+      expect(texts[0]!.includes('対策:')).toBe(actionKind === 'workaround');
+      expect(verified).toEqual([expect.objectContaining({ summary: metadata })]);
+      const revision = (await store.getRevision(id!))!;
+      expect((await store.getSummary(revision))?.summary).toEqual(metadata);
+      expect((await store.budgetStatus(now))?.calls).toBe(2);
+    },
+  );
+
   it('改訂の保存日時が古くても最新更新が新しければ要約して投稿する', async () => {
     const { bot, store } = harness();
     const [id] = await store.ingest(item, now);
@@ -650,6 +733,70 @@ describe('complete pipeline', () => {
     await processAll(bot, now);
     expect((await store.list('deliveries')).find((d) => d.target_id === 'main')?.state).toBe('held');
   });
+
+  it.each([null, 'workaround'] as const)(
+    '短縮後も対策種別を検証し、合格した対象・タグ・回避策を再送準備で再利用する: %s',
+    async (shortenedActionKind) => {
+      const config = makeConfig();
+      config.targets = config.targets.filter((target) => target.id === 'main');
+      const quoted = 'Disable the management interface as a workaround.';
+      const metadata = {
+        ...summary,
+        subject: claim('Acme', 'Acme 1.0'),
+        action: claim('管理画面を無効にしてください。', quoted),
+        actionKind: 'workaround',
+        tags: [{ kind: 'product', ...claim('Acme', 'Acme 1.0') }],
+      };
+      const texts: string[] = [];
+      const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            const value =
+              request.system === VERIFY_SYSTEM
+                ? { supported: true, contradictions: [], unsupportedClaims: [] }
+                : request.system.includes('at most 45')
+                  ? { ...metadata, actionKind: shortenedActionKind }
+                  : { ...metadata, overview: claim('脆弱性'.repeat(200), 'Acme 1.0 allows remote execution.') };
+            return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(250).prepare(intent),
+          async publish(post) {
+            texts.push(post.text);
+            if (texts.length === 1) {
+              throw new PublishError('retry', 'test_rate_limit', 60000);
+            }
+            return { id: 'short', url: 'https://social.example/notes/short' };
+          },
+        }),
+      });
+      const [id] = await bot.store.ingest({ ...item, text: `${item.text} ${quoted}` }, now);
+      await bot.tick(now);
+      await processAll(bot, now);
+      const delivery = (await bot.store.list('deliveries'))[0]!;
+      const revision = (await bot.store.getRevision(id!))!;
+      const shortened = await bot.store.getShortened(delivery.id, revision.evidence_hash);
+
+      if (shortenedActionKind === null) {
+        expect(delivery.state).toBe('held');
+        expect(shortened?.validation).toMatchObject({ valid: false, reasons: ['action: missing action kind'] });
+        expect(texts).toEqual([]);
+        return;
+      }
+
+      expect(shortened?.summary).toEqual(metadata);
+      expect(texts).toHaveLength(1);
+      expect(texts[0]).toContain('対策: 管理画面を無効にしてください。');
+      expect(texts[0]).toContain('#ACME');
+      const calls = (await bot.store.budgetStatus(now))?.calls;
+      await bot.tick(now + 3600000);
+      await processAll(bot, now + 3600000);
+      expect(texts).toEqual([texts[0], texts[0]]);
+      expect((await bot.store.budgetStatus(now))?.calls).toBe(calls);
+      expect((await bot.store.list('deliveries'))[0]?.state).toBe('sent');
+    },
+  );
 });
 
 describe('management boundary', () => {

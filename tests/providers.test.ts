@@ -195,6 +195,8 @@ describe('social adapters', () => {
     expect(post.url).toBe('https://social.example/notes/new');
     expect(payload.renoteId).toBe('old');
     expect(payload.noExtractMentions).toBe(true);
+    expect(payload.noExtractHashtags).toBe(false);
+    expect(payload.noExtractEmojis).toBe(true);
     expect(String(payload.text)).toContain('未確認');
   });
 

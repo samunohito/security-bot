@@ -1,21 +1,41 @@
 import type { PostIntent } from '../domain';
+import { formatHashtags } from './tags';
 
 function escapeText(text: string): string {
-  return text.replace(/[@#$*`<>\[\]\\]/g, (s) => `${s}\u200b`);
+  return text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[@#$*`<>\[\]\\]/g, (s) => `${s}\u200b`);
 }
 
 /** 投稿意図を日本語のセキュリティ告知文に整形する。 */
 export function formatPost(intent: PostIntent): string {
   const summary = intent.summary;
-  const label = intent.kind === 'new' ? '' : intent.kind === 'correction' ? '訂正 ' : '更新 ';
+  const label = intent.kind === 'new' ? '' : intent.kind === 'correction' ? '[訂正] ' : '[更新] ';
+  const hasCve = /^CVE-\d{4}-\d{4,}$/.test(intent.key);
+  const subject = escapeText(summary.subject?.text ?? intent.title);
+  const overview = summary.overview ? escapeText(summary.overview.text) : '概要: 未確認';
+  const heading = [
+    ...(hasCve ? [`${label}[${escapeText(intent.severity)}] ${intent.key}`] : []),
+    `${hasCve ? '' : label}${subject}`,
+    ...(overview !== subject ? [overview] : []),
+  ].join('\n');
+  const showAction =
+    summary.action &&
+    ['unpatched', 'workaround', 'additional_steps', 'patch_warning'].includes(summary.actionKind ?? '');
 
   return [
-    `【${label}${intent.severity}】${intent.key}`,
-    escapeText(intent.title),
-    `概要: ${escapeText(summary.overview?.text ?? '未確認')}`,
-    `影響: ${escapeText(summary.impact?.text ?? '未確認')}`,
-    `対策: ${escapeText(summary.action?.text ?? '未確認')}`,
-    ...(summary.uncertainties.length ? [`未確認事項: ${escapeText(summary.uncertainties.join('／'))}`] : []),
+    heading,
+    hasCve
+      ? `影響: ${escapeText(summary.impact?.text ?? '未確認')}`
+      : summary.impact
+        ? escapeText(summary.impact.text)
+        : '',
+    showAction ? `対策: ${escapeText(summary.action!.text)}` : '',
+    summary.uncertainties.length ? `未確認事項: ${escapeText(summary.uncertainties.join('／'))}` : '',
     `出典: ${intent.sources.join('\n')}`,
-  ].join('\n');
+    formatHashtags(summary.tags ?? []),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }

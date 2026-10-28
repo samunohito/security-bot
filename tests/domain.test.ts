@@ -106,7 +106,7 @@ describe('security domain', () => {
         },
         sources: [],
       });
-      expect(text).toContain('【未評価】');
+      expect(text).toContain('[未評価]');
     }
   });
 });

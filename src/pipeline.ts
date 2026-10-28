@@ -146,7 +146,9 @@ export class Bot {
 
     const input = this.promptEvidence(revision);
     const summary = await this.generate({ system: SUMMARY_SYSTEM, data: input }, summarySchema, now);
-    const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key);
+    const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key, {
+      requireActionKind: true,
+    });
     let verdict: Verdict | null = null;
     if (this.config.llm.provider === 'fake' && !this.providers.llm) {
       validation.valid = false;
@@ -413,7 +415,9 @@ export class Bot {
         summarySchema,
         now,
       );
-      const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key);
+      const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key, {
+        requireActionKind: true,
+      });
       if (fakeLlm) {
         validation.reasons = ['fake_provider', ...validation.reasons];
       } else if (validation.valid) {
@@ -509,7 +513,9 @@ export class Bot {
           summarySchema,
           now,
         );
-        const check = validateSummary(shorter, revision.snapshot.evidence, revision.threat_key);
+        const check = validateSummary(shorter, revision.snapshot.evidence, revision.threat_key, {
+          requireActionKind: true,
+        });
         cached = {
           summary: shorter,
           validation: {

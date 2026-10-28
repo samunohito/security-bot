@@ -45,8 +45,8 @@ describe('ローカルProvider', () => {
     };
     const published = await provider.publish(provider.prepare(intent));
     expect(output).toHaveLength(1);
-    expect(output[0]).toContain('【High】CVE-2026-1111');
-    expect(output[0]).toContain('概要: 更新してください。');
+    expect(output[0]).toContain('[High] CVE-2026-1111');
+    expect(output[0]).toContain('告知\n更新してください。');
     expect(published.url).toContain('preview.invalid');
     expect(() => new StdoutSocialProvider(10).prepare(intent)).toThrow('post_too_long');
   });

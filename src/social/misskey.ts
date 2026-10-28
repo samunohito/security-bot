@@ -103,7 +103,7 @@ export class MisskeyProvider implements SocialProvider {
           renoteId: post.referenceId,
           visibility: this.target.visibility,
           noExtractMentions: true,
-          noExtractHashtags: true,
+          noExtractHashtags: false,
           noExtractEmojis: true,
         }),
         signal: AbortSignal.timeout(15000),

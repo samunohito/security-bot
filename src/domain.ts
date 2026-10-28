@@ -49,11 +49,20 @@ export interface Claim {
   evidence: { id: string; quote: string }[];
 }
 
+export type ActionKind = 'routine_update' | 'unpatched' | 'workaround' | 'additional_steps' | 'patch_warning';
+
+export interface SummaryTag extends Claim {
+  kind: 'usage' | 'theme' | 'vendor' | 'product';
+}
+
 export interface Summary {
   overview: Claim | null;
   impact: Claim | null;
   action: Claim | null;
   uncertainties: string[];
+  subject?: Claim | null;
+  actionKind?: ActionKind | null;
+  tags?: SummaryTag[];
 }
 
 export interface Validation {

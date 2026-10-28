@@ -30,6 +30,94 @@ const claim = (text: string, quote: string) => ({
 });
 
 describe('quality validation', () => {
+  const base: Summary = {
+    overview: claim('Acmeに脆弱性', 'Acme 1.0 allows remote execution.'),
+    impact: claim('任意のコードが実行される', 'Acme 1.0 allows remote execution.'),
+    action: claim('更新してください', 'Upgrade to 2.0.'),
+    uncertainties: [],
+  };
+
+  it('対象名・固定分類・抽出した製品名を引用付きで受け取り、旧要約も読める', () => {
+    expect(summarySchema.safeParse(base).success).toBe(true);
+    expect(
+      summarySchema.safeParse({
+        ...base,
+        subject: claim('Acme', 'Acme 1.0 allows remote execution.'),
+        actionKind: 'routine_update',
+        tags: [{ kind: 'product', ...claim('Acme', 'Acme 1.0 allows remote execution.') }],
+      }).success,
+    ).toBe(true);
+    expect(validateSummary(base, evidence, 'CVE-2026-1111')).toMatchObject({ valid: true, complete: true });
+  });
+
+  it.each(['.NET', 'AT&T', 'C#'])('記号を含む正当な抽出名称も引用付きで受け取る: %s', (text) => {
+    const summary = { ...base, tags: [{ kind: 'product' as const, ...claim(text, text) }] };
+    expect(summarySchema.safeParse(summary).success).toBe(true);
+    expect(
+      validateSummary(summary, [{ ...evidence[0]!, text: `${evidence[0]!.text} ${text}` }], 'CVE-2026-1111').valid,
+    ).toBe(true);
+  });
+
+  it('対象名・タグにも架空の引用と複数CVEへの曖昧な帰属を許可しない', () => {
+    const summary = {
+      ...base,
+      subject: claim('Acme', '架空の引用'),
+      tags: [{ kind: 'product' as const, ...claim('Acme', 'Acme 1.0') }],
+    };
+    expect(validateSummary(summary, evidence, 'CVE-2026-1111').valid).toBe(false);
+    expect(
+      validateSummary({ ...base, tags: summary.tags }, [{ ...evidence[0]!, scope: 'article' }], 'CVE-2026-1111').valid,
+    ).toBe(false);
+  });
+
+  it('引用にない製品名と固定候補にない分類を拒否する', () => {
+    const tags = [{ kind: 'product' as const, ...claim('Other Product', 'Acme 1.0') }];
+    expect(validateSummary({ ...base, tags }, evidence, 'CVE-2026-1111').valid).toBe(false);
+    expect(
+      summarySchema.safeParse({
+        ...base,
+        tags: [{ kind: 'usage', ...claim('勝手な分類', 'Acme 1.0') }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('用途の重複・テーマの過剰選択・対策本文のない例外指定を拒否する', () => {
+    const ref = claim('ネットワーク', 'Acme 1.0');
+    expect(
+      validateSummary(
+        {
+          ...base,
+          tags: [
+            { ...ref, kind: 'usage' as const },
+            { ...ref, kind: 'usage' as const },
+          ],
+        },
+        evidence,
+        'CVE-2026-1111',
+      ).valid,
+    ).toBe(false);
+    expect(
+      validateSummary(
+        { ...base, tags: ['認証', '暗号', 'パス処理'].map((text) => ({ ...ref, text, kind: 'theme' as const })) },
+        evidence,
+        'CVE-2026-1111',
+      ).valid,
+    ).toBe(false);
+    expect(
+      validateSummary({ ...base, action: null, actionKind: 'unpatched' as const }, evidence, 'CVE-2026-1111').valid,
+    ).toBe(false);
+  });
+
+  it('新規生成では対策種別を必須にし、旧要約の読み取りでは省略を許可する', () => {
+    expect(validateSummary(base, evidence, 'CVE-2026-1111').valid).toBe(true);
+    expect(validateSummary(base, evidence, 'CVE-2026-1111', { requireActionKind: true }).valid).toBe(false);
+    expect(
+      validateSummary({ ...base, actionKind: 'routine_update' as const }, evidence, 'CVE-2026-1111', {
+        requireActionKind: true,
+      }).valid,
+    ).toBe(true);
+  });
+
   it('緩和方針の場合にのみ不完全な情報を許可する', () => {
     const summary = {
       overview: claim('Acmeに脆弱性', 'Acme 1.0 allows remote execution.'),

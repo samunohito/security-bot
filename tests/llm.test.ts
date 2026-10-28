@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { evidencePrompt } from '../src/llm/evidence';
 import type { Evidence } from '../src/domain';
+import { WorkersAiProvider } from '../src/llm/workers-ai';
+import { loadConfig } from '../src/config';
+import { summarySchema } from '../src/quality';
+import { SUMMARY_SYSTEM } from '../src/llm/prompts';
 
 const key = 'CVE-2026-1111';
 const evidence: Evidence = {
@@ -26,6 +30,29 @@ const evidence: Evidence = {
 };
 
 describe('LLMへ渡す根拠', () => {
+  it('対象・対策種別・タグを要求するJSON SchemaをWorkers AIへ渡す', async () => {
+    let payload: Record<string, unknown> = {};
+    const provider = new WorkersAiProvider(
+      {
+        async run(_model, input) {
+          payload = input as Record<string, unknown>;
+          return { response: { overview: null, impact: null, action: null, uncertainties: [] } };
+        },
+      },
+      loadConfig().llm,
+    );
+    await provider.generateStructured({ system: SUMMARY_SYSTEM, data: evidencePrompt(key, [evidence]) }, summarySchema);
+    expect(payload.response_format).toMatchObject({
+      type: 'json_schema',
+      json_schema: {
+        required: expect.arrayContaining(['subject', 'actionKind', 'tags']),
+        properties: {
+          tags: { maxItems: 6 },
+        },
+      },
+    });
+  });
+
   it('長いナビゲーションより本文の概要と影響・対策を優先し、引用可能な抜粋を渡す', () => {
     const result = evidencePrompt(key, [evidence]).evidence[0]!;
     expect(result.text).toContain(`${key} Acmeに脆弱性。`);

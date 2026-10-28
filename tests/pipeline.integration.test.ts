@@ -151,6 +151,132 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('収集と要約が先に大量登録されても投稿を先にキューへ送る', async () => {
+    const { bot, store, queue } = harness();
+    bot.config.budget.queueOperations = 3;
+    for (let index = 0; index < 25; index++) {
+      await store.enqueue(`analyze:${index}`, 'analyze', { revisionId: 'missing' }, now - 1000);
+    }
+    await store.enqueue('collect:first', 'collect', { sourceId: 'jvn' }, now - 2000);
+    await store.enqueue('publish:first', 'publish', { deliveryId: 'ready' }, now);
+
+    await bot.flush(now);
+
+    expect(queue).toEqual(['publish:first']);
+    expect((await store.budgetStatus(now))?.queue_ops).toBe(3);
+  });
+
+  it.each(['calls', 'neurons'] as const)('AIの%s上限では未生成の要約を配送せず翌UTC日まで延期する', async (limit) => {
+    const { bot, store, queue } = harness();
+    const [id] = await store.ingest(item, now);
+    await store.enqueue('analyze:waiting', 'analyze', { revisionId: id }, now);
+    await db
+      .prepare('INSERT INTO budgets(day,calls,neurons) VALUES(?,?,?)')
+      .bind(
+        '2026-10-27',
+        limit === 'calls' ? bot.config.budget.maxCalls : 0,
+        limit === 'neurons' ? bot.config.budget.neurons : 0,
+      )
+      .run();
+
+    await bot.flush(now);
+    await bot.flush(now + 60000);
+
+    expect(queue).toEqual([]);
+    expect(await store.getJob('analyze:waiting')).toMatchObject({
+      state: 'deferred',
+      attempts: 0,
+      error: 'AI_daily_budget_exhausted',
+      available_at: now + 86400000,
+    });
+    expect((await store.budgetStatus(now))?.queue_ops).toBe(0);
+    await bot.flush(now + 86400000);
+    expect(queue).toEqual(['analyze:waiting']);
+  });
+
+  it('AI予算切れでも検証済み要約から配信を作り実行中と直近配送済みの所有権を維持する', async () => {
+    const { bot, store, queue } = harness();
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    await store.saveSummary(revision, summary, { valid: true, complete: true, reasons: [] }, now);
+    const [uncachedId] = await store.ingest({ ...item, id: '2', cves: ['CVE-2026-2222'] }, now);
+    await store.enqueue('cached', 'analyze', { revisionId: id }, now);
+    await store.enqueue('running', 'analyze', { revisionId: uncachedId }, now);
+    const running = await store.claimJob('running', now);
+    await store.enqueue('dispatched', 'analyze', { revisionId: uncachedId }, now);
+    await store.markDispatched('dispatched', now);
+    await db.prepare('INSERT INTO budgets(day,calls) VALUES(?,?)').bind('2026-10-27', bot.config.budget.maxCalls).run();
+
+    await bot.flush(now);
+    expect(queue).toEqual(['cached']);
+    await bot.runJob('cached', now);
+    expect((await store.list('deliveries')).map((delivery) => delivery.state)).toEqual(['ready', 'ready']);
+    expect(await store.getJob('running')).toEqual(running);
+    expect(await store.getJob('dispatched')).toMatchObject({ state: 'pending', dispatched_at: now, error: null });
+    await bot.flush(now + 120001);
+    expect(await store.getJob('dispatched')).toMatchObject({ state: 'deferred', attempts: 0 });
+    expect(await store.getJob('running')).toEqual(running);
+  });
+
+  it('古い根拠のキャッシュとFake由来のキャッシュはAI予算切れで延期する', async () => {
+    const { bot, store, queue } = harness();
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    await store.saveSummary(
+      { ...revision, evidence_hash: 'old' },
+      summary,
+      { valid: true, complete: true, reasons: [] },
+      now,
+    );
+    await store.enqueue('stale', 'analyze', { revisionId: id }, now);
+    const [fakeId] = await store.ingest({ ...item, id: '2', cves: ['CVE-2026-2222'] }, now);
+    await store.saveSummary(
+      (await store.getRevision(fakeId!))!,
+      summary,
+      { valid: false, complete: true, reasons: ['fake_provider'] },
+      now,
+    );
+    await store.enqueue('fake', 'analyze', { revisionId: fakeId }, now);
+    await db.prepare('INSERT INTO budgets(day,calls) VALUES(?,?)').bind('2026-10-27', bot.config.budget.maxCalls).run();
+
+    await bot.flush(now);
+
+    expect(queue).toEqual([]);
+    expect(await store.getJob('stale')).toMatchObject({ state: 'deferred', attempts: 0 });
+    expect(await store.getJob('fake')).toMatchObject({ state: 'deferred', attempts: 0 });
+  });
+
+  it('AI予算を使わないFake LLMのジョブは日次予算切れでも配送する', async () => {
+    const { bot, store, queue } = harness();
+    bot.config.llm.provider = 'fake';
+    delete bot.providers.llm;
+    const [id] = await store.ingest(item, now);
+    await store.enqueue('fake', 'analyze', { revisionId: id }, now);
+    await db.prepare('INSERT INTO budgets(day,calls) VALUES(?,?)').bind('2026-10-27', bot.config.budget.maxCalls).run();
+
+    await bot.flush(now);
+
+    expect(queue).toEqual(['fake']);
+  });
+
+  it('意味検証待ちのキャッシュはAI予算切れで配送前に延期する', async () => {
+    const { bot, store, queue } = harness();
+    const [id] = await store.ingest(item, now);
+    await store.saveSummary(
+      (await store.getRevision(id!))!,
+      summary,
+      { valid: false, complete: true, reasons: ['verification_pending'] },
+      now,
+    );
+    await store.enqueue('verify', 'analyze', { revisionId: id }, now);
+    await db.prepare('INSERT INTO budgets(day,calls) VALUES(?,?)').bind('2026-10-27', bot.config.budget.maxCalls).run();
+
+    await bot.flush(now);
+
+    expect(queue).toEqual([]);
+    expect(await store.getJob('verify')).toMatchObject({ state: 'deferred', attempts: 0 });
+  });
+
   it('設定のFake LLMで要約を生成し、意味検証を通過したことにはしない', async () => {
     const config = loadConfig({ sources: [], llm: { provider: 'fake' }, targets: [{ id: 'local', provider: 'fake' }] });
     const bot = new Bot(

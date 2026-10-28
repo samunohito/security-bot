@@ -74,7 +74,7 @@ export class Store {
       .run();
   }
 
-  /** 配信待ちのOutboxジョブを実行可能時刻順に取得する。 */
+  /** 投稿を優先し、同じ優先度では実行可能時刻順にOutboxジョブを取得する。 */
   async outbox(now: number, limit = 20): Promise<Job[]> {
     return this.orm
       .select()
@@ -86,9 +86,37 @@ export class Store {
           or(isNull(tables.jobs.dispatched_at), lt(tables.jobs.dispatched_at, now - 120000)),
         ),
       )
-      .orderBy(asc(tables.jobs.available_at))
+      .orderBy(sql`CASE WHEN ${tables.jobs.type}='publish' THEN 0 ELSE 1 END`, asc(tables.jobs.available_at))
       .limit(limit)
       .all();
+  }
+
+  /** 当日のAI予算切れで生成・検証が必要な未配送ジョブを翌UTC日まで延期する。 */
+  async deferAiJobs(now: number, budget: Config['budget'], fakeLlm: boolean) {
+    if (fakeLlm) {
+      return;
+    }
+
+    const until = Math.floor(now / 86400000) * 86400000 + 86400000;
+    await this.statement(
+      `UPDATE jobs SET state='deferred',error='AI_daily_budget_exhausted',available_at=?,dispatched_at=NULL
+       WHERE type='analyze' AND state IN ('pending','deferred') AND available_at<=?
+       AND (dispatched_at IS NULL OR dispatched_at<?)
+       AND EXISTS(SELECT 1 FROM budgets WHERE day=? AND (calls>=? OR neurons>=?))
+       AND EXISTS(
+         SELECT 1 FROM revisions r LEFT JOIN summaries s ON s.revision_id=r.id AND s.evidence_hash=r.evidence_hash
+         WHERE r.id=json_extract(CASE WHEN json_valid(jobs.payload) THEN jobs.payload ELSE '{}' END,'$.revisionId')
+         AND (s.revision_id IS NULL OR EXISTS(
+           SELECT 1 FROM json_each(s.validation,'$.reasons') WHERE value IN ('verification_pending','fake_provider')
+         ))
+       )`,
+      until,
+      now,
+      now - 120000,
+      utcDay(now),
+      budget.maxCalls,
+      budget.neurons,
+    ).run();
   }
 
   /** 未完了ジョブをキューへ送ったことを記録する。 */

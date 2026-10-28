@@ -95,13 +95,13 @@
   // プリセットを使う項目は削除する。空オブジェクト{}やbudget全体の省略も可。
   "budget": {
     // UTC日ごとのLLM呼び出し上限: 1以上の整数。省略時はmodeのプリセット。
-    "maxCalls": 20,
+    "maxCalls": 40,
     // 同時に処理するLLM呼び出し数: 1〜20の整数。省略時はmodeのプリセット。
     "concurrency": 1,
     // UTC日ごとの推定Neurons上限: 0より大きい数。省略時はmodeのプリセット。
-    "neurons": 8000,
+    "neurons": 10000,
     // UTC日ごとのキュー操作数の概算上限: 1以上の整数。省略時8000。通常配送1件を3操作と見積もる。
-    "queueOperations": 16000
+    "queueOperations": 24000
   },
   "llm": {
     // "workers-ai"（既定）/ "fake"（ローカル検証用。意味検証は行わず品質ゲートを通過しない）。

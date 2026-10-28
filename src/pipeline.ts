@@ -100,6 +100,8 @@ export class Bot {
 
   /** OutboxのジョブをQueuesへ送り、送信結果を記録する。 */
   async flush(now: number) {
+    await this.store.deferAiJobs(now, this.config.budget, this.config.llm.provider === 'fake' && !this.providers.llm);
+
     for (const job of await this.store.outbox(now)) {
       if (!(await this.store.reserveQueueOperations(now, this.config.budget.queueOperations))) {
         break;

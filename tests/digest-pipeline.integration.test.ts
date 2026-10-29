@@ -303,6 +303,9 @@ it('複数分割の一部がunknownでも成功した分割を再送せず残り
   );
   await bot.tick(boundary + 120000);
   await drain(bot, boundary + 120000);
+  expect(sent).toHaveLength(2);
+  await bot.tick(boundary + 360000);
+  await drain(bot, boundary + 360000);
   expect(sent).toHaveLength(3);
   expect(new Set(sent).size).toBe(3);
   expect((await bot.store.list('deliveries')).every((delivery) => delivery.state === 'sent')).toBe(true);

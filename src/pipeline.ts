@@ -113,19 +113,37 @@ export class Bot {
 
   /** OutboxのジョブをQueuesへ送り、送信結果を記録する。 */
   async flush(now: number) {
+    const started = Date.now();
+    const currentTime = () => now + Math.max(0, Date.now() - started);
     await this.store.skipOldWork(now);
     await this.store.deferAiJobs(now, this.config.budget, this.config.llm.provider === 'fake' && !this.providers.llm);
 
     for (const job of await this.store.outbox(now)) {
-      if (!(await this.store.reserveQueueOperations(now, this.config.budget.queueOperations))) {
-        break;
+      const token = await this.store.reserveDispatch(job.id, currentTime(), this.config.budget.queueOperations);
+      if (!token) {
+        continue;
       }
 
+      if (!(await this.store.beginDispatch(job.id, token, currentTime()))) {
+        continue;
+      }
+      let accepted = false;
       try {
         await this.env.JOBS.send({ id: job.id });
-        await this.store.markDispatched(job.id, now);
-      } catch {
-        console.warn(JSON.stringify({ event: 'queue_enqueue_failed', job: job.id }));
+        accepted = true;
+        await this.store.markDispatched(job.id, currentTime(), token);
+      } catch (error) {
+        // 送信成功後の記録失敗を、同じ文言のQueue拒否と混同しない。
+        const rejected =
+          !accepted &&
+          error instanceof Error &&
+          /(?:^|:\s*)(?:Too Many Requests|Storage Limit Exceeded)(?:\s+\(\d+\))?(?:$|[.!])/i.test(error.message);
+        if (rejected) {
+          await this.store.retryDispatch(job.id, token, currentTime() + 60000);
+        }
+        console.warn(
+          JSON.stringify({ event: rejected ? 'queue_enqueue_rejected' : 'queue_enqueue_unknown', job: job.id }),
+        );
         break;
       }
     }
@@ -846,7 +864,9 @@ export class Bot {
 
     const reservation = await this.store.reserveDelivery(id, target, now, expectedEvidenceHash, prepared);
     if (!reservation) {
-      throw new Deferred(now + 60000, 'publication_slot_or_current_evidence_unavailable');
+      const until = await this.store.nextPublicationAt(delivery, target, now);
+      await this.store.deferDelivery(id, until, now);
+      throw new Deferred(until, 'publication_slot_or_current_evidence_unavailable');
     }
 
     let phase: 'request' | 'recording' = 'request';

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, lte, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, lte, ne, or, sql } from 'drizzle-orm';
 import { drizzle, type DrizzleD1Database } from 'drizzle-orm/d1';
 import * as tables from './db/schema';
 import type { Config, SourceConfig, TargetConfig } from './config';
@@ -74,7 +74,7 @@ export class Store {
     const payload = "CASE WHEN json_valid(jobs.payload) THEN jobs.payload ELSE '{}' END";
 
     return this.statement(
-      `UPDATE jobs SET state='done',error='skipped_before_cutoff',lease_token=NULL,lease_until=NULL,dispatched_at=NULL
+      `UPDATE jobs SET state='done',error='skipped_before_cutoff',lease_token=NULL,lease_until=NULL,dispatched_at=NULL,dispatch_token=NULL,dispatch_until=NULL
        WHERE state IN ('pending','deferred','held','failed') ${id === undefined ? '' : 'AND id=?'} AND (
          (type='ingest' AND json_type(${payload},'$.item.modifiedAt') IN ('integer','real')
            AND json_extract(${payload},'$.item.modifiedAt')<${eventCutoffQuery}
@@ -169,6 +169,8 @@ export class Store {
           state: 'pending',
           available_at: availableAt,
           dispatched_at: null,
+          dispatch_token: null,
+          dispatch_until: null,
           lease_until: null,
           lease_token: null,
           attempts: 0,
@@ -201,7 +203,7 @@ export class Store {
         and(
           inArray(tables.jobs.state, ['pending', 'deferred']),
           lte(tables.jobs.available_at, now),
-          or(isNull(tables.jobs.dispatched_at), lt(tables.jobs.dispatched_at, now - 120000)),
+          sql`COALESCE(${tables.jobs.dispatch_until},${tables.jobs.dispatched_at}+${this.dispatchWaitMs()},0)<=${now}`,
         ),
       )
       .orderBy(sql`CASE WHEN ${tables.jobs.type}='publish' THEN 0 ELSE 1 END`, asc(tables.jobs.available_at))
@@ -217,9 +219,9 @@ export class Store {
 
     const until = Math.floor(now / 86400000) * 86400000 + 86400000;
     await this.statement(
-      `UPDATE jobs SET state='deferred',error='AI_daily_budget_exhausted',available_at=?,dispatched_at=NULL
+      `UPDATE jobs SET state='deferred',error='AI_daily_budget_exhausted',available_at=?,dispatched_at=NULL,dispatch_token=NULL,dispatch_until=NULL
        WHERE type='analyze' AND state IN ('pending','deferred') AND available_at<=?
-       AND (dispatched_at IS NULL OR dispatched_at<?)
+       AND COALESCE(dispatch_until,dispatched_at+?,0)<=?
        AND EXISTS(SELECT 1 FROM budgets WHERE day=? AND (calls>=? OR neurons>=?))
        AND EXISTS(
          SELECT 1 FROM revisions r LEFT JOIN summaries s ON s.revision_id=r.id AND s.evidence_hash=r.evidence_hash
@@ -230,20 +232,85 @@ export class Store {
        )`,
       until,
       now,
-      now - 120000,
+      this.dispatchWaitMs(),
+      now,
       utcDay(now),
       budget.maxCalls,
       budget.neurons,
     ).run();
   }
 
-  /** 未完了ジョブをキューへ送ったことを記録する。 */
-  async markDispatched(id: string, now: number) {
-    await this.orm
-      .update(tables.jobs)
-      .set({ dispatched_at: now })
-      .where(and(eq(tables.jobs.id, id), inArray(tables.jobs.state, ['pending', 'deferred'])))
-      .run();
+  private dispatchWaitMs() {
+    // 送信開始後の中断では受理時刻が不明なため、保持期間にconsumerの最大実行時間を加える。
+    return ((this.config?.queue.messageRetentionSeconds ?? 86400) + 900) * 1000;
+  }
+
+  /** 配送権と操作予算を同じトランザクションで確保し、競合した配送では予算を消費しない。 */
+  async reserveDispatch(id: string, now: number, limit: number): Promise<string | null> {
+    const token = crypto.randomUUID();
+    const result = await this.db.batch([
+      this.statement('INSERT OR IGNORE INTO budgets(day) VALUES(?)', utcDay(now)),
+      this.statement(
+        `UPDATE jobs SET dispatch_token=?,dispatch_until=?,dispatched_at=NULL
+        WHERE id=? AND state IN ('pending','deferred') AND available_at<=?
+        AND COALESCE(dispatch_until,dispatched_at+?,0)<=?
+        AND EXISTS(SELECT 1 FROM budgets WHERE day=? AND queue_ops+3<=?) RETURNING dispatch_token`,
+        token,
+        now + 180000,
+        id,
+        now,
+        this.dispatchWaitMs(),
+        now,
+        utcDay(now),
+        limit,
+      ),
+      this.statement(
+        `UPDATE budgets SET queue_ops=queue_ops+3 WHERE day=?
+        AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND dispatch_token=?)`,
+        utcDay(now),
+        id,
+        token,
+      ),
+    ]);
+
+    return result[1]!.results.length > 0 ? token : null;
+  }
+
+  /** 所有中の配送だけ送信開始を許可し、記録中断時もQueueの保持期間まで再投入を抑える。 */
+  async beginDispatch(id: string, token: string, now: number): Promise<boolean> {
+    const row = await this.statement(
+      `UPDATE jobs SET dispatch_until=? WHERE id=? AND dispatch_token=?
+      AND dispatch_until>? AND state IN ('pending','deferred') RETURNING id`,
+      now + this.dispatchWaitMs(),
+      id,
+      token,
+      now,
+    ).first();
+
+    return row !== null;
+  }
+
+  /** 同じ配送所有者の送信成功だけを記録し、consumerが進めた状態を上書きしない。 */
+  async markDispatched(id: string, now: number, token: string) {
+    await this.statement(
+      `UPDATE jobs SET dispatched_at=?,dispatch_until=? WHERE id=? AND dispatch_token=?
+      AND state IN ('pending','deferred')`,
+      now,
+      now + this.dispatchWaitMs(),
+      id,
+      token,
+    ).run();
+  }
+
+  /** Queueが未受理と明示した配送だけを所有者条件付きで延期し、再試行を可能にする。 */
+  async retryDispatch(id: string, token: string, until: number) {
+    await this.statement(
+      `UPDATE jobs SET dispatch_token=NULL,dispatch_until=NULL,dispatched_at=NULL,available_at=MAX(available_at,?)
+       WHERE id=? AND dispatch_token=? AND state IN ('pending','deferred')`,
+      until,
+      id,
+      token,
+    ).run();
   }
 
   /** 実行可能なジョブをリース付きで取得する。 */
@@ -255,6 +322,9 @@ export class Store {
         .update(tables.jobs)
         .set({
           state: 'running',
+          dispatch_token: null,
+          dispatch_until: null,
+          dispatched_at: null,
           lease_token: crypto.randomUUID(),
           lease_until: now + 180000,
           attempts: sql`${tables.jobs.attempts}+1`,
@@ -297,6 +367,8 @@ export class Store {
         error,
         available_at: when,
         dispatched_at: null,
+        dispatch_token: null,
+        dispatch_until: null,
         lease_until: null,
       })
       .where(and(eq(tables.jobs.id, job.id), eq(tables.jobs.lease_token, job.lease_token)))
@@ -312,7 +384,7 @@ export class Store {
         now,
       ),
       this.statement(
-        "UPDATE jobs SET state=CASE WHEN attempts>=5 THEN 'held' ELSE 'pending' END,error=CASE WHEN attempts>=5 THEN 'resource_limit_or_worker_lease_expired' ELSE error END,dispatched_at=NULL,lease_until=NULL WHERE state='running' AND lease_until<?",
+        "UPDATE jobs SET state=CASE WHEN attempts>=5 THEN 'held' ELSE 'pending' END,error=CASE WHEN attempts>=5 THEN 'resource_limit_or_worker_lease_expired' ELSE error END,dispatched_at=NULL,dispatch_token=NULL,dispatch_until=NULL,lease_until=NULL WHERE state='running' AND lease_until<?",
         now,
       ),
       this.statement(
@@ -906,10 +978,73 @@ export class Store {
     return this.orm
       .select()
       .from(tables.deliveries)
-      .where(and(eq(tables.deliveries.state, 'ready'), lte(tables.deliveries.available_at, now)))
+      .where(
+        and(
+          eq(tables.deliveries.state, 'ready'),
+          lte(tables.deliveries.available_at, now),
+          sql`NOT EXISTS(SELECT 1 FROM jobs j WHERE j.type='publish' AND j.state IN ('pending','deferred','running')
+          AND json_extract(j.payload,'$.deliveryId')=${tables.deliveries.id})`,
+        ),
+      )
       .orderBy(desc(tables.deliveries.urgent), asc(tables.deliveries.created_at))
       .limit(50)
       .all();
+  }
+
+  /** 投稿間隔・日次枠と既知の送信中リースから、次に予約を試せる時刻を返す。 */
+  async nextPublicationAt(
+    delivery: Pick<Delivery, 'target_id' | 'urgent'>,
+    target: TargetConfig,
+    now: number,
+  ): Promise<number> {
+    const account = await this.orm.select().from(tables.targets).where(eq(tables.targets.id, delivery.target_id)).get();
+    const quotas = await this.orm
+      .select()
+      .from(tables.quotas)
+      .where(and(eq(tables.quotas.target_id, delivery.target_id), eq(tables.quotas.day, publicationDay(now))))
+      .all();
+    const used = (bucket: string) => quotas.find((quota) => quota.bucket === bucket)?.used ?? 0;
+    const last = delivery.urgent ? account?.last_urgent_at : account?.last_normal_at;
+    const interval = delivery.urgent ? target.urgentIntervalSeconds : target.normalIntervalSeconds;
+    const limit = delivery.urgent ? target.urgentDailyLimit : target.normalDailyLimit;
+    const midnight = (Math.floor((now + 9 * 3600000) / 86400000) + 1) * 86400000 - 9 * 3600000;
+    let next = Math.max(
+      now + 60000,
+      account?.last_attempt_at == null ? 0 : account.last_attempt_at + target.minimumIntervalSeconds * 1000,
+      last == null ? 0 : last + interval * 1000,
+      used(delivery.urgent ? 'urgent' : 'normal') >= limit ? midnight : 0,
+    );
+
+    if (account?.paused) {
+      next = Math.max(next, now + 300000);
+    }
+    if (account?.active_delivery) {
+      const active = await this.getDelivery(account.active_delivery);
+      next = Math.max(next, active?.state === 'sending' ? (active.lease_until ?? now + 300000) : now + 300000);
+    }
+    if (!delivery.urgent && used('urgent') < target.urgentDailyLimit) {
+      const urgent = await this.db
+        .prepare(
+          "SELECT 1 FROM deliveries WHERE target_id=? AND urgent=1 AND state='ready' AND available_at<=? LIMIT 1",
+        )
+        .bind(delivery.target_id, now)
+        .first();
+      if (urgent && account?.last_urgent_at != null) {
+        next = Math.max(next, account.last_urgent_at + target.urgentIntervalSeconds * 1000);
+      }
+    }
+
+    return next;
+  }
+
+  /** 予約前の配信を延期し、Cronが同じ候補を短周期で再登録しないようにする。 */
+  async deferDelivery(id: string, until: number, now: number) {
+    await this.statement(
+      "UPDATE deliveries SET available_at=MAX(available_at,?),updated_at=? WHERE id=? AND state='ready'",
+      until,
+      now,
+      id,
+    ).run();
   }
 
   /** 同じ脅威について投稿先へ最後に送信した投稿を返す。 */
@@ -981,6 +1116,8 @@ export class Store {
         state: 'pending',
         available_at: now,
         dispatched_at: null,
+        dispatch_token: null,
+        dispatch_until: null,
         lease_until: null,
         attempts: 0,
         error: null,
@@ -997,6 +1134,8 @@ export class Store {
         state: 'pending',
         available_at: now,
         dispatched_at: null,
+        dispatch_token: null,
+        dispatch_until: null,
         lease_until: null,
         lease_token: null,
         attempts: 0,
@@ -1248,23 +1387,6 @@ export class Store {
         .where(eq(tables.budgets.day, utcDay(now)))
         .get()) ?? null
     );
-  }
-
-  /** キュー操作予算を予約できたかを返す。 */
-  async reserveQueueOperations(now: number, limit: number): Promise<boolean> {
-    await this.orm
-      .insert(tables.budgets)
-      .values({ day: utcDay(now) })
-      .onConflictDoNothing()
-      .run();
-    const row = await this.orm
-      .update(tables.budgets)
-      .set({ queue_ops: sql`${tables.budgets.queue_ops}+3` })
-      .where(and(eq(tables.budgets.day, utcDay(now)), sql`${tables.budgets.queue_ops}+3<=${limit}`))
-      .returning({ queue_ops: tables.budgets.queue_ops })
-      .get();
-
-    return Boolean(row);
   }
 
   /** 運用画面向けに許可されたテーブルの行を上限付きで取得する。 */

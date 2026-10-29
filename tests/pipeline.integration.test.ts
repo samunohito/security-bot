@@ -156,6 +156,27 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('通常投稿枠が空くまでジョブと配信を延期し毎分再投入しない', async () => {
+    const { bot, store } = harness();
+    const [id] = await store.ingest(item, now);
+    const revision = (await store.getRevision(id!))!;
+    await store.saveSummary(revision, summary, { valid: true, complete: true, reasons: [] }, now);
+    await store.syncTargets(bot.config.targets);
+    await db.prepare('UPDATE targets SET last_normal_at=? WHERE id=?').bind(now, 'main').run();
+    await store.createDelivery('waiting-slot', 'main', id!, false, now);
+    await store.enqueue('publish:waiting-slot', 'publish', { deliveryId: 'waiting-slot' }, now);
+
+    await bot.runJob('publish:waiting-slot', now);
+
+    expect(await store.getJob('publish:waiting-slot')).toMatchObject({
+      state: 'deferred',
+      available_at: now + 3600000,
+    });
+    expect(await store.getDelivery('waiting-slot')).toMatchObject({ state: 'ready', available_at: now + 3600000 });
+    expect(await store.dueDeliveries(now + 60000)).toHaveLength(0);
+    expect(await store.dueDeliveries(now + 3600000)).toHaveLength(0);
+  });
+
   it.each([null, undefined])('新しく生成した対策に種別がなければ非表示のまま送らず保留する: %s', async (actionKind) => {
     const { bot: original, store } = harness();
     const bot = new Bot(original.env, original.config, {
@@ -384,8 +405,13 @@ describe('complete pipeline', () => {
     await store.enqueue('running', 'analyze', { revisionId: uncachedId }, now);
     const running = await store.claimJob('running', now);
     await store.enqueue('dispatched', 'analyze', { revisionId: uncachedId }, now);
-    await store.markDispatched('dispatched', now);
-    await db.prepare('INSERT INTO budgets(day,calls) VALUES(?,?)').bind('2026-10-27', bot.config.budget.maxCalls).run();
+    const dispatchToken = (await bot.store.reserveDispatch('dispatched', now, bot.config.budget.queueOperations))!;
+    await bot.store.beginDispatch('dispatched', dispatchToken, now);
+    await bot.store.markDispatched('dispatched', now, dispatchToken);
+    await db
+      .prepare('INSERT INTO budgets(day,calls) VALUES(?,?) ON CONFLICT(day) DO UPDATE SET calls=excluded.calls')
+      .bind('2026-10-27', bot.config.budget.maxCalls)
+      .run();
 
     await bot.flush(now);
     expect(queue).toEqual(['cached']);
@@ -394,7 +420,7 @@ describe('complete pipeline', () => {
     expect(await store.getJob('running')).toEqual(running);
     expect(await store.getJob('dispatched')).toMatchObject({ state: 'pending', dispatched_at: now, error: null });
     await bot.flush(now + 120001);
-    expect(await store.getJob('dispatched')).toMatchObject({ state: 'deferred', attempts: 0 });
+    expect(await store.getJob('dispatched')).toMatchObject({ state: 'pending', attempts: 0 });
     expect(await store.getJob('running')).toEqual(running);
   });
 

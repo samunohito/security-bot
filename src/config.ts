@@ -71,6 +71,9 @@ export const configSchema = z.object({
   pollIntervalSeconds: interval,
   sources: z.array(sourceSchema),
   targets: z.array(targetSchema),
+  queue: z
+    .object({ messageRetentionSeconds: z.number().int().min(60).max(1209600).default(86400) })
+    .default({ messageRetentionSeconds: 86400 }),
   budget: z.object({
     maxCalls: z.number().int().positive(),
     concurrency: z.number().int().min(1).max(20),
@@ -165,6 +168,7 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
       pollIntervalSeconds: s.pollIntervalSeconds ?? poll,
     })),
     targets: raw.targets ?? [],
+    queue: raw.queue,
     budget: {
       ...presets[mode],
       ...budgetRaw,

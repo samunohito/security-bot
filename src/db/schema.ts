@@ -30,13 +30,18 @@ export const jobs = sqliteTable(
     state: text().notNull().default('pending'),
     available_at: integer().notNull(),
     dispatched_at: integer(),
+    dispatch_token: text(),
+    dispatch_until: integer(),
     lease_until: integer(),
     lease_token: text(),
     attempts: integer().notNull().default(0),
     error: text(),
     created_at: integer().notNull(),
   },
-  (table) => [index('jobs_due').on(table.state, table.available_at, table.dispatched_at)],
+  (table) => [
+    index('jobs_due').on(table.state, table.available_at, table.dispatched_at),
+    index('jobs_publish_delivery').on(table.state, table.payload).where(sql`${table.type}='publish'`),
+  ],
 );
 
 export const threats = sqliteTable('threats', {

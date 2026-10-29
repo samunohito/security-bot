@@ -1,0 +1,1 @@
+CREATE INDEX `jobs_publish_delivery` ON `jobs` (`state`,`payload`) WHERE "jobs"."type"='publish';

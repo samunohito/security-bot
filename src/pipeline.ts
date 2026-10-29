@@ -137,7 +137,7 @@ export class Bot {
         const rejected =
           !accepted &&
           error instanceof Error &&
-          /(?:^|:\s*)(?:Too Many Requests|Storage Limit Exceeded)(?:$|[.!])/i.test(error.message);
+          /(?:^|:\s*)(?:Too Many Requests|Storage Limit Exceeded)(?:\s+\(\d+\))?(?:$|[.!])/i.test(error.message);
         if (rejected) {
           await this.store.retryDispatch(job.id, token, currentTime() + 60000);
         }

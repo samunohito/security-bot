@@ -107,33 +107,35 @@ it('Queue送信の結果が不明なら短周期に再送せず保存した期�
   expect(await store.budgetStatus(now)).toMatchObject({ queue_ops: 3 });
 });
 
-it.each(['Too Many Requests', 'Storage Limit Exceeded'])(
-  'Queueからの明示的な拒否%sは1分後に再試行する',
-  async (reason) => {
-    let sends = 0;
-    const bot = new Bot(
-      {
-        DB: db,
-        JOBS: {
-          async send() {
-            sends++;
-            if (sends === 1) {
-              throw new Error(reason);
-            }
-          },
+it.each([
+  'Too Many Requests',
+  'Storage Limit Exceeded',
+  'Queue send failed: Too Many Requests (429)',
+  'Storage Limit Exceeded (10251)',
+])('Queueからの明示的な拒否%sは1分後に再試行する', async (reason) => {
+  let sends = 0;
+  const bot = new Bot(
+    {
+      DB: db,
+      JOBS: {
+        async send() {
+          sends++;
+          if (sends === 1) {
+            throw new Error(reason);
+          }
         },
       },
-      config,
-    );
-    await store.enqueue('one', 'collect', {}, now);
-    await bot.flush(now);
-    await bot.flush(now + 59000);
-    expect(sends).toBe(1);
-    await bot.flush(now + 61000);
-    expect(sends).toBe(2);
-    expect(await store.budgetStatus(now)).toMatchObject({ queue_ops: 6 });
-  },
-);
+    },
+    config,
+  );
+  await store.enqueue('one', 'collect', {}, now);
+  await bot.flush(now);
+  await bot.flush(now + 59000);
+  expect(sends).toBe(1);
+  await bot.flush(now + 61000);
+  expect(sends).toBe(2);
+  expect(await store.budgetStatus(now)).toMatchObject({ queue_ops: 6 });
+});
 
 it('Queue送信後の記録エラーは明示的な拒否と同じ文言でも再送しない', async () => {
   let sends = 0;

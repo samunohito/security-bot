@@ -19,13 +19,16 @@ import {
 } from './domain';
 import type { PreparedPost } from './social/provider';
 import type { SourceCursor } from './sources/provider';
+import { PublicationStore } from './publication-store';
+import { severityLevel, digestWindow } from './publication';
 
 export type Job = typeof tables.jobs.$inferSelect;
 export type Revision = Omit<typeof tables.revisions.$inferSelect, 'snapshot'> & { snapshot: ThreatSnapshot };
 export type Delivery = typeof tables.deliveries.$inferSelect;
 
 const eventCutoffQuery = "COALESCE((SELECT CAST(value AS INTEGER) FROM settings WHERE key='event_cutoff'),0)";
-const eventTimeQuery = (alias: string) => `COALESCE(json_extract(${alias}.snapshot,'$.eventAt'),${alias}.event_at)`;
+const eventTimeQuery = (alias: string) =>
+  `COALESCE((SELECT CASE WHEN o.nvd_only=1 AND COALESCE(json_extract(${alias}.snapshot,'$.rejected'),0)=0 THEN MAX(COALESCE(o.exploited_at,0),COALESCE(CASE WHEN o.current_level=3 THEN o.critical_at ELSE o.high_at END,0),COALESCE(json_extract(${alias}.snapshot,'$.eventAt'),${alias}.event_at)) END FROM publication_observations o WHERE o.threat_key=${alias}.threat_key),json_extract(${alias}.snapshot,'$.eventAt'),${alias}.event_at)`;
 
 type ListedRows = {
   summaries: {
@@ -52,10 +55,15 @@ type ListedRows = {
 
 export class Store {
   private orm: DrizzleD1Database<typeof tables>;
+  readonly publications: PublicationStore;
 
   /** D1データベースを使ってジョブ・根拠・配信状態を管理する。 */
-  constructor(public db: D1Database) {
+  constructor(
+    public db: D1Database,
+    private config?: Config,
+  ) {
     this.orm = drizzle(db, { schema: tables });
+    this.publications = new PublicationStore(db, config);
   }
 
   private statement(sql: string, ...params: unknown[]) {
@@ -69,22 +77,26 @@ export class Store {
       `UPDATE jobs SET state='done',error='skipped_before_cutoff',lease_token=NULL,lease_until=NULL,dispatched_at=NULL
        WHERE state IN ('pending','deferred','held','failed') ${id === undefined ? '' : 'AND id=?'} AND (
          (type='ingest' AND json_type(${payload},'$.item.modifiedAt') IN ('integer','real')
-           AND json_extract(${payload},'$.item.modifiedAt')<${eventCutoffQuery})
+           AND json_extract(${payload},'$.item.modifiedAt')<${eventCutoffQuery}
+           AND (COALESCE(json_extract(${payload},'$.sourceId'),json_extract(${payload},'$.item.sourceId'),'') NOT IN (SELECT value FROM json_each(?))
+             OR (${this.publications.enabled ? 1 : 0}=0 AND NOT EXISTS(SELECT 1 FROM settings WHERE key='publication_initialized'))))
          OR (type='analyze' AND EXISTS(SELECT 1 FROM revisions r
            WHERE r.id=json_extract(${payload},'$.revisionId') AND ${eventTimeQuery('r')}<${eventCutoffQuery}))
          OR (type='publish' AND EXISTS(SELECT 1 FROM deliveries d JOIN revisions r ON r.id=d.revision_id
-           WHERE d.id=json_extract(${payload},'$.deliveryId') AND ${eventTimeQuery('r')}<${eventCutoffQuery}))
+           WHERE d.id=json_extract(${payload},'$.deliveryId') AND COALESCE(d.event_at,${eventTimeQuery('r')})<${eventCutoffQuery}))
+         OR (type='publish' AND EXISTS(SELECT 1 FROM deliveries d WHERE d.mode='digest' AND d.id=json_extract(${payload},'$.deliveryId') AND d.event_at<${eventCutoffQuery}))
        )`,
       ...(id === undefined ? [] : [id]),
+      JSON.stringify(this.config?.sources.filter((source) => source.kind === 'nvd').map((source) => source.id) ?? []),
     );
   }
 
   private skipDeliveriesStatement(now: number) {
     return this.statement(
       `UPDATE deliveries SET state='stale',error='skipped_before_cutoff',updated_at=?
-       WHERE state IN ('ready','held','preview') AND EXISTS(
-         SELECT 1 FROM revisions r WHERE r.id=deliveries.revision_id AND ${eventTimeQuery('r')}<${eventCutoffQuery}
-       )`,
+       WHERE state IN ('ready','held','preview') AND ((mode='digest' AND event_at<${eventCutoffQuery}) OR EXISTS(
+         SELECT 1 FROM revisions r WHERE r.id=deliveries.revision_id AND COALESCE(deliveries.event_at,${eventTimeQuery('r')})<${eventCutoffQuery}
+       ))`,
       now,
     );
   }
@@ -105,19 +117,33 @@ export class Store {
       throw new Error('invalid_event_cutoff');
     }
 
+    const rebuildWindows = (await this.publications.isTracking())
+      ? [
+          this.statement(
+            `DELETE FROM digest_windows
+      WHERE window_end=? AND target_id IN (SELECT d.target_id FROM deliveries d
+        WHERE d.mode='digest' AND d.state IN ('ready','held','preview')
+        AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.event_at<${eventCutoffQuery})
+        AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.event_at>=MAX(${eventCutoffQuery},?)))`,
+            digestWindow(now, this.config!.publishing.digestIntervalSeconds).end,
+            now - this.config!.freshnessSeconds * 1000,
+          ),
+        ]
+      : [];
     const result = await this.db.batch([
       this.statement(
         "INSERT INTO settings(key,value) VALUES('event_cutoff',?) ON CONFLICT(key) DO UPDATE SET value=CAST(MAX(CAST(settings.value AS INTEGER),CAST(excluded.value AS INTEGER)) AS TEXT)",
         String(cutoff),
       ),
       this.skipJobsStatement(),
+      ...rebuildWindows,
       this.skipDeliveriesStatement(now),
     ]);
 
     return {
       cutoff: await this.eventCutoff(),
       jobsSkipped: result[1]!.meta.changes,
-      deliveriesSkipped: result[2]!.meta.changes,
+      deliveriesSkipped: result[2 + rebuildWindows.length]!.meta.changes,
     };
   }
 
@@ -126,7 +152,7 @@ export class Store {
     await this.db.batch([this.skipJobsStatement(), this.skipDeliveriesStatement(now)]);
   }
 
-  /** 同一IDのジョブは再登録せず、指定した実行時刻でジョブを登録する。 */
+  /** ジョブを冪等に登録し、設定待ちや現行要約の欠落から解析を再開する。 */
   async enqueue(id: string, type: string, payload: unknown, now: number, availableAt = now) {
     await this.orm
       .insert(tables.jobs)
@@ -137,7 +163,32 @@ export class Store {
         available_at: availableAt,
         created_at: now,
       })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: tables.jobs.id,
+        set: {
+          state: 'pending',
+          available_at: availableAt,
+          dispatched_at: null,
+          lease_until: null,
+          lease_token: null,
+          attempts: 0,
+          error: null,
+        },
+        setWhere: and(
+          eq(tables.jobs.type, 'analyze'),
+          or(
+            and(eq(tables.jobs.state, 'held'), eq(tables.jobs.error, 'analysis_policy_changed')),
+            and(
+              eq(tables.jobs.state, 'done'),
+              sql`EXISTS(SELECT 1 FROM settings WHERE key='publication_initialized')
+              AND EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id
+                WHERE r.id=json_extract(${tables.jobs.payload},'$.revisionId')
+                AND substr(${tables.jobs.id},1,length('analyze:'||r.id||':'||r.evidence_hash||':'))='analyze:'||r.id||':'||r.evidence_hash||':'
+                AND NOT EXISTS(SELECT 1 FROM summaries s WHERE s.revision_id=r.id AND s.evidence_hash=r.evidence_hash))`,
+            ),
+          ),
+        ),
+      })
       .run();
   }
 
@@ -399,6 +450,7 @@ export class Store {
 
   /** 新しい情報源データを取り込み、更新された脅威改訂IDを返す。 */
   async ingest(item: SourceItem, now: number): Promise<string[]> {
+    await this.publications.initialize(now);
     const revisions: string[] = [];
     const normalized = normalizeItem(item),
       keys = new Set(normalized.map((r) => r.key)),
@@ -540,12 +592,15 @@ export class Store {
   }
 
   private async refreshThreat(key: string, now: number): Promise<string | null> {
+    const trackObservations = await this.publications.isTracking();
     for (let attempt = 0; attempt < 5; attempt++) {
       const old = await this.orm
         .select({
           revision_id: tables.threats.revision_id,
           material: tables.threats.material,
           generation: tables.threats.generation,
+          priority: tables.revisions.priority,
+          level: sql<number>`COALESCE((SELECT current_level FROM publication_observations WHERE threat_key=${tables.threats.key}),-1)`,
           event_at: sql<number | null>`${sql.raw(eventTimeQuery('revisions'))}`,
         })
         .from(tables.threats)
@@ -577,12 +632,16 @@ export class Store {
       const material = materialKey(current);
       const cutoff = await this.eventCutoff();
       const crossesCutoff = old.event_at !== null && old.event_at < cutoff && current.eventAt >= cutoff;
-      const changed = !old.revision_id || material !== old.material || crossesCutoff;
-      const id = changed ? await digest(`${key}:${material}:${current.eventAt}`) : old.revision_id!;
+      const classification = classify(current);
+      const nvdPolicy = trackObservations && this.publications.nvdOnly(current);
+      const classificationChanged =
+        nvdPolicy && (old.priority !== classification.priority || old.level !== severityLevel(current.scores));
+      const changed = !old.revision_id || material !== old.material || crossesCutoff || classificationChanged;
+      const identity = `${key}:${material}:${current.eventAt}${nvdPolicy ? `:${classification.priority}:${old.generation + 1}` : ''}`;
+      const id = changed ? await digest(identity) : old.revision_id!;
       const evidenceHash = await digest(
         JSON.stringify(current.evidence.map((e) => ({ ...e, fetchedAt: 0, modifiedAt: 0 }))),
       );
-      const classification = classify(current);
       const kind = old.revision_id ? (current.rejected ? 'correction' : 'update') : 'new';
 
       const result = await this.db.batch([
@@ -619,6 +678,14 @@ export class Store {
           id,
           cutoff,
         ),
+        ...(trackObservations
+          ? [
+              this.publications.observationStatement(
+                { id, threat_key: key, snapshot: current, evidence_hash: evidenceHash },
+                now,
+              ),
+            ]
+          : []),
       ]);
       if (result[1]?.meta.changes) {
         return id;
@@ -635,7 +702,31 @@ export class Store {
   }
 
   /** 現在有効な改訂を優先度順に取得する。 */
-  async currentRevisions(limit = 50): Promise<{ id: string; evidence_hash: string }[]> {
+  async currentRevisions(limit = 50, analysisPolicy?: string): Promise<{ id: string; evidence_hash: string }[]> {
+    if (this.publications.enabled) {
+      const targets = this.config!.targets.filter((target) => target.enabled || this.config!.dryRun).map(
+        (target) => target.id,
+      );
+      return (
+        await this.statement(
+          `SELECT r.id,r.evidence_hash FROM revisions r JOIN threats t ON t.revision_id=r.id
+        LEFT JOIN publication_observations o ON o.threat_key=r.threat_key
+        WHERE r.eligible=1 AND r.evidence_hash NOT LIKE 'updating:%' AND (o.nvd_only=0 OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1 OR
+          ((CASE WHEN o.current_level=3 THEN o.critical_at ELSE o.high_at END)>=${eventCutoffQuery} AND EXISTS(SELECT 1 FROM json_each(?) target WHERE NOT EXISTS(
+            SELECT 1 FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id WHERE d.target_id=target.value AND i.threat_key=r.threat_key
+            AND i.level>=CASE WHEN o.current_level=3 THEN 3 ELSE 2 END AND (d.state IN ('sent','sending','unknown') OR (d.state='ready' AND i.revision_id=r.id AND i.evidence_hash=r.evidence_hash AND EXISTS(SELECT 1 FROM summaries cs WHERE cs.revision_id=r.id AND cs.evidence_hash=r.evidence_hash)))))))
+        AND EXISTS(SELECT 1 FROM json_each(?) target WHERE NOT EXISTS(SELECT 1 FROM deliveries d WHERE d.target_id=target.value AND d.revision_id=r.id AND (d.state IN ('sent','sending','unknown') OR (d.state='ready' AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.evidence_hash=r.evidence_hash) AND EXISTS(SELECT 1 FROM summaries cs WHERE cs.revision_id=r.id AND cs.evidence_hash=r.evidence_hash)))))
+        AND (r.priority<>2 OR o.nvd_only<>1 OR NOT EXISTS(SELECT 1 FROM summaries s WHERE s.revision_id=r.id AND s.evidence_hash=r.evidence_hash AND json_extract(s.validation,'$.valid')=1))
+        AND (? IS NULL OR NOT EXISTS(SELECT 1 FROM jobs j WHERE j.id='analyze:'||r.id||':'||r.evidence_hash||':'||? AND NOT (j.state='held' AND COALESCE(j.error,'')='analysis_policy_changed') AND NOT (j.state='done' AND NOT EXISTS(SELECT 1 FROM summaries cs WHERE cs.revision_id=r.id AND cs.evidence_hash=r.evidence_hash))))
+        ORDER BY r.priority,COALESCE(CASE WHEN o.current_level=3 THEN o.critical_at ELSE o.high_at END,r.event_at),r.id LIMIT ?`,
+          JSON.stringify(targets),
+          JSON.stringify(targets),
+          analysisPolicy ?? null,
+          analysisPolicy ?? null,
+          limit,
+        ).all<{ id: string; evidence_hash: string }>()
+      ).results;
+    }
     return this.orm
       .select({ id: tables.revisions.id, evidence_hash: tables.revisions.evidence_hash })
       .from(tables.revisions)
@@ -643,6 +734,7 @@ export class Store {
       .where(
         and(
           eq(tables.revisions.eligible, 1),
+          sql`${tables.revisions.evidence_hash} NOT LIKE 'updating:%'`,
           sql`${sql.raw(eventTimeQuery('revisions'))}>=${sql.raw(eventCutoffQuery)}`,
         ),
       )
@@ -762,29 +854,46 @@ export class Store {
     now: number,
     state = 'ready',
     reason: string | null = null,
+    publicationEventAt?: number,
   ) {
-    await this.statement(
-      `INSERT INTO deliveries(id,target_id,revision_id,state,urgent,available_at,error,created_at,updated_at)
-       SELECT ?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM revisions r WHERE r.id=? AND ${eventTimeQuery('r')}<${eventCutoffQuery})
+    await this.db.batch([
+      this.statement(
+        `INSERT INTO deliveries(id,target_id,revision_id,state,urgent,available_at,error,created_at,updated_at,event_at)
+       SELECT ?,?,?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM revisions r WHERE r.id=? AND ${eventTimeQuery('r')}<${eventCutoffQuery})
        ON CONFLICT(target_id,revision_id) DO UPDATE SET
          state=CASE WHEN deliveries.state IN ('held','preview') THEN excluded.state ELSE deliveries.state END,
-         error=CASE WHEN deliveries.state IN ('held','preview') THEN excluded.error ELSE deliveries.error END`,
-      id,
-      target,
-      revision,
-      state,
-      urgent ? 1 : 0,
-      now,
-      reason,
-      now,
-      now,
-      revision,
-    ).run();
+         error=CASE WHEN deliveries.state IN ('held','preview') THEN excluded.error ELSE deliveries.error END,
+         event_at=CASE WHEN deliveries.state IN ('ready','held','preview') THEN excluded.event_at ELSE deliveries.event_at END,
+         urgent=CASE WHEN deliveries.state IN ('ready','held','preview') THEN excluded.urgent ELSE deliveries.urgent END`,
+        id,
+        target,
+        revision,
+        state,
+        urgent ? 1 : 0,
+        now,
+        reason,
+        now,
+        now,
+        publicationEventAt ?? null,
+        revision,
+      ),
+      this.publications.individualItemStatement(id),
+    ]);
   }
 
   /** 配信状態をIDで取得する。 */
   async getDelivery(id: string): Promise<Delivery | null> {
     return (await this.orm.select().from(tables.deliveries).where(eq(tables.deliveries.id, id)).get()) ?? null;
+  }
+
+  /** 未送信配信を無効化し、その所属を後続のまとめで再判定可能にする。 */
+  async staleDelivery(id: string, reason: string, now: number) {
+    await this.statement(
+      "UPDATE deliveries SET state='stale',error=?,updated_at=? WHERE id=? AND state IN ('ready','held','preview')",
+      reason,
+      now,
+      id,
+    ).run();
   }
 
   /** ジョブの詳細をIDで取得し、存在しない場合はnullを返す。 */
@@ -805,20 +914,13 @@ export class Store {
 
   /** 同じ脅威について投稿先へ最後に送信した投稿を返す。 */
   async previousPost(target: string, key: string): Promise<PublishedPost | undefined> {
-    const row = await this.orm
-      .select({ post_id: tables.deliveries.post_id, post_url: tables.deliveries.post_url })
-      .from(tables.deliveries)
-      .innerJoin(tables.revisions, eq(tables.revisions.id, tables.deliveries.revision_id))
-      .where(
-        and(
-          eq(tables.deliveries.target_id, target),
-          eq(tables.revisions.threat_key, key),
-          eq(tables.deliveries.state, 'sent'),
-        ),
-      )
-      .orderBy(desc(tables.deliveries.updated_at))
-      .limit(1)
-      .get();
+    const row = await this.db
+      .prepare(`SELECT d.post_id,d.post_url FROM deliveries d
+      LEFT JOIN revisions r ON r.id=d.revision_id
+      WHERE d.target_id=? AND d.state='sent' AND (r.threat_key=? OR EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.threat_key=?))
+      ORDER BY d.updated_at DESC LIMIT 1`)
+      .bind(target, key, key)
+      .first<{ post_id: string; post_url: string }>();
 
     return row ? { id: row.post_id!, url: row.post_url! } : undefined;
   }
@@ -887,6 +989,23 @@ export class Store {
       .run();
   }
 
+  /** 現在版の要約キャッシュが失われた場合に、完了済み解析だけを再開する。 */
+  async reopenCompletedAnalysis(id: string, now: number) {
+    await this.orm
+      .update(tables.jobs)
+      .set({
+        state: 'pending',
+        available_at: now,
+        dispatched_at: null,
+        lease_until: null,
+        lease_token: null,
+        attempts: 0,
+        error: null,
+      })
+      .where(and(eq(tables.jobs.id, id), eq(tables.jobs.type, 'analyze'), eq(tables.jobs.state, 'done')))
+      .run();
+  }
+
   /** 現在改訂・投稿先枠・配信リースを原子的に確保する。 */
   async reserveDelivery(
     id: string,
@@ -907,7 +1026,7 @@ export class Store {
         day,
       ),
       this.statement(
-        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND NOT EXISTS(SELECT 1 FROM revisions cr WHERE cr.id=deliveries.revision_id AND ${eventTimeQuery('cr')}<${eventCutoffQuery}) AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
+        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND NOT EXISTS(SELECT 1 FROM revisions cr WHERE cr.id=deliveries.revision_id AND COALESCE(deliveries.event_at,${eventTimeQuery('cr')})<${eventCutoffQuery}) AND (deliveries.mode<>'digest' OR (deliveries.event_at>=${eventCutoffQuery} AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id) AND NOT EXISTS(SELECT 1 FROM delivery_items i LEFT JOIN threats t ON t.key=i.threat_key LEFT JOIN revisions r ON r.id=t.revision_id LEFT JOIN publication_observations o ON o.threat_key=i.threat_key LEFT JOIN summaries s ON s.revision_id=r.id WHERE i.delivery_id=deliveries.id AND (r.id IS NULL OR r.id<>i.revision_id OR r.evidence_hash<>i.evidence_hash OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1 OR COALESCE(o.nvd_only,0)<>1 OR o.high_at IS NULL OR o.high_at<>i.event_at OR s.evidence_hash IS NULL OR s.evidence_hash<>i.evidence_hash OR i.summary_json IS NULL OR s.summary<>i.summary_json OR COALESCE(json_extract(s.validation,'$.valid'),0)<>1 OR (?=1 AND COALESCE(json_extract(s.validation,'$.complete'),0)<>1) OR (SELECT MAX(json_extract(value,'$.score')) FROM json_each(r.snapshot,'$.scores')) NOT BETWEEN 7 AND 8.999999 OR EXISTS(SELECT 1 FROM delivery_items other JOIN deliveries od ON od.id=other.delivery_id WHERE other.threat_key=i.threat_key AND other.level>=2 AND od.target_id=deliveries.target_id AND od.id<>deliveries.id AND od.state IN ('sent','sending','unknown')))))) AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
         token,
         now + 300000,
         day,
@@ -916,6 +1035,7 @@ export class Store {
         id,
         target.id,
         now,
+        target.qualityGate.enabled ? 1 : 0,
         expectedEvidenceHash ?? null,
         expectedEvidenceHash ?? null,
         now,
@@ -931,6 +1051,7 @@ export class Store {
         target.urgentDailyLimit,
         target.normalDailyLimit,
       ),
+      this.publications.individualItemStatement(id, token),
       this.statement(
         "UPDATE targets SET active_delivery=?,last_attempt_at=? WHERE id=? AND EXISTS(SELECT 1 FROM deliveries WHERE id=? AND state='sending' AND lease_token=?)",
         id,

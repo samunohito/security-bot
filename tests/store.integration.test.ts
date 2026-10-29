@@ -38,6 +38,9 @@ const item: SourceItem = {
 beforeEach(async () => {
   await db.batch(
     [
+      'digest_windows',
+      'delivery_items',
+      'publication_observations',
       'source_versions',
       'shortened_summaries',
       'settings',

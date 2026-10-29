@@ -4,6 +4,12 @@
   "mode": "performance",
   // true（既定）: 投稿をプレビューとして保存 / false: 有効な投稿先へ送信する。
   "dryRun": false,
+  // 発信方式: individual（省略時は従来方式）/ nvd-high-digest（NVD Highの新規・昇格をまとめる）。
+  "publishing": {
+    "mode": "nvd-high-digest",
+    // 日本時間を基準とする集計間隔（秒）。既定21600 = 6時間。
+    "digestIntervalSeconds": 21600
+  },
   // 情報源の既定取得間隔（秒）: 60以上の整数。省略時900。実行は毎分のCronに従う。
   "pollIntervalSeconds": 300,
 

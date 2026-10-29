@@ -12,7 +12,11 @@ import { PublishError, type PreparedPost, type SocialProvider } from './social/p
 import { describePublishFailure } from './social/diagnostics';
 import { sourceProvider } from './sources';
 import type { SourceProvider } from './sources/provider';
-import { Store, type Job, type Revision } from './store';
+import { Store, type Job, type Revision, type Delivery } from './store';
+import { digestWindow } from './publication';
+import { formatDigest } from './social/digest';
+import { formatPost } from './social/format';
+import type { DigestMember } from './publication-store';
 
 export interface BotEnv extends Environment {
   DB: D1Database;
@@ -52,37 +56,46 @@ export class Bot {
     public config: Config,
     public providers: Providers = {},
   ) {
-    this.store = new Store(env.DB);
+    this.store = new Store(env.DB, config);
     this.llm = providers.llm ?? createLlmProvider(config.llm, env.AI);
   }
 
-  private async analyzeKey(revisionId: string, evidenceHash: string) {
-    const policy = await digest(
+  private async analysisPolicy() {
+    return digest(
       JSON.stringify({
         targets: this.config.targets,
         dryRun: this.config.dryRun,
         model: this.config.llm.model,
         llmProvider: this.config.llm.provider,
+        publishing: this.config.publishing,
       }),
     );
+  }
 
-    return `analyze:${revisionId}:${evidenceHash}:${policy}`;
+  private async analyzeKey(revisionId: string, evidenceHash: string) {
+    return `analyze:${revisionId}:${evidenceHash}:${await this.analysisPolicy()}`;
   }
 
   /** 定期実行として状態を同期し、作業をキューへ送る。 */
   async tick(now = Date.now()) {
     await this.store.bootstrapTime(now);
+    await this.store.publications.initialize(now);
     await this.store.recover(now);
     await this.store.syncTargets(this.config.targets);
     await this.store.syncSources(this.config.sources, now);
+    await this.store.publications.reconcileDeliveries(now);
 
-    for (const revision of await this.store.currentRevisions()) {
+    for (const revision of await this.store.currentRevisions(50, await this.analysisPolicy())) {
       await this.store.enqueue(
         await this.analyzeKey(revision.id, revision.evidence_hash),
         'analyze',
         { revisionId: revision.id },
         now,
       );
+    }
+
+    if (this.store.publications.enabled) {
+      await this.buildDigests(now);
     }
 
     for (const delivery of await this.store.dueDeliveries(now)) {
@@ -193,6 +206,19 @@ export class Bot {
 
   /** 改訂の保存済み要約から投稿先ごとの本文と投稿可否のプレビューを作る。 */
   async preview(id: string) {
+    const delivery = await this.store.getDelivery(id);
+    if (delivery?.mode === 'digest') {
+      const current = await this.store.publications.digestCurrent(delivery);
+      return [
+        {
+          targetId: delivery.target_id,
+          allowed: current,
+          members: await this.store.publications.members(id),
+          ...JSON.parse(delivery.prepared ?? '{}'),
+          reasons: current ? [] : ['digest_members_changed'],
+        },
+      ];
+    }
     const revision = await this.store.getRevision(id);
     if (!revision) {
       throw new Error('revision_not_found');
@@ -270,7 +296,21 @@ export class Bot {
           }
         }
       } else if (job.type === 'analyze') {
-        await this.analyze(z.object({ revisionId: z.string() }).parse(payload).revisionId, now);
+        const { revisionId } = z.object({ revisionId: z.string() }).parse(payload);
+        const policy = /^analyze:[0-9a-f]{64}:.+:([0-9a-f]{64})$/.exec(job.id)?.[1];
+        if (policy && policy !== (await this.analysisPolicy())) {
+          const revision = await this.store.getRevision(revisionId);
+          if (revision && (await this.store.isCurrent(revision.id))) {
+            await this.store.enqueue(
+              await this.analyzeKey(revision.id, revision.evidence_hash),
+              'analyze',
+              { revisionId },
+              now,
+            );
+            throw new Error('analysis_policy_changed');
+          }
+        }
+        await this.analyze(revisionId, now);
       } else if (job.type === 'publish') {
         await this.publish(z.object({ deliveryId: z.string() }).parse(payload).deliveryId, now);
       } else {
@@ -390,15 +430,48 @@ export class Bot {
       !revision ||
       !revision.eligible ||
       !(await this.store.isCurrent(id)) ||
-      (await this.store.isBeforeCutoff(revision.snapshot.eventAt))
+      (!this.store.publications.enabled && (await this.store.isBeforeCutoff(revision.snapshot.eventAt)))
     ) {
       return;
     }
 
+    if (revision.evidence_hash.startsWith('updating:')) {
+      throw new Deferred(now + 60000, 'evidence_updating');
+    }
+
+    const decisions = await Promise.all(
+      this.config.targets
+        .filter((target) => target.enabled || this.config.dryRun)
+        .map((target) => this.store.publications.decision(revision, target.id)),
+    );
+    const eventAt = Math.max(0, ...decisions.flatMap((decision) => (decision ? [decision.eventAt] : [])));
+    const pendingDecisions = await Promise.all(
+      this.config.targets
+        .filter((target) => target.enabled || this.config.dryRun)
+        .map((target, index) =>
+          decisions[index] ? null : this.store.publications.decision(revision, target.id, false),
+        ),
+    );
+    const awaitingResult = pendingDecisions.some(Boolean);
+    const pendingAt = Math.max(
+      eventAt,
+      ...pendingDecisions.flatMap((decision) => (decision ? [decision.eventAt] : [])),
+    );
+    if (this.store.publications.enabled && pendingAt > 0 && pendingAt < now - this.config.freshnessSeconds * 1000) {
+      throw new Error('publication_event_expired');
+    }
+    if ((this.store.publications.enabled || decisions.length > 0) && !decisions.some(Boolean)) {
+      if (awaitingResult) {
+        throw new Deferred(now + 60000, 'publication_result_pending');
+      }
+      return;
+    }
     const start = await this.store.bootstrapTime(now);
+    const effectiveAt = this.store.publications.enabled ? eventAt : revision.snapshot.eventAt;
     if (
-      revision.snapshot.eventAt < now - this.config.freshnessSeconds * 1000 ||
-      (revision.kind === 'new' && revision.snapshot.eventAt < start - this.config.initialLookbackSeconds * 1000)
+      effectiveAt < now - this.config.freshnessSeconds * 1000 ||
+      (await this.store.isBeforeCutoff(effectiveAt)) ||
+      (revision.kind === 'new' && effectiveAt < start - this.config.initialLookbackSeconds * 1000)
     ) {
       return;
     }
@@ -429,7 +502,7 @@ export class Bot {
     }
 
     if (cached.validation.reasons.includes('verification_pending')) {
-      if (await this.store.isBeforeCutoff(revision.snapshot.eventAt)) {
+      if (await this.store.isBeforeCutoff(effectiveAt)) {
         return;
       }
       const verdict = await this.generate(
@@ -467,6 +540,10 @@ export class Bot {
       if (revision.snapshot.rejected && !(await this.store.previousPost(target.id, revision.threat_key))) {
         continue;
       }
+      const decision = await this.store.publications.decision(revision, target.id);
+      if (!decision || (this.store.publications.enabled && decision.route === 'digest')) {
+        continue;
+      }
       const deliveryId = await digest(`${target.id}:${id}`);
       const allowed = cached.validation.valid && (!target.qualityGate.enabled || cached.validation.complete);
       await this.store.createDelivery(
@@ -477,10 +554,14 @@ export class Bot {
         now,
         allowed ? 'ready' : 'held',
         allowed ? null : cached.validation.reasons.join(';') || 'incomplete_information',
+        decision?.eventAt,
       );
       if (allowed) {
         await this.store.enqueue(`publish:${deliveryId}:${now}`, 'publish', { deliveryId }, now);
       }
+    }
+    if (awaitingResult) {
+      throw new Deferred(now + 60000, 'publication_result_pending');
     }
   }
 
@@ -558,21 +639,49 @@ export class Bot {
     }
 
     const target = this.config.targets.find((t) => t.id === delivery.target_id);
-    const revision = await this.store.getRevision(delivery.revision_id);
+    if (delivery.mode === 'digest') {
+      await this.publishDigest(delivery, target, now);
+      return;
+    }
+    const revision = delivery.revision_id ? await this.store.getRevision(delivery.revision_id) : null;
     if (
       !target ||
       (!target.enabled && !this.config.dryRun) ||
       !revision ||
       !(await this.store.isCurrent(revision.id)) ||
-      (await this.store.isBeforeCutoff(revision.snapshot.eventAt)) ||
-      revision.snapshot.eventAt < now - this.config.freshnessSeconds * 1000
+      (await this.store.isBeforeCutoff(delivery.event_at ?? revision.snapshot.eventAt)) ||
+      (delivery.event_at ?? revision.snapshot.eventAt) < now - this.config.freshnessSeconds * 1000
     ) {
       await this.store.holdDelivery(id, 'disabled_superseded_or_stale', now);
       return;
     }
 
+    if (revision.evidence_hash.startsWith('updating:')) {
+      throw new Deferred(now + 60000, 'evidence_updating');
+    }
+
+    const decision = await this.store.publications.decision(revision, target.id);
+    if (!decision || (this.store.publications.enabled && decision.route !== 'individual')) {
+      await this.store.staleDelivery(
+        id,
+        decision?.route === 'digest' ? 'individual_to_digest' : 'publication_policy_changed',
+        now,
+      );
+      return;
+    }
     const cached = await this.store.getSummary(revision);
-    if (!cached?.validation.valid || (target.qualityGate.enabled && !cached.validation.complete)) {
+    if (!cached) {
+      const key = await this.analyzeKey(revision.id, revision.evidence_hash);
+      await this.store.enqueue(key, 'analyze', { revisionId: revision.id }, now);
+      await this.store.reopenCompletedAnalysis(key, now);
+      const analysis = await this.store.getJob(key);
+      if (analysis?.state === 'held' || analysis?.state === 'failed') {
+        await this.store.holdDelivery(id, 'summary_analysis_held', now);
+        return;
+      }
+      throw new Deferred(Math.max(now + 60000, analysis?.available_at ?? now), 'summary_not_current');
+    }
+    if (!cached.validation.valid || (target.qualityGate.enabled && !cached.validation.complete)) {
       await this.store.holdDelivery(id, 'quality_gate', now);
       return;
     }
@@ -599,12 +708,143 @@ export class Bot {
       return;
     }
 
+    await this.sendPrepared(delivery, target, provider, prepared, now, revision.evidence_hash);
+  }
+
+  private async buildDigests(now: number) {
+    const window = digestWindow(now, this.config.publishing.digestIntervalSeconds);
+    for (const target of this.config.targets) {
+      if (!target.enabled && !this.config.dryRun) {
+        continue;
+      }
+      if (
+        await this.env.DB.prepare('SELECT 1 FROM digest_windows WHERE target_id=? AND window_end=?')
+          .bind(target.id, window.end)
+          .first()
+      ) {
+        continue;
+      }
+      // 検証済みHighは個別候補の上限とは別に取得し、既報の更新がまとめを圧迫しないようにする。
+      const cutoff = await this.store.eventCutoff();
+      const rows =
+        await this.env.DB.prepare(`SELECT r.*,s.summary,s.validation,o.high_at,o.high_reason FROM revisions r JOIN threats t ON t.revision_id=r.id
+        JOIN publication_observations o ON o.threat_key=r.threat_key
+        JOIN summaries s ON s.revision_id=r.id AND s.evidence_hash=r.evidence_hash
+        WHERE o.nvd_only=1 AND o.high_at IS NOT NULL AND o.high_at<? AND r.priority=2 AND r.urgent=0
+        AND json_extract(r.snapshot,'$.rejected')=0 AND json_extract(s.validation,'$.valid')=1
+        AND (?=0 OR json_extract(s.validation,'$.complete')=1)
+        AND NOT EXISTS(SELECT 1 FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id WHERE d.target_id=? AND i.threat_key=r.threat_key AND i.level>=2 AND (d.state IN ('sent','sending','unknown') OR (d.state IN ('ready','held','preview') AND i.revision_id=r.id AND i.evidence_hash=r.evidence_hash)))
+        ORDER BY (SELECT MAX(json_extract(value,'$.score')) FROM json_each(r.snapshot,'$.scores')) DESC,o.high_at,r.threat_key`)
+          .bind(window.end, target.qualityGate.enabled ? 1 : 0, target.id)
+          .all<
+            Omit<Revision, 'snapshot'> & {
+              snapshot: string;
+              summary: string;
+              validation: string;
+              high_at: number;
+              high_reason: string | null;
+            }
+          >();
+      const members = new Map<string, DigestMember>();
+      const entries: { id: string; text: string }[] = [];
+      for (const row of rows.results) {
+        const revision: Revision = { ...row, snapshot: JSON.parse(row.snapshot) as Revision['snapshot'] };
+        const decision = {
+          route: 'digest' as const,
+          level: 2,
+          eventAt: row.high_at,
+          reason: row.high_reason ?? 'High昇格',
+        };
+        if (decision.eventAt < now - this.config.freshnessSeconds * 1000 || decision.eventAt < cutoff) {
+          await this.store.createDelivery(
+            await digest(`${target.id}:${revision.id}`),
+            target.id,
+            revision.id,
+            false,
+            now,
+            'held',
+            'publication_event_expired',
+            decision.eventAt,
+          );
+          continue;
+        }
+        const summary = JSON.parse(row.summary) as Summary;
+        const intent: PostIntent = {
+          kind: 'new',
+          key: revision.threat_key,
+          title: revision.snapshot.title,
+          severity: 'High',
+          summary: { ...summary, tags: [] },
+          sources: [...new Set(revision.snapshot.evidence.map((entry) => entry.url))].slice(0, 2),
+        };
+        const score = Math.max(...revision.snapshot.scores.map((value) => value.score));
+        const text = `${decision.reason} / CVSS ${score}\n${formatPost(intent)}`;
+        try {
+          formatDigest([{ id: revision.id, text }], window, target.maxCharacters, rows.results.length);
+        } catch {
+          await this.store.createDelivery(
+            await digest(`${target.id}:${revision.id}`),
+            target.id,
+            revision.id,
+            false,
+            now,
+            'held',
+            'digest_item_too_long',
+            decision.eventAt,
+          );
+          continue;
+        }
+        members.set(revision.id, { revision, decision, summary });
+        entries.push({ id: revision.id, text });
+      }
+      const pages = formatDigest(entries, window, target.maxCharacters).map((page) => ({
+        text: page.text,
+        members: page.ids.map((id) => members.get(id)!),
+      }));
+      await this.store.publications.createWindow(target.id, window, pages, now);
+    }
+  }
+
+  private async publishDigest(delivery: Delivery, target: TargetConfig | undefined, now: number) {
+    if (!target || (!target.enabled && !this.config.dryRun) || !this.store.publications.enabled) {
+      await this.store.holdDelivery(delivery.id, 'digest_disabled', now);
+      return;
+    }
+    if (!(await this.store.publications.digestCurrent(delivery))) {
+      await this.store.staleDelivery(delivery.id, 'digest_members_changed', now);
+      return;
+    }
+    if (
+      (await this.store.isBeforeCutoff(delivery.event_at ?? 0)) ||
+      (delivery.event_at ?? 0) < now - this.config.freshnessSeconds * 1000
+    ) {
+      await this.store.holdDelivery(delivery.id, 'publication_event_expired', now);
+      return;
+    }
+    const prepared = JSON.parse(delivery.prepared ?? '{}') as PreparedPost;
+    if (typeof prepared.text !== 'string' || [...prepared.text].length > target.maxCharacters) {
+      await this.store.holdDelivery(delivery.id, 'digest_format_error', now);
+      return;
+    }
+    const provider = this.providers.social?.(target) ?? createSocialProvider(target, this.env);
+    await this.sendPrepared(delivery, target, provider, prepared, now);
+  }
+
+  private async sendPrepared(
+    delivery: Delivery,
+    target: TargetConfig,
+    provider: SocialProvider,
+    prepared: PreparedPost,
+    now: number,
+    expectedEvidenceHash?: string,
+  ) {
+    const id = delivery.id;
     if (this.config.dryRun) {
       await this.store.previewDelivery(id, prepared, now);
       return;
     }
 
-    const reservation = await this.store.reserveDelivery(id, target, now, revision.evidence_hash, prepared);
+    const reservation = await this.store.reserveDelivery(id, target, now, expectedEvidenceHash, prepared);
     if (!reservation) {
       throw new Deferred(now + 60000, 'publication_slot_or_current_evidence_unavailable');
     }
@@ -634,7 +874,7 @@ export class Bot {
           event: 'publication_failed',
           deliveryId: id,
           targetId: target.id,
-          revisionId: revision.id,
+          revisionId: delivery.revision_id,
           kind: failure.kind,
           reason: failure.message,
           diagnostics: failure.diagnostics,

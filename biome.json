@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/package-lock.json", "!migrations/meta/**"]
+    "includes": ["**", "!**/package-lock.json", "!**/pnpm-lock.yaml", "!migrations/meta/**"]
   },
   "formatter": {
     "indentStyle": "space",

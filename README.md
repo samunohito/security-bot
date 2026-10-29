@@ -113,6 +113,9 @@ pnpm run db:migrate:remote
 `migrations/` のSQLと `migrations/meta/` のスナップショット・生成履歴は一緒にGit管理します。
 適用履歴はWranglerの `d1_migrations` で管理し、`drizzle-kit migrate` や `push` は併用しません。
 統合テストも同じディレクトリのマイグレーション一式をローカルD1に適用します。
+`0007_index_current_revision.sql` は、解析候補の選出と配信方式の再調整で現在改訂を照合する `threats.revision_id`
+にインデックスを追加します。SQLの判定条件は変えず、脅威表の繰り返し走査を抑えます。
+既存環境にもこのmigrationの適用が必要です。改訂の更新時にはインデックスの更新分が加わります。
 生成にCloudflareの認証情報は不要です。操作の根拠は
 [Drizzle Kitの生成手順](https://orm.drizzle.team/docs/drizzle-kit-generate)と
 [D1のマイグレーション仕様](https://developers.cloudflare.com/d1/reference/migrations/)です（確認日：2026-10-27）。

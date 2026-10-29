@@ -1,0 +1,1 @@
+CREATE INDEX `threats_revision` ON `threats` (`revision_id`);

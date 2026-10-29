@@ -44,12 +44,16 @@ export const jobs = sqliteTable(
   ],
 );
 
-export const threats = sqliteTable('threats', {
-  key: text().primaryKey(),
-  revision_id: text(),
-  material: text().notNull().default(''),
-  generation: integer().notNull().default(0),
-});
+export const threats = sqliteTable(
+  'threats',
+  {
+    key: text().primaryKey(),
+    revision_id: text(),
+    material: text().notNull().default(''),
+    generation: integer().notNull().default(0),
+  },
+  (table) => [index('threats_revision').on(table.revision_id)],
+);
 
 export const evidence = sqliteTable(
   'evidence',

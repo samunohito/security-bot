@@ -50,6 +50,13 @@
       "when": 1793268946911,
       "tag": "0006_publish_job_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793273296168,
+      "tag": "0007_index_current_revision",
+      "breakpoints": true
     }
   ]
 }

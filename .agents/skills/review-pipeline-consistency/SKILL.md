@@ -75,6 +75,13 @@ description: Use when changing or reviewing Security Bot's D1-backed jobs, deliv
 
 ### 送信結果不明・予算・優先度
 
+- Queue配送はStoreの `reserveDispatch`、`beginDispatch`、`markDispatched` とBotの `flush` を確認する。
+  Queue待機中は実行リースと別の配送所有権で保護し、`deferAiJobs` にも同じ配送期限条件が必要。
+  consumerの取得後に届くsenderの遅延応答と、並行flushで負けた側の予算消費を
+  [Queue配送統合テスト](../../../tests/queue-dispatch.integration.test.ts)で検証する。
+- 投稿枠待ちはStoreの `nextPublicationAt`、`deferDelivery`、`dueDeliveries` を確認する。
+  配信とジョブの延期時刻を揃え、未完了の投稿ジョブがある配信をCronで二重登録しない。
+
 - 実装：Storeの `recover`、`deliveryError`、`retryDelivery`、`reserveDelivery`、`reserveBudget` と、
   [MisskeyProvider](../../../src/social/misskey.ts)の送信結果の分類。
 - 外部SNSでの受理とD1記録は同一トランザクションにならない。タイムアウトや記録失敗を、確実な未送信と混同しない。

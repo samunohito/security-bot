@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig, parseConfig } from '../src/config';
 
 describe('configuration', () => {
+  it('Queue保持期間は既定24時間で実Queueに合わせて変更できる', () => {
+    expect(loadConfig().queue.messageRetentionSeconds).toBe(86400);
+    expect(loadConfig({ queue: { messageRetentionSeconds: 172800 } }).queue.messageRetentionSeconds).toBe(172800);
+  });
+
+  it.each([0, 59, 1209601, 60.5])('不正なQueue保持期間%sを拒否する', (messageRetentionSeconds) => {
+    expect(() => loadConfig({ queue: { messageRetentionSeconds } })).toThrow();
+  });
   it('FakeのLLMと投稿先を実サービス用のモデル・接続先・Secretなしで検証する', () => {
     const config = loadConfig({ llm: { provider: 'fake' }, targets: [{ id: 'local', provider: 'fake' }] });
     expect(config.llm.provider).toBe('fake');

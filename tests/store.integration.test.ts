@@ -61,6 +61,38 @@ beforeEach(async () => {
 });
 
 describe('durable work', () => {
+  it('投稿間隔と最低間隔の両方を満たす時刻まで待つ', async () => {
+    await store.syncTargets([target]);
+    await db
+      .prepare('UPDATE targets SET last_attempt_at=?,last_normal_at=? WHERE id=?')
+      .bind(now, now - 1000, target.id)
+      .run();
+    expect(await store.nextPublicationAt({ target_id: target.id, urgent: 0 }, target, now)).toBe(
+      now - 1000 + target.normalIntervalSeconds * 1000,
+    );
+  });
+
+  it('通常枠を使い切ったら次のJST日まで待ち緊急枠は独立して使える', async () => {
+    await store.syncTargets([target]);
+    await db
+      .prepare("INSERT INTO quotas(target_id,day,bucket,used) VALUES(?,?,'normal',?)")
+      .bind(target.id, '2026-10-27', target.normalDailyLimit)
+      .run();
+    expect(await store.nextPublicationAt({ target_id: target.id, urgent: 0 }, target, now)).toBe(
+      Date.parse('2026-10-27T15:00:00Z'),
+    );
+    expect(await store.nextPublicationAt({ target_id: target.id, urgent: 1 }, target, now)).toBe(now + 60000);
+  });
+
+  it('緊急枠が尽きても通常枠の次回時刻を翌日に延ばさない', async () => {
+    await store.syncTargets([target]);
+    await db
+      .prepare("INSERT INTO quotas(target_id,day,bucket,used) VALUES(?,?,'urgent',?)")
+      .bind(target.id, '2026-10-27', target.urgentDailyLimit)
+      .run();
+    expect(await store.nextPublicationAt({ target_id: target.id, urgent: 0 }, target, now)).toBe(now + 60000);
+  });
+
   it('固定境界より古い未実行ジョブと配信だけを終了し履歴と所有権を保持する', async () => {
     const cutoff = now - 6 * 3600000;
     const [oldId] = await store.ingest({ ...item, modifiedAt: cutoff - 1 }, now);
@@ -185,8 +217,9 @@ describe('durable work', () => {
     await store.enqueue('one', 'analyze', { revisionId: 'r' }, now);
 
     expect(await store.outbox(now)).toHaveLength(1);
-    await store.markDispatched('one', now);
-    expect(await store.outbox(now + 120001)).toHaveLength(1);
+    await db.prepare('UPDATE jobs SET dispatched_at=? WHERE id=?').bind(now, 'one').run();
+    expect(await store.outbox(now + 120001)).toHaveLength(0);
+    expect(await store.outbox(now + 86400000 + 900000)).toHaveLength(1);
 
     const [firstClaim, replayClaim] = await Promise.all([store.claimJob('one', now), store.claimJob('one', now)]);
     expect([firstClaim, replayClaim].filter(Boolean)).toHaveLength(1);

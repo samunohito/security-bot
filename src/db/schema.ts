@@ -30,6 +30,8 @@ export const jobs = sqliteTable(
     state: text().notNull().default('pending'),
     available_at: integer().notNull(),
     dispatched_at: integer(),
+    dispatch_token: text(),
+    dispatch_until: integer(),
     lease_until: integer(),
     lease_token: text(),
     attempts: integer().notNull().default(0),

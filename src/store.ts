@@ -245,7 +245,7 @@ export class Store {
     return ((this.config?.queue.messageRetentionSeconds ?? 86400) + 900) * 1000;
   }
 
-  /** 配送権と操作予算を同じトランザクションで確保する。競合した配送には課金しない。 */
+  /** 配送権と操作予算を同じトランザクションで確保し、競合した配送では予算を消費しない。 */
   async reserveDispatch(id: string, now: number, limit: number): Promise<string | null> {
     const token = crypto.randomUUID();
     const result = await this.db.batch([
@@ -297,6 +297,17 @@ export class Store {
       AND state IN ('pending','deferred')`,
       now,
       now + this.dispatchWaitMs(),
+      id,
+      token,
+    ).run();
+  }
+
+  /** Queueが未受理と明示した配送だけを所有者条件付きで延期し、再試行を可能にする。 */
+  async retryDispatch(id: string, token: string, until: number) {
+    await this.statement(
+      `UPDATE jobs SET dispatch_token=NULL,dispatch_until=NULL,dispatched_at=NULL,available_at=MAX(available_at,?)
+       WHERE id=? AND dispatch_token=? AND state IN ('pending','deferred')`,
+      until,
       id,
       token,
     ).run();

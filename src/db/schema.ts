@@ -38,7 +38,10 @@ export const jobs = sqliteTable(
     error: text(),
     created_at: integer().notNull(),
   },
-  (table) => [index('jobs_due').on(table.state, table.available_at, table.dispatched_at)],
+  (table) => [
+    index('jobs_due').on(table.state, table.available_at, table.dispatched_at),
+    index('jobs_publish_delivery').on(table.state, table.payload).where(sql`${table.type}='publish'`),
+  ],
 );
 
 export const threats = sqliteTable('threats', {

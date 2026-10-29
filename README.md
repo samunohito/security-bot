@@ -361,11 +361,13 @@ pnpm run cli -- retry-delivery DELIVERY_ID --ack-duplicate-risk
 ジョブはキューへ送る前にD1へ保存し、配送権と操作予算を原子的に確保します。
 送信開始前に中断した配送は3分後に回収します。送信開始後は、Queueで待機中か結果不明かを問わず、保持期間と15分の猶予が過ぎるまで追加投入しません。
 送信成功の記録は所有トークンで保護し、consumerが先に処理したジョブを古いsenderの応答で待機状態へ戻しません。
-この修正の導入前にmigration `0005_queue_dispatch_ownership.sql` を適用してください。
+この修正の導入前にmigration `0005_queue_dispatch_ownership.sql` と `0006_publish_job_lookup.sql` を適用してください。
 
 `queue.messageRetentionSeconds`（既定86400秒）は実Queueのメッセージ保持期間に合わせて設定します。
 この設定自体はCloudflare側の保持期間を変更しません。既存の送信記録にも同じ待機期間を適用します。
 送信開始後に応答や記録が失われた場合、未受理であってもこの期間は回復が遅れます。
+Queueが`Too Many Requests`または`Storage Limit Exceeded`として明示的に拒否した場合は、所有トークンを確認して1分後に再試行します。
+送信後の記録失敗や、それ以外の結果不明なエラーは短周期に再送しません。拒否・結果不明の試行も予算の概算から返却しません。
 短周期の重複投入を避けながら、保持期限切れや失われた配送をCronで回収するための制約です。
 繰り返し処理期限が切れたジョブは、CPU上限などを確認できるよう`held`に止めます。
 Queueの保持期限とconsumerの最大実行時間は[公式の制限](https://developers.cloudflare.com/queues/platform/limits/)を参照しています（確認日：2026-10-29）。

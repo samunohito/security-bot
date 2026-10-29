@@ -43,6 +43,13 @@
       "when": 1793268468797,
       "tag": "0005_queue_dispatch_ownership",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793268946911,
+      "tag": "0006_publish_job_lookup",
+      "breakpoints": true
     }
   ]
 }

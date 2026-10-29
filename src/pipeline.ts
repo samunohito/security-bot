@@ -127,11 +127,23 @@ export class Bot {
       if (!(await this.store.beginDispatch(job.id, token, currentTime()))) {
         continue;
       }
+      let accepted = false;
       try {
         await this.env.JOBS.send({ id: job.id });
+        accepted = true;
         await this.store.markDispatched(job.id, currentTime(), token);
-      } catch {
-        console.warn(JSON.stringify({ event: 'queue_enqueue_unknown', job: job.id }));
+      } catch (error) {
+        // 送信成功後の記録失敗を、同じ文言のQueue拒否と混同しない。
+        const rejected =
+          !accepted &&
+          error instanceof Error &&
+          /(?:^|:\s*)(?:Too Many Requests|Storage Limit Exceeded)(?:$|[.!])/i.test(error.message);
+        if (rejected) {
+          await this.store.retryDispatch(job.id, token, currentTime() + 60000);
+        }
+        console.warn(
+          JSON.stringify({ event: rejected ? 'queue_enqueue_rejected' : 'queue_enqueue_unknown', job: job.id }),
+        );
         break;
       }
     }

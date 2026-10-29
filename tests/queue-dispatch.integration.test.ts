@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { beforeEach, expect, it } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 import { Bot } from '../src/pipeline';
 import { loadConfig } from '../src/config';
 import { Store } from '../src/store';
@@ -54,6 +54,7 @@ it('送信開始前の中断は短いリース後に回復し旧所有者の送�
   expect(second).not.toBe(first);
   expect(await store.beginDispatch('one', first, now + 180000)).toBe(false);
   await store.markDispatched('one', now + 180000, first);
+  await store.retryDispatch('one', first, now + 240000);
   expect(await store.getJob('one')).toMatchObject({ dispatch_token: second, dispatched_at: null });
 });
 
@@ -104,4 +105,52 @@ it('Queue送信の結果が不明なら短周期に再送せず保存した期�
   await bot.flush(now + 120001);
   expect(sends).toBe(1);
   expect(await store.budgetStatus(now)).toMatchObject({ queue_ops: 3 });
+});
+
+it.each(['Too Many Requests', 'Storage Limit Exceeded'])(
+  'Queueからの明示的な拒否%sは1分後に再試行する',
+  async (reason) => {
+    let sends = 0;
+    const bot = new Bot(
+      {
+        DB: db,
+        JOBS: {
+          async send() {
+            sends++;
+            if (sends === 1) {
+              throw new Error(reason);
+            }
+          },
+        },
+      },
+      config,
+    );
+    await store.enqueue('one', 'collect', {}, now);
+    await bot.flush(now);
+    await bot.flush(now + 59000);
+    expect(sends).toBe(1);
+    await bot.flush(now + 61000);
+    expect(sends).toBe(2);
+    expect(await store.budgetStatus(now)).toMatchObject({ queue_ops: 6 });
+  },
+);
+
+it('Queue送信後の記録エラーは明示的な拒否と同じ文言でも再送しない', async () => {
+  let sends = 0;
+  const bot = new Bot(
+    {
+      DB: db,
+      JOBS: {
+        async send() {
+          sends++;
+        },
+      },
+    },
+    config,
+  );
+  vi.spyOn(bot.store, 'markDispatched').mockRejectedValue(new Error('Too Many Requests'));
+  await store.enqueue('one', 'collect', {}, now);
+  await bot.flush(now);
+  await bot.flush(now + 61000);
+  expect(sends).toBe(1);
 });

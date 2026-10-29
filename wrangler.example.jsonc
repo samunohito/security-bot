@@ -24,7 +24,7 @@
     {
       "binding": "DB",
       "database_name": "security-bot",
-      "database_id": "2cd1aa02-33b6-4217-b43e-5729ed2d199d",
+      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }
   ],

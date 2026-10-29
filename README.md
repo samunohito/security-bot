@@ -4,7 +4,7 @@ JVN・JPCERT/CC・CISA KEV・NVDを収集し、日本語で脆弱性や公的な
 Workersアプリです。D1を処理状態の正本にし、Queuesで収集・記事取得・要約・投稿を分離します。初期対応はWorkers
 AIとMisskeyです。
 
-初期状態は **`dryRun: true`、投稿先なし** です。リポジトリをビルドしただけでは投稿しません。
+設定例の初期状態は **`dryRun: true`、投稿先無効** です。リポジトリをビルドしただけでは投稿しません。
 
 仕様書・補助資料・履歴・一時メモの分類と資料の索引は [`docs/README.md`](docs/README.md) を参照してください。
 投稿の見出し・対策欄・分類タグの仕様は [`投稿本文とハッシュタグ`](docs/specs/post-format.md) にまとめています。
@@ -12,6 +12,16 @@ AIとMisskeyです。
 ## 開発と検証
 
 Node.js 22以上を使用します（開発・検証はNode.js 24）。
+
+初回は設定例からローカル設定を作成します。`cp -n`は既存ファイルを上書きしません。
+
+```sh
+cp -n bot.config.example.jsonc bot.config.jsonc
+cp -n wrangler.example.jsonc wrangler.jsonc
+```
+
+`bot.config.jsonc`と`wrangler.jsonc`はGit管理対象外です。運用先・実投稿の設定はローカル設定に記述し、
+共有する設定例には実際の投稿先やD1データベースIDを含めないでください。
 
 ```sh
 pnpm ci

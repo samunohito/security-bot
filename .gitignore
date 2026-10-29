@@ -9,6 +9,10 @@ coverage/
 .superpowers/
 benchmark-data/
 
+# 運用先ごとの実設定はローカルに保持し、設定例だけを共有する。
+/bot.config.jsonc
+/wrangler.jsonc
+
 # Ignore downloaded skills; keep explicitly listed repository-owned skills.
 /.agents/skills/*
 !/.agents/skills/review-pipeline-consistency/

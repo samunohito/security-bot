@@ -44,6 +44,7 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
       return json({
         mode: bot.config.mode,
         dryRun: bot.config.dryRun,
+        publishing: bot.config.publishing,
         budget: await bot.store.budgetStatus(Date.now()),
         eventCutoff: await bot.store.eventCutoff(),
         sources: await bot.store.list('sources'),
@@ -51,6 +52,10 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
         jobs: await bot.store.list('jobs'),
         deliveries: await bot.store.list('deliveries'),
       });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/admin/publications') {
+      return json(await bot.store.publications.status());
     }
 
     const summaryMatch = url.pathname.match(/^\/admin\/summaries\/([^/]+)$/);
@@ -80,7 +85,9 @@ export async function adminRequest(request: Request, bot: Bot, token?: string): 
             ? await bot.store.getJob(id)
             : await bot.store.getDelivery(id);
 
-      return row ? json(row) : json({ error: 'not_found' }, 404);
+      return row
+        ? json(table === 'deliveries' ? { ...row, members: await bot.store.publications.members(id) } : row)
+        : json({ error: 'not_found' }, 404);
     }
 
     if (request.method !== 'POST') {

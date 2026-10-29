@@ -112,7 +112,11 @@ export const deliveries = sqliteTable(
   {
     id: text().primaryKey(),
     target_id: text().notNull(),
-    revision_id: text().notNull(),
+    revision_id: text(),
+    mode: text().notNull().default('individual'),
+    window_start: integer(),
+    window_end: integer(),
+    event_at: integer(),
     state: text().notNull().default('ready'),
     urgent: integer().notNull(),
     available_at: integer().notNull(),
@@ -130,6 +134,50 @@ export const deliveries = sqliteTable(
     unique().on(table.target_id, table.revision_id),
     index('deliveries_due').on(table.state, table.available_at),
     index('deliveries_history').on(table.target_id, table.state, desc(table.updated_at)),
+    check(
+      'delivery_mode',
+      sql`(${table.mode}='individual' AND ${table.revision_id} IS NOT NULL) OR (${table.mode}='digest' AND ${table.revision_id} IS NULL AND ${table.window_start} IS NOT NULL AND ${table.window_end} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const publicationObservations = sqliteTable('publication_observations', {
+  threat_key: text().primaryKey(),
+  highest_level: integer().notNull(),
+  current_level: integer().notNull().default(0),
+  high_at: integer(),
+  critical_at: integer(),
+  exploited_at: integer(),
+  current_exploited: integer().notNull().default(0),
+  high_reason: text(),
+  nvd_only: integer().notNull(),
+});
+
+export const digestWindows = sqliteTable(
+  'digest_windows',
+  {
+    target_id: text().notNull(),
+    window_end: integer().notNull(),
+    token: text().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.target_id, table.window_end] })],
+);
+
+export const deliveryItems = sqliteTable(
+  'delivery_items',
+  {
+    delivery_id: text().notNull(),
+    threat_key: text().notNull(),
+    revision_id: text().notNull(),
+    evidence_hash: text().notNull(),
+    summary_json: text(),
+    level: integer().notNull(),
+    exploited: integer().notNull(),
+    event_at: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.delivery_id, table.threat_key] }),
+    index('delivery_items_threat').on(table.threat_key),
   ],
 );
 

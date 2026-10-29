@@ -83,7 +83,7 @@ async function main() {
 
   if (!command || command === 'help') {
     console.log(
-      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions|summaries; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID [--save]; dry-run REVISION_ID; skip-before --hours HOURS; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
+      'Commands: preview --source SOURCE_ID [--item ITEM_ID] [--key THREAT_KEY] [--config path]; config validate|show; status; list jobs|deliveries|sources|targets|revisions|summaries|publications; show jobs|deliveries|revisions|summaries ID; generate-summary REVISION_ID [--save]; dry-run REVISION_OR_DIGEST_DELIVERY_ID; skip-before --hours HOURS; retry-job ID; retry-delivery ID [--ack-duplicate-risk]; resolve ID --post-id NOTE_ID --post-url HTTPS_URL; pause TARGET_ID; resume TARGET_ID',
     );
     return;
   }
@@ -112,7 +112,7 @@ async function main() {
     body = { hours: Number(values.hours) };
   } else if (
     command === 'list' &&
-    ['jobs', 'deliveries', 'sources', 'targets', 'revisions', 'summaries'].includes(resource ?? '')
+    ['jobs', 'deliveries', 'sources', 'targets', 'revisions', 'summaries', 'publications'].includes(resource ?? '')
   ) {
     path = `/admin/${resource}`;
   } else if (command === 'show' && ['jobs', 'deliveries', 'revisions', 'summaries'].includes(resource ?? '') && id) {

@@ -24,7 +24,7 @@ pnpm run cli -- config validate
 
 `pnpm test`は実際のWorkersランタイムとローカルD1を使う統合テストを含みます。外部情報源・LLM・SNSへのアクセスはテストでは置き換え、SNSへの実送信は行いません。`pnpm run build`もWranglerのdry-runです。
 
-フォーマットにはBiomeを使用します。`pnpm run format`で対応ファイル全体を整形し、`pnpm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`は整形対象から除外します。
+フォーマットにはBiomeを使用します。`pnpm run format`で対応ファイル全体を整形し、`pnpm run format:check`で確認します。設定は`biome.json`で管理し、インデントはスペース2つ、行幅は120文字です。生成物・Gitの無視対象・`package-lock.json`・`pnpm-lock.yaml`は整形対象から除外します。
 
 ## AIエージェント向けの開発環境
 
@@ -141,6 +141,20 @@ pnpm wrangler deploy
 
 ローカル起動には`.dev.vars.example`を`.dev.vars`へコピーして値を設定し、`pnpm run dev`を使用します。Workers
 AIの呼び出しはローカル起動でもクラウド側の推論・利用量を伴うため、オフラインでの検証にはテストを使ってください。
+
+## 発信方法
+
+プロジェクト設定では `publishing.mode: "nvd-high-digest"` を選択します。
+KEV・JVN・JPCERT・NVD Criticalは個別、NVDのみのHighは新規公表・初評価・昇格を6時間ごとにまとめます。
+日本時間0・6・12・18時に作成し、文字数を超える場合は分割します。送信には通常の間隔・日次上限を適用します。
+High→Criticalと悪用確認は個別通知します。同帯域のスコア変動や翻訳追加だけではNVDを再掲載しません。
+方式を省略すると従来どおり個別投稿します。詳細は[発信方法と掲載理由](docs/specs/publishing-policy.md)を参照してください。
+
+導入前に追加migrationを適用します。初回実行では既存CVEを観測の基準にし、古いHighを一括投稿しません。
+`list publications` は観測と要約の品質状態、`show deliveries ID` はまとめの所属、`dry-run ID`
+はまとめ配信IDの本文を確認できます。
+結果不明の配信は既存どおり確認・解決し、明示的に重複リスクを承認しない限り再送しません。
+まとめてもCVE単位の要約・検証は必要です。AI予算不足・品質不合格・期限超過では掲載が保留されます。
 
 ## 設定
 

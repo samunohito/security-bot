@@ -62,6 +62,12 @@ const modeSchema = z.enum(['free', 'balanced', 'performance']);
 export const configSchema = z.object({
   mode: modeSchema,
   dryRun: z.boolean(),
+  publishing: z
+    .object({
+      mode: z.enum(['individual', 'nvd-high-digest']).default('individual'),
+      digestIntervalSeconds: z.number().int().min(3600).max(86400).default(21600),
+    })
+    .default({ mode: 'individual', digestIntervalSeconds: 21600 }),
   pollIntervalSeconds: interval,
   sources: z.array(sourceSchema),
   targets: z.array(targetSchema),
@@ -152,6 +158,7 @@ export function loadConfig(input: unknown = {}, env: Environment = {}): Config {
   const config = configSchema.parse({
     mode,
     dryRun: booleanEnv(env.DRY_RUN, z.boolean().parse(raw.dryRun ?? true)),
+    publishing: raw.publishing,
     pollIntervalSeconds: poll,
     sources: sourceRaw.map((s) => ({
       ...s,

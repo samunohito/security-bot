@@ -9,7 +9,7 @@ import { PublishError } from '../src/social/provider';
 import { UrlReferenceProvider } from '../src/social/url-reference';
 import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
 import type { LlmProvider, LlmRequest } from '../src/llm/provider';
-import type { PostIntent, SourceItem } from '../src/domain';
+import type { PostIntent, SourceItem, SummaryTag } from '../src/domain';
 
 const db = (env as unknown as { DB: D1Database }).DB;
 const now = Date.parse('2026-10-27T00:00:00Z');
@@ -255,6 +255,87 @@ describe('complete pipeline', () => {
       const revision = (await store.getRevision(id!))!;
       expect((await store.getSummary(revision))?.summary).toEqual(metadata);
       expect((await store.budgetStatus(now))?.calls).toBe(2);
+    },
+  );
+
+  it.each(['valid', 'invalid_quote', 'unsupported'] as const)(
+    'タグ候補の重複と個数を整理しても採用タグの根拠・意味検証を維持する: %s',
+    async (outcome) => {
+      const { bot: original, store } = harness();
+      const tags: SummaryTag[] = [
+        { kind: 'usage', ...claim('ネットワーク', 'Acme 1.0') },
+        { kind: 'theme', ...claim('認証', 'Acme 1.0') },
+        { kind: 'theme', ...claim('暗号', 'Acme 1.0') },
+        { kind: 'product', ...claim('Acme', outcome === 'invalid_quote' ? '架空の引用' : 'Acme 1.0') },
+      ];
+      const candidate = {
+        ...summary,
+        tags: [
+          tags[0],
+          tags[0],
+          { kind: 'usage', ...claim('OS', 'Acme 1.0') },
+          tags[1],
+          tags[1],
+          tags[2],
+          { kind: 'theme', ...claim('パス処理', 'Acme 1.0') },
+          tags[3],
+          { kind: 'product', ...claim('ACME', 'Acme 1.0') },
+        ],
+      };
+      const published: string[] = [];
+      const verified: unknown[] = [];
+      const bot = new Bot(original.env, original.config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            if (request.system === VERIFY_SYSTEM) {
+              verified.push(request.data);
+            }
+            return {
+              value: schema.parse(
+                request.system === VERIFY_SYSTEM
+                  ? {
+                      supported: outcome !== 'unsupported',
+                      contradictions: [],
+                      unsupportedClaims: outcome === 'unsupported' ? ['tag_not_supported'] : [],
+                    }
+                  : candidate,
+              ),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+          async publish(post) {
+            published.push(post.text);
+            return { id: 'normalized-tags', url: 'https://social.example/notes/normalized-tags' };
+          },
+        }),
+      });
+      const [id] = await store.ingest(item, now);
+      await bot.tick(now);
+      await processAll(bot, now);
+
+      const revision = (await store.getRevision(id!))!;
+      const saved = await store.getSummary(revision);
+      expect(saved?.summary.tags).toEqual(tags);
+      expect(saved?.validation.valid).toBe(outcome === 'valid');
+      expect((await store.list('deliveries')).map((delivery) => delivery.state)).toEqual(
+        outcome === 'valid' ? ['sent', 'sent'] : ['held', 'held'],
+      );
+      expect(verified).toEqual(
+        outcome === 'invalid_quote' ? [] : [expect.objectContaining({ summary: { ...summary, subject: null, tags } })],
+      );
+      expect((await store.budgetStatus(now))?.calls).toBe(outcome === 'invalid_quote' ? 1 : 2);
+      expect(published).toHaveLength(outcome === 'valid' ? 2 : 0);
+      if (outcome === 'valid') {
+        expect(published[0]).toContain('#ネットワーク #認証 #暗号 #ACME');
+      }
+
+      const diagnostic = await bot.generateSummary(id!, now);
+      expect(diagnostic.summary.tags).toEqual(tags);
+      expect(diagnostic.validation.valid).toBe(outcome === 'valid');
+      expect(diagnostic.saved).toBe(false);
     },
   );
 
@@ -784,7 +865,7 @@ describe('complete pipeline', () => {
               request.system === VERIFY_SYSTEM
                 ? { supported: true, contradictions: [], unsupportedClaims: [] }
                 : request.system.includes('at most 45')
-                  ? { ...metadata, actionKind: shortenedActionKind }
+                  ? { ...metadata, actionKind: shortenedActionKind, tags: Array(7).fill(metadata.tags[0]) }
                   : { ...metadata, overview: claim('脆弱性'.repeat(200), 'Acme 1.0 allows remote execution.') };
             return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
           },

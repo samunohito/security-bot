@@ -66,8 +66,9 @@ function tagName(tag: SummaryTag): string | null {
   return /^\d+$/.test(name) ? null : name;
 }
 
-/** 固定分類と抽出名称を安全なハッシュタグへ変換し、分類順に重複なく並べる。 */
-export function formatHashtags(tags: SummaryTag[]): string {
+/** 投稿時のタグ表記で重複を除き、分類ごとの上限内で候補順に採用する。根拠検証は呼び出し側で行う。 */
+export function selectTags(tags: SummaryTag[]): SummaryTag[] {
+  const selected: SummaryTag[] = [];
   const names: string[] = [];
   const limits = { usage: 1, theme: 2, vendor: 1, product: 2 };
   for (const kind of ['usage', 'theme', 'vendor', 'product'] as const) {
@@ -78,9 +79,17 @@ export function formatHashtags(tags: SummaryTag[]): string {
         continue;
       }
       names.push(name);
+      selected.push(tag);
       count++;
     }
   }
 
-  return names.map((name) => `#${name}`).join(' ');
+  return selected;
+}
+
+/** 固定分類と抽出名称を安全なハッシュタグへ変換し、分類順に重複なく並べる。 */
+export function formatHashtags(tags: SummaryTag[]): string {
+  return selectTags(tags)
+    .map((tag) => `#${tagName(tag)}`)
+    .join(' ');
 }

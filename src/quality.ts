@@ -47,6 +47,11 @@ export const summarySchema = z
   })
   .strict();
 
+// 個数超過だけで要約全体を捨てず、採用候補を整理してから厳格なスキーマと根拠で検証する。
+export const summaryCandidateSchema = summarySchema.extend({
+  tags: z.array(tagSchema).default([]).describe('用途は最大1、テーマは最大2、メーカーは最大1、製品は最大2。'),
+});
+
 export const verdictSchema = z
   .object({
     supported: z.boolean(),

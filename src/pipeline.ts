@@ -6,7 +6,7 @@ import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
 import type { AiBinding, LlmProvider, LlmRequest } from './llm/provider';
 import { createLlmProvider } from './llm';
 import { evidencePrompt } from './llm/evidence';
-import { summarySchema, validateSummary, validateVerdict, verdictSchema, type Verdict } from './quality';
+import { summaryCandidateSchema, validateSummary, validateVerdict, verdictSchema, type Verdict } from './quality';
 import { createSocialProvider } from './social';
 import { PublishError, type PreparedPost, type SocialProvider } from './social/provider';
 import { describePublishFailure } from './social/diagnostics';
@@ -16,6 +16,7 @@ import { Store, type Job, type Revision, type Delivery } from './store';
 import { digestWindow } from './publication';
 import { formatDigest } from './social/digest';
 import { formatPost } from './social/format';
+import { selectTags } from './social/tags';
 import type { DigestMember } from './publication-store';
 
 export interface BotEnv extends Environment {
@@ -176,7 +177,7 @@ export class Bot {
     }
 
     const input = this.promptEvidence(revision);
-    const summary = await this.generate({ system: SUMMARY_SYSTEM, data: input }, summarySchema, now);
+    const summary = await this.generateSummaryCandidate({ system: SUMMARY_SYSTEM, data: input }, now);
     const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key, {
       requireActionKind: true,
     });
@@ -399,6 +400,12 @@ export class Bot {
     return evidencePrompt(revision.threat_key, revision.snapshot.evidence);
   }
 
+  private async generateSummaryCandidate(request: LlmRequest, now: number): Promise<Summary> {
+    const summary = await this.generate(request, summaryCandidateSchema, now);
+
+    return { ...summary, tags: selectTags(summary.tags) };
+  }
+
   private async generate<T>(request: LlmRequest, schema: z.ZodType<T>, now: number): Promise<T> {
     if (!this.llm) {
       throw new Error('missing_AI_binding');
@@ -501,9 +508,8 @@ export class Bot {
     }
 
     if (!cached) {
-      const summary = await this.generate(
+      const summary = await this.generateSummaryCandidate(
         { system: SUMMARY_SYSTEM, data: this.promptEvidence(revision) },
-        summarySchema,
         now,
       );
       const validation = validateSummary(summary, revision.snapshot.evidence, revision.threat_key, {
@@ -599,7 +605,7 @@ export class Bot {
       }
       let cached = await this.store.getShortened(deliveryId, revision.evidence_hash);
       if (!cached) {
-        const shorter = await this.generate(
+        const shorter = await this.generateSummaryCandidate(
           {
             system:
               SUMMARY_SYSTEM +
@@ -609,7 +615,6 @@ export class Bot {
               previousSummary: intent.summary,
             },
           },
-          summarySchema,
           now,
         );
         const check = validateSummary(shorter, revision.snapshot.evidence, revision.threat_key, {

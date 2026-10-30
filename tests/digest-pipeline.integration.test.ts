@@ -155,6 +155,41 @@ it('Highは6時間の区切りまで待ち、掲載後のCriticalを個別通知
   expect(sent[1]).toContain('[Critical]');
   expect(sent[1]).toContain('https://social.example/notes/1');
 });
+it.each([
+  { maxCharacters: 400, expectedCounts: [3, 3] },
+  { maxCharacters: 2000, expectedCounts: [6] },
+])(
+  '投稿先の上限 $maxCharacters 文字で項目を分割し、4件を超えても収容する',
+  async ({ maxCharacters, expectedCounts }) => {
+    const { bot, sent } = harness(undefined, maxCharacters);
+    for (let index = 1; index <= 6; index++) {
+      await bot.store.ingest({ ...item, id: String(index), cves: [`CVE-2026-${1110 + index}`] }, now);
+    }
+    await bot.tick(now);
+    await drain(bot, now);
+    await bot.tick(boundary);
+    await drain(bot, boundary);
+
+    const deliveries = await bot.store.list('deliveries');
+    const bodies = deliveries.map((delivery) => (JSON.parse(delivery.prepared!) as { text: string }).text);
+    expect(bodies.map((body) => body.match(/・CVE-/g)?.length ?? 0).sort()).toEqual(expectedCounts);
+    expect(bodies.every((body) => [...body].length <= maxCharacters)).toBe(true);
+    expect(bodies.every((body) => !body.includes('[High]') && !body.includes('出典:'))).toBe(true);
+    expect(sent[0]).toContain('・CVE-2026-1111｜新規｜CVSS 8\nAcme：Acmeの脆弱性\n影響: Acme 1.0でコード実行\n');
+    const members = (
+      await Promise.all(deliveries.map((delivery) => bot.store.publications.members(delivery.id)))
+    ).flat();
+    expect(members.map((member) => member.threat_key).sort()).toEqual([
+      'CVE-2026-1111',
+      'CVE-2026-1112',
+      'CVE-2026-1113',
+      'CVE-2026-1114',
+      'CVE-2026-1115',
+      'CVE-2026-1116',
+    ]);
+  },
+);
+
 it('まとめがunknownになっても次の期間へ自動で載せ直さない', async () => {
   const { bot, sent } = harness('unknown');
   await bot.store.ingest(item, now);
@@ -279,7 +314,7 @@ it('dry-runのまとめは掲載済み扱いせず本文と所属をプレビュ
   ).toMatchObject({ route: 'digest' });
 });
 it('複数分割の一部がunknownでも成功した分割を再送せず残りを保持する', async () => {
-  const { bot, sent } = harness('second-unknown', 300);
+  const { bot, sent } = harness('second-unknown', 200);
   for (let index = 1; index <= 3; index++) {
     await bot.store.ingest({ ...item, id: String(index), cves: [`CVE-2026-${1110 + index}`] }, now);
   }

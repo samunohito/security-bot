@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ActionKind, PostIntent, SummaryTag } from '../src/domain';
-import { formatPost } from '../src/social/format';
+import { formatDigestEntry, formatPost } from '../src/social/format';
 
 const claim = (text: string) => ({ text, evidence: [{ id: 'jvn:1', quote: text }] });
 const tag = (kind: SummaryTag['kind'], text: string): SummaryTag => ({ kind, ...claim(text) });
@@ -26,6 +26,71 @@ const intent: PostIntent = {
   },
   sources: ['https://jvn.jp/jp/JVN30675482/'],
 };
+
+describe('まとめの項目', () => {
+  it('CVE・理由・スコア、対象と概要、影響、出典を空行なしの4行にする', () => {
+    expect(formatDigestEntry(intent, '新規', 7.1)).toBe(
+      'CVE-2026-97860｜新規｜CVSS 7.1\n' +
+        'ヤマハ YMS-VPN8／YMS-VPN8-CP：Windowsサービスのファイルパスの引用符不備\n' +
+        '影響: 書き込み権限を持つユーザーにより、SYSTEM権限でコードが実行される可能性があります。\n' +
+        'https://jvn.jp/jp/JVN30675482/',
+    );
+  });
+
+  it.each(['unpatched', 'workaround', 'additional_steps', 'patch_warning'] as const)(
+    '例外対策と未確認事項は追加行に残す: %s',
+    (actionKind) => {
+      const text = formatDigestEntry(
+        {
+          ...intent,
+          summary: {
+            ...intent.summary,
+            actionKind,
+            action: claim('管理機能を無効にしてください。'),
+            uncertainties: ['他のバージョンへの影響は未確認'],
+          },
+          sources: [...intent.sources, 'https://example.com/advisory'],
+        },
+        'High昇格',
+        8,
+      );
+      expect(text).toContain('｜High昇格｜CVSS 8\n');
+      expect(text).toContain('\n対策: 管理機能を無効にしてください。\n');
+      expect(text).toContain('\n未確認事項: 他のバージョンへの影響は未確認\n');
+      expect(text).toContain('\nhttps://jvn.jp/jp/JVN30675482/\nhttps://example.com/advisory');
+      expect(text).not.toContain('\n\n');
+    },
+  );
+
+  it('旧要約では元見出しを使い、影響が未確認であることを残す', () => {
+    const text = formatDigestEntry(
+      { ...intent, summary: { overview: claim('問題の概要'), impact: null, action: null, uncertainties: [] } },
+      '初評価',
+      7,
+    );
+    expect(text).toContain(`${intent.title}：問題の概要\n影響: 未確認\n`);
+  });
+
+  it('対象と同一の概要は重複させず、概要の欠落は明示する', () => {
+    expect(
+      formatDigestEntry({ ...intent, summary: { ...intent.summary, overview: intent.summary.subject! } }, '新規', 8),
+    ).toContain('\nヤマハ YMS-VPN8／YMS-VPN8-CP\n影響:');
+    expect(formatDigestEntry({ ...intent, summary: { ...intent.summary, overview: null } }, '新規', 8)).toContain(
+      '：概要: 未確認\n',
+    );
+  });
+
+  it('任意タグとメンションとMFMを無効化し、項目のタグを付けない', () => {
+    const text = formatDigestEntry(
+      { ...intent, summary: { ...intent.summary, subject: claim('Acme\n@everyone #任意 $[spin x]') } },
+      '新規',
+      8,
+    );
+    expect(text).toContain('Acme @\u200beveryone #\u200b任意 $\u200b[\u200bspin x]\u200b：');
+    expect(text).not.toContain('#YMS_VPN8');
+    expect(text.split('\n')).toHaveLength(4);
+  });
+});
 
 describe('投稿本文', () => {
   it('CVEと深刻度を先頭に置き、対象・問題・影響・出典・タグを重複なく段落にする', () => {

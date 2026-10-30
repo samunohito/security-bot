@@ -17,7 +17,7 @@ export function formatDigest(
   const overhead = `${header} (${'9'.repeat(digits)}/${'9'.repeat(digits)})\n\n\n\n#NVD`.length;
 
   for (const entry of entries) {
-    if ([...entry.text].length + overhead + 2 > maxCharacters) {
+    if ([...entry.text].length + overhead + 1 > maxCharacters) {
       throw new Error(`digest_item_too_long:${entry.id}`);
     }
     const next = [...group, entry];

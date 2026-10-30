@@ -15,7 +15,7 @@ import type { SourceProvider } from './sources/provider';
 import { Store, type Job, type Revision, type Delivery } from './store';
 import { digestWindow } from './publication';
 import { formatDigest } from './social/digest';
-import { formatPost } from './social/format';
+import { formatDigestEntry } from './social/format';
 import { selectTags } from './social/tags';
 import type { DigestMember } from './publication-store';
 
@@ -801,7 +801,7 @@ export class Bot {
           sources: [...new Set(revision.snapshot.evidence.map((entry) => entry.url))].slice(0, 2),
         };
         const score = Math.max(...revision.snapshot.scores.map((value) => value.score));
-        const text = `${decision.reason} / CVSS ${score}\n${formatPost(intent)}`;
+        const text = formatDigestEntry(intent, decision.reason, score);
         try {
           formatDigest([{ id: revision.id, text }], window, target.maxCharacters, rows.results.length);
         } catch {

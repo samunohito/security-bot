@@ -79,6 +79,8 @@
 
 ### 履歴
 
+- [短縮時に重要条件を残す変更と初期生成指示の不採用](history/2026-11-02-keep-critical-conditions/evaluation.md)：
+  Issue #20の投稿全体の文字数予算、短縮の比較、初期生成3案の不採用と残存課題。
 - [追加LLM検品の効果比較](history/2026-11-02-critic-comparison/evaluation.md)：
   同じ保存要約での検品なし・現行・重大誤り集中型の比較、独立原文照合、費用と掲載経路への効果。
 - [対策の表示を分類から切り離した変更と再生比較](history/2026-11-01-show-actions/evaluation.md)：

@@ -1,0 +1,406 @@
+{
+  "recordedDate": "2026-11-02",
+  "sourceFiles": {
+    "docs/history/2026-11-01-tag-candidate-limit/inputs.json": "9f66d4af4d50339804d34e014bada34d572ed0c73cf597e796a78a090daeda1b"
+  },
+  "realCases": [
+    {
+      "label": "nvd-normal",
+      "key": "CVE-2026-118147",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "3ebaec81547e3447ae7374a4d4ee558cbe9d5bf409eaa37f0a43ed2e756e5abd"
+    },
+    {
+      "label": "jvn",
+      "key": "CVE-2023-4863",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "a697c65ca61e7c29406131affb54729540154eb19dccedca8aeabcf96627f9d3"
+    },
+    {
+      "label": "jpcert-multi-cve",
+      "key": "CVE-2026-115560",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "e0f3064a368a8a645ef934a078c51d03e29a8d3b71100015ed42a3cfe2bc6700"
+    },
+    {
+      "label": "kev",
+      "key": "CVE-2026-118527",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "e7b4e5fd71a19a6dea56650ee7939a88826caf070635759faa9d6830eefc7246"
+    },
+    {
+      "label": "previous-json-error",
+      "key": "CVE-2026-120135",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "387a790b28df2594c77477d2053f8a312193e3fda118d7f0a14a2d1816eea932"
+    },
+    {
+      "label": "incomplete-information",
+      "key": "CVE-2026-39732",
+      "sourceFile": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "inputSha256": "8a62d30ec76e5fe489eeabfba35ad5c1465bb8924cdbec715b5427d626dc7d97"
+    }
+  ],
+  "syntheticAndShorteningCases": [
+    {
+      "label": "synthetic-exclusive",
+      "key": "CVE-2099-9001",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-exclusive",
+          "url": "https://example.invalid/synthetic-exclusive",
+          "title": "Orion",
+          "impact": null,
+          "text": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive.\nUpgrade to version 7.4.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9001"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-exclusive",
+          "scope": "cve",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9001",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-exclusive",
+            "scope": "cve",
+            "cves": ["CVE-2099-9001"],
+            "url": "https://example.invalid/synthetic-exclusive",
+            "text": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive.\nUpgrade to version 7.4.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "synthetic"
+    },
+    {
+      "label": "synthetic-inclusive-mitigation",
+      "key": "CVE-2099-9002",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-inclusive-mitigation",
+          "url": "https://example.invalid/synthetic-inclusive-mitigation",
+          "title": "Orion",
+          "impact": null,
+          "text": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.\nA patch has not been released. Set feature.upload_progress=off and restart all workers. Discontinue use if the mitigation is unavailable.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9002"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-inclusive-mitigation",
+          "scope": "cve",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9002",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-inclusive-mitigation",
+            "scope": "cve",
+            "cves": ["CVE-2099-9002"],
+            "url": "https://example.invalid/synthetic-inclusive-mitigation",
+            "text": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.\nA patch has not been released. Set feature.upload_progress=off and restart all workers. Discontinue use if the mitigation is unavailable.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "synthetic"
+    },
+    {
+      "label": "synthetic-unknown-remediation",
+      "key": "CVE-2099-9003",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-unknown-remediation",
+          "url": "https://example.invalid/synthetic-unknown-remediation",
+          "title": "Orion",
+          "impact": null,
+          "text": "Orion Editor allows an unauthorized actor to bypass permissions when opening a crafted project.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9003"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-unknown-remediation",
+          "scope": "cve",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9003",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-unknown-remediation",
+            "scope": "cve",
+            "cves": ["CVE-2099-9003"],
+            "url": "https://example.invalid/synthetic-unknown-remediation",
+            "text": "Orion Editor allows an unauthorized actor to bypass permissions when opening a crafted project.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "synthetic"
+    },
+    {
+      "label": "synthetic-multi-cve",
+      "key": "CVE-2099-9004",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-multi-cve",
+          "url": "https://example.invalid/synthetic-multi-cve",
+          "title": "Orion",
+          "impact": null,
+          "text": "CVE-2099-9004:\nOrion Console permits authenticated administrators to cause denial of service when importing a malformed configuration.\nDisable the import plug-in and restart all workers.\n\nCVE-2099-9005:\nOrion Console permits unauthenticated code execution. Upgrade to 12.0.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9004", "CVE-2099-9005"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-multi-cve",
+          "scope": "article",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9004",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-multi-cve",
+            "scope": "article",
+            "cves": ["CVE-2099-9004", "CVE-2099-9005"],
+            "url": "https://example.invalid/synthetic-multi-cve",
+            "text": "CVE-2099-9004:\nOrion Console permits authenticated administrators to cause denial of service when importing a malformed configuration.\nDisable the import plug-in and restart all workers.\n\nCVE-2099-9005:\nOrion Console permits unauthenticated code execution. Upgrade to 12.0.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "synthetic"
+    },
+    {
+      "label": "shorten-exclusive",
+      "key": "CVE-2099-9001",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-exclusive",
+          "url": "https://example.invalid/synthetic-exclusive",
+          "title": "Orion",
+          "impact": null,
+          "text": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive.\nUpgrade to version 7.4.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9001"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-exclusive",
+          "scope": "cve",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9001",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-exclusive",
+            "scope": "cve",
+            "cves": ["CVE-2099-9001"],
+            "url": "https://example.invalid/synthetic-exclusive",
+            "text": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive.\nUpgrade to version 7.4.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "shortening",
+      "previousSummary": {
+        "subject": {
+          "text": "Orion Parser",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-exclusive",
+              "quote": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive."
+            }
+          ]
+        },
+        "overview": {
+          "text": "任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性任意コード実行の脆弱性",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-exclusive",
+              "quote": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive."
+            }
+          ]
+        },
+        "impact": {
+          "text": "Orion Parser 7.4未満で、認証済みの管理者が細工したアーカイブをインポートした場合に任意のコードを実行される可能性がある。",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-exclusive",
+              "quote": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive."
+            }
+          ]
+        },
+        "action": {
+          "text": "7.4へ更新する。",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-exclusive",
+              "quote": "Upgrade to version 7.4."
+            }
+          ]
+        },
+        "actionKind": "routine_update",
+        "uncertainties": [],
+        "tags": []
+      },
+      "maxPostCharacters": 360
+    },
+    {
+      "label": "shorten-mitigation",
+      "key": "CVE-2099-9002",
+      "sources": [
+        {
+          "sourceId": "fixture",
+          "id": "synthetic-inclusive-mitigation",
+          "url": "https://example.invalid/synthetic-inclusive-mitigation",
+          "title": "Orion",
+          "impact": null,
+          "text": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.\nA patch has not been released. Set feature.upload_progress=off and restart all workers. Discontinue use if the mitigation is unavailable.",
+          "publishedAt": 1793474207213,
+          "modifiedAt": 1793474207873,
+          "fetchedAt": 1793475333882,
+          "cves": ["CVE-2099-9002"],
+          "scores": [],
+          "exploited": false,
+          "urgent": false,
+          "advisory": false,
+          "affected": null,
+          "remediation": null,
+          "rejected": false,
+          "evidenceId": "fixture:synthetic-inclusive-mitigation",
+          "scope": "cve",
+          "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+        }
+      ],
+      "input": {
+        "key": "CVE-2099-9002",
+        "evidence": [
+          {
+            "id": "fixture:synthetic-inclusive-mitigation",
+            "scope": "cve",
+            "cves": ["CVE-2099-9002"],
+            "url": "https://example.invalid/synthetic-inclusive-mitigation",
+            "text": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.\nA patch has not been released. Set feature.upload_progress=off and restart all workers. Discontinue use if the mitigation is unavailable.",
+            "sections": {
+              "affected": null,
+              "impact": null,
+              "remediation": null
+            }
+          }
+        ]
+      },
+      "kind": "shortening",
+      "previousSummary": {
+        "subject": {
+          "text": "Orion Gateway",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-inclusive-mitigation",
+              "quote": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled."
+            }
+          ]
+        },
+        "overview": {
+          "text": "特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行特定構成でのコード実行",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-inclusive-mitigation",
+              "quote": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled."
+            }
+          ]
+        },
+        "impact": {
+          "text": "Orion Gateway 9.1以下で、独自ハンドラーとアップロード追跡の両方を有効にした場合のみコード実行が可能。",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-inclusive-mitigation",
+              "quote": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled."
+            }
+          ]
+        },
+        "action": {
+          "text": "修正版未提供。feature.upload_progress=offに設定して全ワーカーを再起動する。緩和策を利用できなければ使用を中止する。",
+          "evidence": [
+            {
+              "id": "fixture:synthetic-inclusive-mitigation",
+              "quote": "A patch has not been released. Set feature.upload_progress=off and restart all workers. Discontinue use if the mitigation is unavailable."
+            }
+          ]
+        },
+        "actionKind": "workaround",
+        "uncertainties": [],
+        "tags": []
+      },
+      "maxPostCharacters": 360
+    }
+  ]
+}

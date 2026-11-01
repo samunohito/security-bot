@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Config, Environment, SourceConfig, TargetConfig } from './config';
 import { classify, digest, type PostIntent, type Summary, type Validation } from './domain';
 import { HttpError } from './http';
-import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
+import { SHORTEN_SYSTEM, SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
 import type { AiBinding, LlmProvider, LlmRequest } from './llm/provider';
 import { createLlmProvider } from './llm';
 import { evidencePrompt } from './llm/evidence';
@@ -595,6 +595,7 @@ export class Bot {
     revision: Revision,
     deliveryId: string,
     strict: boolean,
+    maxPostCharacters: number,
     now: number,
   ): Promise<PreparedPost> {
     try {
@@ -607,12 +608,11 @@ export class Bot {
       if (!cached) {
         const shorter = await this.generateSummaryCandidate(
           {
-            system:
-              SUMMARY_SYSTEM +
-              ' Make each Japanese field at most 45 characters. Preserve all critical version boundaries and exact supporting quotes. The template including sources must fit the target limit; do not drop safety-critical facts to fit.',
+            system: SHORTEN_SYSTEM,
             data: {
               ...this.promptEvidence(revision),
               previousSummary: intent.summary,
+              maxPostCharacters,
             },
           },
           now,
@@ -722,7 +722,15 @@ export class Bot {
     };
     let prepared: PreparedPost;
     try {
-      prepared = await this.prepare(provider, intent, revision, id, target.qualityGate.enabled, now);
+      prepared = await this.prepare(
+        provider,
+        intent,
+        revision,
+        id,
+        target.qualityGate.enabled,
+        target.maxCharacters,
+        now,
+      );
     } catch (error) {
       if (error instanceof Deferred) {
         throw error;

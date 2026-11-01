@@ -79,6 +79,8 @@
 
 ### 履歴
 
+- [引用の原文位置と対象CVEへの帰属の再生比較](history/2026-11-01-quote-attribution/evaluation.md)：
+  Issue #16の原文位置照合、同じ72応答での検証器の比較、自然文の帰属と内容検証の残存課題。
 - [タグ候補上限と固定入力でのモデル再評価](history/2026-11-01-tag-candidate-limit/evaluation.md)：
   Issue #12の変更効果、LlamaとLunaの近似比較、原文・表示上の残存課題、固定入力と工程別測定値。
 

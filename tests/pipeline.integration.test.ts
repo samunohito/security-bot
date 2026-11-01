@@ -343,17 +343,7 @@ describe('complete pipeline', () => {
       ];
       const candidate = {
         ...summary,
-        tags: [
-          tags[0],
-          tags[0],
-          { kind: 'usage', ...claim('OS', 'Acme 1.0') },
-          tags[1],
-          tags[1],
-          tags[2],
-          { kind: 'theme', ...claim('パス処理', 'Acme 1.0') },
-          tags[3],
-          { kind: 'product', ...claim('ACME', 'Acme 1.0') },
-        ],
+        tags: [tags[0], { kind: 'usage', ...claim('OS', 'Acme 1.0') }, tags[1], tags[1], tags[2], tags[3]],
       };
       const published: string[] = [];
       const verified: unknown[] = [];
@@ -411,6 +401,42 @@ describe('complete pipeline', () => {
       expect(diagnostic.saved).toBe(false);
     },
   );
+
+  it('生成タグ候補が上限を超えたときは選別で救済せず、診断でも保存・投稿しない', async () => {
+    const { bot: original, store } = harness();
+    const published: string[] = [];
+    const bot = new Bot(original.env, original.config, {
+      llm: {
+        async generateStructured<T>(request: LlmRequest, _schema: z.ZodType<T>) {
+          // Provider側の検証を通らない応答でも、呼び出し側の構造検証で投稿を防ぐ。
+          const value =
+            request.system === VERIFY_SYSTEM
+              ? { supported: true, contradictions: [], unsupportedClaims: [] }
+              : { ...summary, tags: Array(7).fill({ kind: 'product', ...claim('Acme', 'Acme 1.0') }) };
+          return { value: value as T, usage: { inputTokens: 100, outputTokens: 100 } };
+        },
+      },
+      social: () => ({
+        prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+        async publish(post) {
+          published.push(post.text);
+          return { id: 'unexpected', url: 'https://social.example/notes/unexpected' };
+        },
+      }),
+    });
+    const [id] = await store.ingest(item, now);
+
+    await bot.tick(now);
+    await expect(bot.generateSummary(id!, now, { save: true })).rejects.toMatchObject({
+      issues: [expect.objectContaining({ code: 'too_big', path: ['tags'], maximum: 6 })],
+    });
+    await processAll(bot, now);
+
+    const revision = (await store.getRevision(id!))!;
+    expect(await store.getSummary(revision)).toBeNull();
+    expect(await store.list('deliveries')).toEqual([]);
+    expect(published).toEqual([]);
+  });
 
   it('改訂の保存日時が古くても最新更新が新しければ要約して投稿する', async () => {
     const { bot, store } = harness();
@@ -938,7 +964,7 @@ describe('complete pipeline', () => {
               request.system === VERIFY_SYSTEM
                 ? { supported: true, contradictions: [], unsupportedClaims: [] }
                 : request.system.includes('at most 45')
-                  ? { ...metadata, actionKind: shortenedActionKind, tags: Array(7).fill(metadata.tags[0]) }
+                  ? { ...metadata, actionKind: shortenedActionKind, tags: Array(6).fill(metadata.tags[0]) }
                   : { ...metadata, overview: claim('脆弱性'.repeat(200), 'Acme 1.0 allows remote execution.') };
             return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
           },

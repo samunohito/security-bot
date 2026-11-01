@@ -47,10 +47,8 @@ export const summarySchema = z
   })
   .strict();
 
-// 個数超過だけで要約全体を捨てず、採用候補を整理してから厳格なスキーマと根拠で検証する。
-export const summaryCandidateSchema = summarySchema.extend({
-  tags: z.array(tagSchema).default([]).describe('用途は最大1、テーマは最大2、メーカーは最大1、製品は最大2。'),
-});
+// 生成時にも合計上限を渡す。後段の選別だけでは反復によるJSON切断とトークン消費を防げない。
+export const summaryCandidateSchema = summarySchema;
 
 export const verdictSchema = z
   .object({

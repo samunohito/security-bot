@@ -1,0 +1,290 @@
+[
+  {
+    "label": "nvd-normal",
+    "key": "CVE-2026-118147",
+    "sources": [
+      {
+        "sourceId": "nvd",
+        "id": "CVE-2026-118147",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-118147",
+        "title": "CVE-2026-118147",
+        "impact": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+        "text": "CVE-2026-118147\nImproper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+        "publishedAt": 1793474207213,
+        "modifiedAt": 1793474207873,
+        "fetchedAt": 1793475333882,
+        "cves": ["CVE-2026-118147"],
+        "scores": [
+          {
+            "score": 7.4,
+            "version": "3.1",
+            "issuer": "secure@microsoft.com"
+          }
+        ],
+        "exploited": false,
+        "urgent": false,
+        "advisory": false,
+        "affected": null,
+        "remediation": null,
+        "rejected": false,
+        "evidenceId": "nvd:CVE-2026-118147",
+        "scope": "cve",
+        "originalTextSha256": "eba2e95f861499ef0bf8029b5208149bc39799d0ac07d9c5d5899ca4a95b579a"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2026-118147",
+      "evidence": [
+        {
+          "id": "nvd:CVE-2026-118147",
+          "scope": "cve",
+          "cves": ["CVE-2026-118147"],
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-118147",
+          "text": "CVE-2026-118147\nImproper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "sections": {
+            "affected": null,
+            "impact": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+            "remediation": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "label": "jvn",
+    "key": "CVE-2023-4863",
+    "sources": [
+      {
+        "sourceId": "jvn",
+        "id": "https://jvn.jp/vu/JVNVU93251594/",
+        "url": "https://jvn.jp/vu/JVNVU93251594/",
+        "title": "三菱電機製の複数製品における複数の脆弱性（2026-006）",
+        "text": "JVNVU#93251594: 三菱電機製の複数製品における複数の脆弱性（2026-006） \n Japan Vulnerability Notes\n 公開日：2026/10/23　最終更新日：2026/10/30 \n JVNVU#93251594\n 三菱電機製の複数製品における複数の脆弱性（2026-006）\n 概要\n 三菱電機株式会社が提供するGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizVizには、複数の脆弱性が存在します。\n 影響を受けるシステム\n CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで\n CVE-2026-16436、CVE-2026-16437 \n GENESIS 11.03およびそれ以前\n GENESIS64 10.97.3およびそれ以前\n ICONICS Suite 10.97.3およびそれ以前\n Hyper Historian 10.97.3およびそれ以前\n AnalytiX 10.97.3およびそれ以前\n MobileHMI 10.97.3およびそれ以前\n IoTWorX 10.97.3およびそれ以前\n MC Works64 全バージョン\n GENESIS32 全バージョン\n BizViz 全バージョン\n CVE-2026-16438 \n GENESIS64 10.97.3およびそれ以前\n ICONICS Suite 10.97.3およびそれ以前\n Hyper Historian 10.97.3およびそれ以前\n AnalytiX 10.97.3およびそれ以前\n MobileHMI 10.97.3およびそれ以前\n MC Works64 全バージョン\n 詳細情報\n 三菱電機株式会社が提供するGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizVizには、次の複数の脆弱性が存在します。\n libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（ CWE-122 ） - CVE-2023-4863\n チャレンジレスポンスの内容が固定（ CWE-640 ） - CVE-2026-16436\n チャレンジレスポンスの内容がファイルに保存されており、管理者権限を持ったユーザが改ざん可能（ CWE-640 ） - CVE-2026-16437\n 管理者権限を持ったユーザにDCOM権限が付与されている（ CWE-266 ） - CVE-2026-16438\n 想定される影響\n 想定される影響は脆弱性により異なりますが、次のような可能性があります。\n CVE-2023-4863： \n細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。\n CVE-2026-16436： \nシステムロックを解除するために使用されるチャレンジレスポンスが全てのユーザーで共通かつ固定値であり、チャレンジレスポンスを入手した遠隔の第三者によって、システムのロックを解除される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。\n CVE-2026-16437： \nPCの管理者権限を持ったユーザによってチャレンジレスポンスを保存している管理ファイルを改ざんされた場合、システムのロックが解除される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。\n CVE-2026-16438： \nPCの管理者権限を持ったユーザによって、DCOMオブジェクトをローカルまたはリモートから起動および操作される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、影響を受けるシステムをサービス運用妨害（DoS）状態にされたりする可能性があります。\n 対策方法\n アップデートするまたはワークアラウンドを実施する \n対策方法は、脆弱性および製品・バージョンにより異なります。\n特定の製品・バージョンについては、対策版がリリースされないものもあり、その場合には回避策・軽減策を適用することが推奨されています。\n対策方法の詳細については、開発者が提供する情報を確認してください。\n ベンダ情報\n ベンダ\n リンク\n 三菱電機株式会社 \n GENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32及びBizVizにおける複数の脆弱性 \n 参考情報\n ICS Advisory | ICSA-26-300-02 \nMitsubishi Electric and Mitsubishi Electric Iconics Digital Solutions GENESIS, GENESIS64, ICONICS Suite, Hyper Historian, AnalytiX, MobileHMI, IoTWorX, MC Works64, GENESIS32 and BizViz \n JPCERT/CCからの補足情報\n JPCERT/CCによる脆弱性分析結果\n 謝辞\n この脆弱性情報は、製品利用者への周知を目的に、開発者がJPCERT/CCに報告し、JPCERT/CCが開発者との調整を行いました。\n 関連文書\n JPCERT 緊急報告 \n JPCERT REPORT \n CERT Advisory \n CPNI Advisory \n TRnotes \n CVE \n JVN iPedia \n 更新履歴\n 2026/10/30 \n ［参考情報］にICS Advisoryのリンクを追加しました \n JVN\n HOME \n JVNとは \n 脆弱性レポートの読み方 \n 脆弱性レポート一覧 \n VN_JP \n VN_JP（連絡不能） \n VN_VU \n VN_TA \n TRnotes \n JVN iPedia \n MyJVN \n JVNJS/RSS \n ベンダ情報一覧 \n 連絡不能開発者一覧 \n 脆弱性情報の届出 \n お問合せ先 \n Copyright (c) 2000-2026 JPCERT/CC and IPA. All rights reserved.",
+        "publishedAt": 1793336400000,
+        "modifiedAt": 1793336400000,
+        "fetchedAt": 1793336904085,
+        "cves": ["CVE-2023-4863", "CVE-2026-16436", "CVE-2026-16437", "CVE-2026-16438"],
+        "scores": [],
+        "exploited": false,
+        "advisory": false,
+        "urgent": false,
+        "affected": null,
+        "remediation": null,
+        "rejected": false,
+        "impact": null,
+        "evidenceId": "jvn:https://jvn.jp/vu/JVNVU93251594/",
+        "scope": "article",
+        "originalTextSha256": "2cd90386881ee96f8aaa89a2a84d22059480b20a0579e031c162598182993b16"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2023-4863",
+      "evidence": [
+        {
+          "id": "jvn:https://jvn.jp/vu/JVNVU93251594/",
+          "scope": "article",
+          "cves": ["CVE-2023-4863", "CVE-2026-16436", "CVE-2026-16437", "CVE-2026-16438"],
+          "url": "https://jvn.jp/vu/JVNVU93251594/",
+          "text": "要\n 三菱電機株式会社が提供するGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizVizには、複数の脆弱性が存在します。\n 影響を受けるシステム\n CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで\n CVE-2026-16436、CVE-2026-16437 \n GENESIS 11.03およびそれ以前\n GENESIS64 10.97.3およびそれ以前\n ICONICS Suite 10.97.3およびそれ以前\n Hyper Historian 10.97.3およびそれ以前\n AnalytiX 10.97.3およびそれ以前\n MobileHMI 10.97.3およびそれ以前\n IoTWorX 10.97.3およびそれ以前\n MC Works64 全バージョン\n GENESIS32 全バージョン\n BizViz 全バージョン\n CVE-2026-16438 \n GENESIS64 10.97.3およびそれ以前\n ICONICS Suite 10.97.3およびそれ以前\n Hyper Historian 10.97.3およびそれ以前\n AnalytiX 10.97.3およびそれ以前\n MobileHMI 10.97.3およびそれ以前\n MC Works64 全バージョン\n 詳細情報\n 三菱電機株式会社が提供するGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizVizには、次の複数の脆弱性が存在します。\n libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（ CWE-122 ） - CVE-2023-4863\n チャレンジレスポンスの内容が固定（ CWE-640 ） - CVE-2026-16436\n チャレンジレスポンスの内容がファイルに保存されており、管理者権限を持ったユーザが改ざん可能（ CWE-640 ） - CVE-2026-16437\n 管",
+          "sections": {
+            "affected": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+            "impact": "CVE-2023-4863： \n細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。",
+            "remediation": "アップデートするまたはワークアラウンドを実施する \n対策方法は、脆弱性および製品・バージョンにより異なります。\n特定の製品・バージョンについては、対策版がリリースされないものもあり、その場合には回避策・軽減策を適用することが推奨されています。\n対策方法の詳細については、開発者が提供する情報を確認してください。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "label": "jpcert-multi-cve",
+    "key": "CVE-2026-115560",
+    "sources": [
+      {
+        "sourceId": "jpcert",
+        "id": "https://www.jpcert.or.jp/at/2026/at260033.html",
+        "url": "https://www.jpcert.or.jp/at/2026/at260033.html",
+        "title": "注意喚起: PHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関する注意喚起  (更新)",
+        "text": "PHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関する注意喚起 \r\n スマートフォン用で表示 \n サイバーインシデントがなくなるその日まで\n お問い合わせ \n 採用情報 \n サイトマップ \n English \n JPCERT Coordination Center \n powered by Yahoo! JAPAN\r\n このサイト内を検索\r\n ウェブ全体を検索\r\n 最新情報を取得 ( RSS | メーリングリスト ) \n HTTPS \n モバイル \n インシデントとは \n 緊急情報を確認する \r\n 緊急情報を確認する\n 注意喚起 \n インターネット定点観測 \n JVN \n 脆弱性対策情報 \n 依頼・相談する \r\n 依頼・相談する\n インシデント対応とは \n インシデント対応依頼 \n インシデント相談・情報提供 \n 公開資料を見る \r\n 公開資料を見る\n Weekly Report \n 四半期レポート \n ソフトウェア等の脆弱性関連情報に関する届出状況 \n 研究・調査・翻訳レポート \n CSIRTマテリアル \n セキュアコーディング \n 制御システムセキュリティ \n ライブラリ \n 情報を受け取る \r\n 情報を受け取る\n CISTA（シスタ） \n 製品開発者登録 \n メーリングリスト \n RSS \n コラム＆ブログ \r\n コラム＆ブログ\n CyberNewsFlash \n JPCERT/CC Eyes～JPCERT/CC公式ブログ～ \n JPCERT/CCについて \r\n JPCERT/CCについて\n JPCERT/CCとは \n 代表理事挨拶 \n 組織概要 \n 事業概要 \n 採用情報 \n 公募・入札情報 \n プレスルーム \n プレスリリース \n 広報へのお問い合わせ \n 講演依頼 \n 後援申請 \n イベント \n 講演・執筆一覧 \n X（旧Twitter）一覧 \n PGP公開鍵 \n 関連組織 \n お問い合わせ \n HOME \n 緊急情報を確認する \n PHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関する注意喚起\n 通常レイアウトに戻す \n 印刷 \n 印刷用レイアウト \n 印刷 \n PHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関する注意喚起\n 最終更新: 2026-10-29 \r\nJPCERT-AT-2026-0033\nJPCERT/CC\n2026-10-22（公開）\n2026-10-29（更新）\n I. 概要\nThe PHP Groupは、2026年10月21日にPHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関するアドバイザリを公表しました。本脆弱性が悪用された場合、PHPの実行プロセスの権限で任意のコードを実行される可能性があります。\nThe PHP Group\nSecurity advisory: Critical remote code execution vulnerabilities, update now\n https://www.php.net/archive/2026.php#2026-10-21-5 \nJPCERT/CCでは、当該製品が国内で広く利用されていることを確認しています。本脆弱性の影響を受ける製品を利用している場合は、開発者が提供する情報などを参考に、速やかに対策の適用および侵害有無の調査を実施してください。\n本脆弱性を悪用できると主張する実証コードが多数公開されているほか、本脆弱性の悪用を試みる通信を観測したとの報告も相次いでいます。一方、実証コードを用いて実際に任意のコードを実行できるかどうかは、PHPのバージョンや実行環境、メモリ配置などの条件に依存し、環境に応じた調整が必要となります。今後も実証コードや新たな攻撃手法の公開、特定の環境を標的とした攻撃の開発が進む可能性があるため、関連情報に注視の上、修正済みバージョンへの更新および侵害有無の調査を実施することを推奨します。\nまた、The PHP Groupは、2026年10月23日に特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）を公表しました。本脆弱性が悪用された場合、任意のコードを実行される可能性があります。ただし、開発者は、影響を受ける構成が一般的ではないことから、通常のリリースサイクルで修正する方針を示しており、修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。\nThe PHP Group\nInformational advisory: Session upload progress\n https://www.php.net/archive/2026.php#2026-10-23-1 \n 更新：2026年10月29日追記 \n 2026年10月29日までに、本脆弱性を悪用した攻撃活動の調査で、あるファイアウォール製品の特定バージョンに対する侵害の成功を示唆する痕跡を確認したと報告されています。報告によると、攻撃者が対象製品を解析してバージョン別に本脆弱性とLinuxカーネルの権限昇格の脆弱性を組み合わせたエクスプロイトコードを開発していたとのことです。また、侵害した機器を足掛かりとして、内部ネットワークへの横展開が試みられたことを示唆する痕跡も確認されたとしています。\nDream\nChained PHP2Shell Exploit Roots 25 Servers, including US Government Servers\n https://dreamgroup.com/blog/chained-php2shell-exploit-roots-25-servers \nまた、一部の製品ベンダーも、本脆弱性を悪用する攻撃を観測したとして、セキュリティアドバイザリを更新しています。今後も、PHPを組み込んださまざまな製品を標的とする実証コードの開発や、本脆弱性を悪用した攻撃が拡大する可能性があります。PHPを組み込んだ製品の管理者は、使用している製品が本脆弱性の影響を受けるか、当該製品を標的とする攻撃や侵害事例が報告されていないかを確認し、必要な対策および侵害調査を速やかに実施することを推奨します。\n II. 対象\n対象となる製品およびバージョンは次のとおりです。\n- PHP 8.5.12より前のPHP8.5系バージョン\n- PHP 8.4.27より前のPHP8.4系バージョン\n- PHP 8.3.36より前のPHP8.3系バージョン\n- PHP 8.2.35より前のPHP8.2系バージョン\nまた、PHP 8.1以前のバージョンは、アップデートバージョンが提供されないためサポートされているバージョンへのアップグレードを推奨しています。ただし、開発者は脆弱性の深刻さを考慮しPHP 7.4、PHP 8.0、PHP 8.1のEOLバージョンに対する最小限の緩和策を提供しています。詳細は、開発者が提供する最新の情報を確認してください。\nなお、PHPを使用する製品やLinuxディストリビューションが提供するPHPも、本脆弱性の影響を受ける可能性があります。本脆弱性に関する対応は利用している製品やOSの提供元が公開する情報もあわせて確認してください。\n III. 対策\nThe PHP Groupは、影響を受ける利用者に対して、修正済みバージョンを可能な限り速やかに適用するよう強く推奨しています。十分なテストを実施の上、速やかに修正済みバージョンを適用してください。詳細は、開発者が提供する最新の情報を確認してください。\n IV. 緩和策\nThe PHP Groupは、CVE-2026-109618、CVE-2026-109619に対するアップデートができない利用者に対して緩和策を提供しています。ただし、本緩和策は特定の攻撃経路への対処にとどまり、アップデートのみが本脆弱性に対する対策としています。詳細は、開発者が提供する最新の情報を確認してください。\nThe PHP Groupは、CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。\n- session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する\nなお、本設定はCVE-2026-109619に対する緩和策としても案内されており、すでに適用している場合は追加の対応は不要とされています。\n V. 侵害調査\n本脆弱性の発見者らが公開している情報によると、本脆弱性を悪用した攻撃を受けた可能性があるかを調査するため、次のような点を確認することが推奨されています。\n- 過去のHTTPレスポンスにおいて、不自然に長い、または異常な形式の値を含むPHPSESSID Cookieが設定されていないか。\n- 不審なmultipart/form-data形式のHTTPリクエストが送信されていないか。また、その前後にPHPのメモリ上限に関連するエラーやHTTP 500エラーが発生していないか。\n- PHPのワーカープロセスが予期せず異常終了したり、頻繁に再起動したりした痕跡がないか。\nなお、本脆弱性には複数の悪用経路が存在するため、単一の検知ルールですべての攻撃を検出できるとは限りません。また、攻撃手法やログの記録状況などによっては、攻撃の痕跡が残らない場合があります。そのため、上述の痕跡が確認されない場合でも、本脆弱性を悪用した攻撃を受けていないと断定することはできません。\n修正済みバージョンへの更新を速やかに実施するとともに、不審なプロセスの実行や外部通信、不審なファイルの作成など、侵害を示す他の痕跡についても確認し、継続的な監視を実施してください。\n侵害が疑われる場合は、関連するログなどの証拠を保全した上で、影響範囲の調査や当該システムの隔離など、必要な対応を実施してください。\nPHP2Shell\n https://www.php2shell.com/ \nWiz\nPHP2Shell: AI uncovers critical RCE vulnerabilities affecting 70% of the Internet\n https://www.wiz.io/blog/php2shell-php-rce \n VI. 参考情報\nGitHub php / php-src\nRCE via OOM corruption\n https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w \nGitHub php / php-src\nRCE via stale global state\n https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp \n 更新：2026年10月29日追記 \n GitHub NCSC-NL / php2shell\nphp2shell vulnerabilities (CVE-2026-109618, CVE-2026-109619)\n https://github.com/NCSC-NL/php2shell \n※ オランダの国家サイバーセキュリティセンター（NCSC-NL）が公開する、本脆弱性の影響を受ける可能性がある製品の一覧や対策情報などをまとめたリポジトリー\n今回の件につきまして提供いただける情報がございましたら、JPCERT/CCまでご連絡ください。\n 改訂履歴\n2026-10-22 公開\n2026-10-22 「V. 侵害調査」の一部の表現を修正\n2026-10-26 「I. 概要」「IV. 緩和策」に情報を追記\n2026-10-29 「I. 概要」「VI. 参考情報」に情報を追記\n一般社団法人JPCERTコーディネーションセンター（JPCERT/CC）\nサイバーセキュリティコーディネーショングループ\nEmail：ew-info@jpcert.or.jp\n Topへ \n このページは役に立ちましたか？\n はい \r\n いいえ \r\n その他、ご意見・ご感想などございましたら、ご記入ください。\n こちらはご意見・ご感想用のフォームです。各社製品については、各社へお問い合わせください。\n ※本フォームにいただいたコメントへの返信はできません。\r\n 返信をご希望の方は「お問合せ」 \r\n をご利用ください。\r\n javascriptを有効にすると、ご回答いただけます。 \r\n 処理中... \r\n ありがとうございました。 \r\n インシデント報告はこちらから \r\n << 前へ \r\n 次へ >> \r\n 緊急情報を確認する\n 注意喚起 \n インターネット定点観測 \n JVN \n 脆弱性対策情報 \n おすすめ情報\n JPCERT/CC Eyes「連続不正アクセス事案の攻撃手法に関する調査」 \n JPCERT/CC Eyes「TSUBAMEレポート Overflow（2026年4～6月）」 \n JPCERT/CC Eyes「APT-C-60による2026年の攻撃」 \n JPCERT/CC Eyes「ツール分析結果シートのアップデート」 \n JPCERT/CC Eyes「TSUBAMEレポート Overflow（2026年1～3月）」 \n 侵入型ランサムウェア攻撃を受けたら読むFAQ \n 創立30周年を越えて \n CSIRTマテリアル \n JPCERT/CCについて \n JPCERT/CCとは \r\n 代表理事挨拶 \r\n 組織概要 \r\n 事業概要 \r\n 採用情報 \r\n 公募・入札情報 \r\n プレスルーム \r\n プレスリリース \r\n 広報へのお問い合わせ \r\n 講演依頼 \r\n 後援申請 \r\n イベント \r\n 講演・執筆一覧 \r\n セキュリティ\nインシデント年表 \r\n X（旧Twitter）一覧 \r\n PGP公開鍵 \r\n 関連組織 \r\n お問い合わせ \r\n コラム＆ブログ \r\n CyberNewsFlash \r\n JPCERT/CC Eyes ～JPCERTコーディネーションセンター公式ブログ～ \r\n インシデントとは \r\n インシデントとは \r\n 緊急情報を確認する \r\n 注意喚起 \r\n JVN \r\n 脆弱性対策情報 \r\n 依頼・相談する \r\n インシデント対応とは \r\n インシデント対応依頼 \r\n インシデント相談・情報提供 \r\n 公開資料を見る \r\n Weekly Report \r\n 四半期レポート \r\n ソフトウェア等の\n脆弱性関連情報に関する届出 \r\n 研究・調査・翻訳レポート \r\n CSIRTマテリアル \r\n セキュアコーディング \r\n 制御システムセキュリティ \r\n ライブラリ \r\n 情報を受け取る \r\n CISTA（シスタ） \r\n 製品開発者登録 \r\n メーリングリスト \r\n RSS \r\n JPCERT/CC\r\n 一般社団法人JPCERTコーディネーションセンター\n〒103-0023\n東京都中央区日本橋本町4-4-2 東山ビルディング8階\nTEL: 03-6271-8901　FAX 03-6271-8908\n ご利用にあたって \n プライバシーポリシー \n お問い合わせ \n モバイル向けコンテンツ \n &copy; 1996-2026 JPCERT/CC",
+        "publishedAt": 1793256180000,
+        "modifiedAt": 1793256180000,
+        "fetchedAt": 1793271197602,
+        "cves": ["CVE-2026-109618", "CVE-2026-109619", "CVE-2026-115560"],
+        "scores": [],
+        "exploited": false,
+        "advisory": true,
+        "urgent": false,
+        "affected": null,
+        "remediation": null,
+        "rejected": false,
+        "impact": null,
+        "evidenceId": "jpcert:https://www.jpcert.or.jp/at/2026/at260033.html",
+        "scope": "article",
+        "originalTextSha256": "c9b760a28da9caf29b0ed858b5c4cca5283c5cbb282e4299adfda94ddee22641"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2026-115560",
+      "evidence": [
+        {
+          "id": "jpcert:https://www.jpcert.or.jp/at/2026/at260033.html",
+          "scope": "article",
+          "cves": ["CVE-2026-109618", "CVE-2026-109619", "CVE-2026-115560"],
+          "url": "https://www.jpcert.or.jp/at/2026/at260033.html",
+          "text": "たな攻撃手法の公開、特定の環境を標的とした攻撃の開発が進む可能性があるため、関連情報に注視の上、修正済みバージョンへの更新および侵害有無の調査を実施することを推奨します。\nまた、The PHP Groupは、2026年10月23日に特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）を公表しました。本脆弱性が悪用された場合、任意のコードを実行される可能性があります。ただし、開発者は、影響を受ける構成が一般的ではないことから、通常のリリースサイクルで修正する方針を示しており、修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。\nThe PHP Group\nInformational advisory: Session upload progress\n https://www.php.net/archive/2026.php#2026-10-23-1 \n 更新：2026年10月29日追記 \n 2026年10月29日までに、本脆弱性を悪用した攻撃活動の調査で、あるファイアウォール製品の特定バージョンに対する侵害の成功を示唆する痕跡を確認したと報告されています。報告によると、攻撃者が対象製品を解析してバージョン別に本脆弱性とLinuxカーネルの権限昇格の脆弱性を組み合わせたエクスプロイトコードを開発していたとのことです。また、侵害した機器を足掛かりとして、内部ネットワークへの横展開が試みられたことを示唆する痕跡も確認されたとしています。\nDream\nChained PHP2Shell Exploit Roots 25 Servers, including US Government Servers\n https://dreamgroup.com/blog/chained-php2shell-exploit-roots-25-servers \nまた、一部の製品ベンダーも、本脆弱性を悪用する攻撃を観測したとして、セキュリティアドバイザリを更新しています。今後も、PHPを組み込んださまざまな製品を標的とする実証コードの開発や、本脆弱性を悪用した攻撃が拡大する可能性があります。PHPを組み込んだ製品の管理者は、使用している製品が本脆弱性の影響を受けるか、当該製品を標的とする攻撃や侵害事例が報告されて",
+          "sections": {
+            "affected": null,
+            "impact": null,
+            "remediation": "The PHP Groupは、CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。\n- session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する\nなお、本設定はCVE-2026-109619に対する緩和策としても案内されており、すでに適用している場合は追加の対応は不要とされています。"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "label": "kev",
+    "key": "CVE-2026-118527",
+    "sources": [
+      {
+        "sourceId": "kev",
+        "id": "CVE-2026-118527",
+        "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527",
+        "title": "Ivanti Connect Secure Generation of Predictable Numbers or Identifiers Vulnerability",
+        "impact": "Ivanti Connect Secure contains a generation of predictable numbers or identifiers vulnerability that allows a remote authenticated attacker to upload files with attacker-controlled content to a known location on disk. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+        "text": "CVE-2026-118527\nIvanti Connect Secure\nIvanti Connect Secure contains a generation of predictable numbers or identifiers vulnerability that allows a remote authenticated attacker to upload files with attacker-controlled content to a known location on disk. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.\nApply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.\nhttps://hub.ivanti.com/s/article/Security-Advisory-Ivanti-Connect-Secure-CVE-2026-104935?language=en_US ; ; BOD 26-04: https://www.cisa.gov/news-events/directives/bod-26-04-prioritizing-security-updates-based-risk ; Forensics Triage Requirements: https://www.cisa.gov/news-events/directives/bod-26-04-implementation-guidance-prioritizing-security-updates-based-risk ; https://nvd.nist.gov/vuln/detail/CVE-2026-118527",
+        "publishedAt": 1793318400000,
+        "modifiedAt": 1793318400000,
+        "fetchedAt": 1793382090349,
+        "cves": ["CVE-2026-118527"],
+        "scores": [],
+        "exploited": true,
+        "advisory": true,
+        "urgent": true,
+        "affected": "Ivanti Connect Secure",
+        "remediation": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+        "rejected": false,
+        "evidenceId": "kev:CVE-2026-118527",
+        "scope": "cve",
+        "originalTextSha256": "2821d65744d917be78b127b06bfd62c9c703c3bf9dd2523ffd827ead4802872a"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2026-118527",
+      "evidence": [
+        {
+          "id": "kev:CVE-2026-118527",
+          "scope": "cve",
+          "cves": ["CVE-2026-118527"],
+          "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527",
+          "text": "CVE-2026-118527\nIvanti Connect Secure\nIvanti Connect Secure contains a generation of predictable numbers or identifiers vulnerability that allows a remote authenticated attacker to upload files with attacker-controlled content to a known location on disk. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.\nApply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.\nhttps://hub.ivanti.com/s/article/Security-Advisory-Ivanti-Connect-Secure-CVE-2026-104935?language=en_US ; ; BOD 26-04: https://www.cisa.gov/news-events/directives/bod-26-04-priori",
+          "sections": {
+            "affected": "Ivanti Connect Secure",
+            "impact": "Ivanti Connect Secure contains a generation of predictable numbers or identifiers vulnerability that allows a remote authenticated attacker to upload files with attacker-controlled content to a known location on disk. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+            "remediation": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "label": "previous-json-error",
+    "key": "CVE-2026-120135",
+    "sources": [
+      {
+        "sourceId": "nvd",
+        "id": "CVE-2026-120135",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-120135",
+        "title": "CVE-2026-120135",
+        "impact": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.\n\n\n\nThis issue affects Apache Thrift: before 0.24.0.\n\n\n\nUsers are recommended to upgrade to version 0.24.0, which fixes the issue.",
+        "text": "CVE-2026-120135\nUncontrolled Recursion vulnerability in Apache Thrift Java bindings.\n\n\n\nThis issue affects Apache Thrift: before 0.24.0.\n\n\n\nUsers are recommended to upgrade to version 0.24.0, which fixes the issue.",
+        "publishedAt": 1793481413397,
+        "modifiedAt": 1793481413397,
+        "fetchedAt": 1793482590921,
+        "cves": ["CVE-2026-120135"],
+        "scores": [
+          {
+            "score": 8.2,
+            "version": "4.0",
+            "issuer": "security@apache.org"
+          }
+        ],
+        "exploited": false,
+        "urgent": false,
+        "advisory": false,
+        "affected": null,
+        "remediation": null,
+        "rejected": false,
+        "evidenceId": "nvd:CVE-2026-120135",
+        "scope": "cve",
+        "originalTextSha256": "86dafe64386bb816d360137d19f7792c060b24befa792633542a6ee3c612c8c4"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2026-120135",
+      "evidence": [
+        {
+          "id": "nvd:CVE-2026-120135",
+          "scope": "cve",
+          "cves": ["CVE-2026-120135"],
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-120135",
+          "text": "CVE-2026-120135\nUncontrolled Recursion vulnerability in Apache Thrift Java bindings.\n\n\n\nThis issue affects Apache Thrift: before 0.24.0.\n\n\n\nUsers are recommended to upgrade to version 0.24.0, which fixes the issue.",
+          "sections": {
+            "affected": null,
+            "impact": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.\n\n\n\nThis issue affects Apache Thrift: before 0.24.0.\n\n\n\nUsers are recommended to upgrade to version 0.24.0, which fixes the issue.",
+            "remediation": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "label": "incomplete-information",
+    "key": "CVE-2026-39732",
+    "sources": [
+      {
+        "sourceId": "nvd",
+        "id": "CVE-2026-39732",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-39732",
+        "title": "CVE-2026-39732",
+        "impact": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+        "text": "CVE-2026-39732\nUnauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+        "publishedAt": 1793387904137,
+        "modifiedAt": 1793388147173,
+        "fetchedAt": 1793395232919,
+        "cves": ["CVE-2026-39732"],
+        "scores": [
+          {
+            "score": 9.3,
+            "version": "3.1",
+            "issuer": "audit@patchstack.com"
+          }
+        ],
+        "exploited": false,
+        "urgent": false,
+        "advisory": false,
+        "affected": null,
+        "remediation": null,
+        "rejected": false,
+        "evidenceId": "nvd:CVE-2026-39732",
+        "scope": "cve",
+        "originalTextSha256": "035efc2f5483b5623fa2c0b5e8e1794526cf3e06843bf0bc45a1238aeb0b3c29"
+      }
+    ],
+    "suppliedInput": {
+      "key": "CVE-2026-39732",
+      "evidence": [
+        {
+          "id": "nvd:CVE-2026-39732",
+          "scope": "cve",
+          "cves": ["CVE-2026-39732"],
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-39732",
+          "text": "CVE-2026-39732\nUnauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "sections": {
+            "affected": null,
+            "impact": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+            "remediation": null
+          }
+        }
+      ]
+    }
+  }
+]

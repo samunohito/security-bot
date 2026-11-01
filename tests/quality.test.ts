@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateSummary, summarySchema, validateVerdict } from '../src/quality';
+import { validateSummary, summarySchema, summaryCandidateSchema, validateVerdict } from '../src/quality';
 import type { Evidence, Summary } from '../src/domain';
 
 const evidence: Evidence[] = [
@@ -36,6 +36,15 @@ describe('quality validation', () => {
     action: claim('更新してください', 'Upgrade to 2.0.'),
     uncertainties: [],
   };
+
+  it.each([
+    [0, true],
+    [6, true],
+    [7, false],
+  ])('生成タグ候補が%d件のとき構造の受理は%sになる', (count, accepted) => {
+    const tags = Array(count).fill({ kind: 'product', ...claim('Acme', 'Acme 1.0') });
+    expect(summaryCandidateSchema.safeParse({ ...base, tags }).success).toBe(accepted);
+  });
 
   it('対象名・固定分類・抽出した製品名を引用付きで受け取り、旧要約も読める', () => {
     expect(summarySchema.safeParse(base).success).toBe(true);

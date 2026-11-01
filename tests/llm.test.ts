@@ -3,7 +3,7 @@ import { evidencePrompt } from '../src/llm/evidence';
 import type { Evidence } from '../src/domain';
 import { WorkersAiProvider } from '../src/llm/workers-ai';
 import { loadConfig } from '../src/config';
-import { summarySchema } from '../src/quality';
+import { summaryCandidateSchema } from '../src/quality';
 import { SUMMARY_SYSTEM } from '../src/llm/prompts';
 
 const key = 'CVE-2026-1111';
@@ -41,7 +41,10 @@ describe('LLMへ渡す根拠', () => {
       },
       loadConfig().llm,
     );
-    await provider.generateStructured({ system: SUMMARY_SYSTEM, data: evidencePrompt(key, [evidence]) }, summarySchema);
+    await provider.generateStructured(
+      { system: SUMMARY_SYSTEM, data: evidencePrompt(key, [evidence]) },
+      summaryCandidateSchema,
+    );
     expect(payload.response_format).toMatchObject({
       type: 'json_schema',
       json_schema: {

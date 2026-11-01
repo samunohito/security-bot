@@ -157,77 +157,104 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
-  it('記事の離れた緩和策を生成・検品・短縮と再検品のすべてに渡す', async () => {
-    const config = makeConfig();
-    config.targets = config.targets.filter((target) => target.id === 'main');
-    const requests: LlmRequest[] = [];
-    const quotedImpact = `${phpKey}は任意のコードを実行される可能性があります。`;
-    const articleClaim = (text: string, quote: string) => ({ text, evidence: [{ id: 'jvn:1', quote }] });
-    const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
-      llm: {
-        async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
-          if (z.object({ key: z.string() }).parse(request.data).key !== phpKey) {
-            return {
-              value: schema.parse({ overview: null, impact: null, action: null, uncertainties: [] }),
-              usage: { inputTokens: 100, outputTokens: 100 },
-            };
-          }
-          requests.push(request);
-          const value =
-            request.system === VERIFY_SYSTEM
-              ? { supported: true, contradictions: [], unsupportedClaims: [] }
-              : {
-                  overview: articleClaim(
-                    request.system.includes('at most 45') ? '脆弱性' : '脆弱性'.repeat(200),
-                    `${phpKey}についての注意喚起。`,
-                  ),
-                  impact: articleClaim('任意のコードを実行される可能性', quotedImpact),
-                  action: articleClaim('設定を無効にし、すべてのワーカーを再起動', phpMitigation),
-                  actionKind: 'workaround',
-                  uncertainties: [],
-                };
-          return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
-        },
-      },
-      social: () => ({
-        prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
-        publish: async () => ({ id: 'fixture', url: 'https://social.example/notes/fixture' }),
-      }),
-    });
-    await bot.store.ingest(
-      {
-        ...item,
-        text: `${phpArticle}\nImpact\n${quotedImpact}`,
-        cves: [phpKey, otherKey],
-        advisory: true,
-        affected: null,
-        remediation: null,
-      },
-      now,
-    );
-    await bot.tick(now);
-    await processAll(bot, now);
-
-    expect(requests).toHaveLength(4);
-    expect(requests.map((request) => request.system)).toEqual([
-      SUMMARY_SYSTEM,
-      VERIFY_SYSTEM,
-      expect.stringContaining('at most 45'),
-      VERIFY_SYSTEM,
-    ]);
-    for (const request of requests) {
-      expect(request.data).toMatchObject({
-        key: phpKey,
-        evidence: [
-          {
-            scope: 'article',
-            sections: { impact: quotedImpact, remediation: phpMitigation },
+  it.each(['valid', 'foreign', 'unseen', 'unsupported'] as const)(
+    '対象項目の番号なし引用を生成・短縮で照合し、帰属と再検品を省略しない: %s',
+    async (outcome) => {
+      const config = makeConfig();
+      config.targets = config.targets.filter((target) => target.id === 'main');
+      const requests: LlmRequest[] = [];
+      const quotedImpact = '任意のコードを実行される可能性があります。';
+      const mitigation = `${phpKey}:\n${phpMitigation.split('\n')[1]}`;
+      const foreign = `${otherKey}: ${phpKey}と異なり、認証を無効化する。`;
+      const unseen = `${phpKey}: 未送信の被害説明。`;
+      let verifications = 0;
+      const articleClaim = (text: string, quote: string) => ({ text, evidence: [{ id: 'jvn:1', quote }] });
+      const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            if (z.object({ key: z.string() }).parse(request.data).key !== phpKey) {
+              return {
+                value: schema.parse({ overview: null, impact: null, action: null, uncertainties: [] }),
+                usage: { inputTokens: 100, outputTokens: 100 },
+              };
+            }
+            requests.push(request);
+            const shortening = request.system.includes('at most 45');
+            if (request.system === VERIFY_SYSTEM) {
+              verifications++;
+            }
+            const value =
+              request.system === VERIFY_SYSTEM
+                ? {
+                    supported: !(outcome === 'unsupported' && verifications === 2),
+                    contradictions: [],
+                    unsupportedClaims: [],
+                  }
+                : {
+                    overview: articleClaim(
+                      request.system.includes('at most 45') ? '脆弱性' : '脆弱性'.repeat(200),
+                      `${phpKey}についての注意喚起。`,
+                    ),
+                    impact: articleClaim(
+                      '任意のコードを実行される可能性',
+                      shortening && outcome === 'foreign'
+                        ? foreign
+                        : shortening && outcome === 'unseen'
+                          ? unseen
+                          : quotedImpact,
+                    ),
+                    action: articleClaim('設定を無効にし、すべてのワーカーを再起動', mitigation.split('\n')[1]!),
+                    actionKind: 'workaround',
+                    uncertainties: [],
+                  };
+            return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
           },
-        ],
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+          publish: async () => ({ id: 'fixture', url: 'https://social.example/notes/fixture' }),
+        }),
       });
-    }
-    expect((await bot.store.list('deliveries')).some((delivery) => delivery.state === 'sent')).toBe(true);
-  });
+      await bot.store.ingest(
+        {
+          ...item,
+          text: `${phpArticle.replace(phpMitigation, mitigation).replace(`${phpKey}についての注意喚起。`, `${phpKey}についての注意喚起。\n${foreign}`)}\nImpact\n${phpKey}:\n${quotedImpact}\nReferences\n${'補足。'.repeat(500)}\n${unseen}`,
+          cves: [phpKey, otherKey],
+          advisory: true,
+          affected: null,
+          remediation: null,
+        },
+        now,
+      );
+      await bot.tick(now);
+      await processAll(bot, now);
+
+      expect(requests).toHaveLength(outcome === 'foreign' || outcome === 'unseen' ? 3 : 4);
+      expect(requests.slice(0, 3).map((request) => request.system)).toEqual([
+        SUMMARY_SYSTEM,
+        VERIFY_SYSTEM,
+        expect.stringContaining('at most 45'),
+      ]);
+      for (const request of requests) {
+        expect(request.data).toMatchObject({
+          key: phpKey,
+          evidence: [
+            {
+              scope: 'article',
+              sections: { impact: `${phpKey}:\n${quotedImpact}`, remediation: mitigation },
+            },
+          ],
+        });
+      }
+      const deliveries = await bot.store.list('deliveries');
+      expect(deliveries.some((delivery) => delivery.state === 'sent')).toBe(outcome === 'valid');
+      expect(deliveries[0]?.state).toBe(outcome === 'valid' ? 'sent' : 'held');
+      if (outcome !== 'valid') {
+        const revision = (await bot.store.getRevision(deliveries[0]!.revision_id!))!;
+        expect((await bot.store.getShortened(deliveries[0]!.id, revision.evidence_hash))?.validation.valid).toBe(false);
+      }
+    },
+  );
 
   it('通常投稿枠が空くまでジョブと配信を延期し毎分再投入しない', async () => {
     const { bot, store } = harness();
@@ -1009,6 +1036,91 @@ describe('complete pipeline', () => {
 });
 
 describe('management boundary', () => {
+  it.each(['valid', 'foreign', 'unseen', 'unsupported'] as const)(
+    '診断と通常生成で同じ引用帰属を検証し、不合格は保存成功や配信にしない: %s',
+    async (outcome) => {
+      const config = makeConfig();
+      config.targets = config.targets.filter((target) => target.id === 'main');
+      const key = item.cves[0]!;
+      const foreign = `${otherKey}: ${key}と異なり、認証を無効化する。`;
+      const unseen = `${key}: 未送信の被害説明。`;
+      const valid = 'Acmeの注意喚起。';
+      const quote = outcome === 'foreign' ? foreign : outcome === 'unseen' ? unseen : valid;
+      const candidate = {
+        overview: claim('Acmeの脆弱性', quote),
+        impact: claim('任意コード実行の可能性', '任意コード実行の可能性。'),
+        action: claim('設定を無効にする', '設定を無効にする。'),
+        actionKind: 'workaround',
+        uncertainties: [],
+      };
+      let verifications = 0;
+      const published: string[] = [];
+      const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            const target = z.object({ key: z.string() }).parse(request.data).key;
+            if (target !== key) {
+              return {
+                value: schema.parse({ overview: null, impact: null, action: null, uncertainties: [] }),
+                usage: { inputTokens: 100, outputTokens: 100 },
+              };
+            }
+            if (request.system === VERIFY_SYSTEM) {
+              verifications++;
+              return {
+                value: schema.parse({
+                  supported: outcome !== 'unsupported',
+                  contradictions: [],
+                  unsupportedClaims: [],
+                }),
+              };
+            }
+            return { value: schema.parse(candidate), usage: { inputTokens: 100, outputTokens: 100 } };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+          async publish(post) {
+            published.push(post.text);
+            return { id: 'fixture', url: 'https://social.example/notes/fixture' };
+          },
+        }),
+      });
+      const ids = await bot.store.ingest(
+        {
+          ...item,
+          advisory: true,
+          cves: [key, otherKey],
+          text: `影響\n${key}:\n${valid}\n任意コード実行の可能性。\n設定を無効にする。\n${foreign}\n参考情報\n${'背景。'.repeat(500)}\n${unseen}`,
+        },
+        now,
+      );
+      await bot.tick(now);
+      const id = (await Promise.all(ids.map((value) => bot.store.getRevision(value)))).find(
+        (revision) => revision?.threat_key === key,
+      )!.id;
+
+      const result = await bot.generateSummary(id, now, { save: true });
+      expect(result.saved).toBe(outcome === 'valid');
+      expect(result.validation.valid).toBe(outcome === 'valid');
+      expect(result.verdict === null).toBe(outcome === 'foreign' || outcome === 'unseen');
+      if (outcome !== 'valid') {
+        expect(await bot.store.getSummary((await bot.store.getRevision(id))!)).toBeNull();
+      }
+      await processAll(bot, now);
+      expect(published.length > 0).toBe(outcome === 'valid');
+      expect(verifications > 0).toBe(outcome === 'valid' || outcome === 'unsupported');
+      if (outcome === 'foreign' || outcome === 'unseen') {
+        expect((await bot.store.getSummary((await bot.store.getRevision(id))!))?.validation).toMatchObject({
+          valid: false,
+          reasons: expect.arrayContaining([
+            `overview: ${outcome === 'foreign' ? 'ambiguous multi-CVE evidence' : 'evidence not supplied'}`,
+          ]),
+        });
+      }
+    },
+  );
+
   it('保存済み要約を新しい順に直近50件返し、未生成と古い根拠の要約を除外する', async () => {
     const { bot, store } = harness();
     const get = () =>

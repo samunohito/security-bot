@@ -2,9 +2,12 @@ import type { Evidence } from '../domain';
 
 type SectionKind = 'affected' | 'impact' | 'remediation';
 
-interface TextLine {
+interface TextRange {
   start: number;
   end: number;
+}
+
+interface TextLine extends TextRange {
   text: string;
 }
 
@@ -183,6 +186,12 @@ function leadingCve(text: string): string | null {
   return content.match(/^(CVE-\d{4}-\d{4,})\b/i)?.[1]?.toUpperCase() ?? null;
 }
 
+function labelledCve(text: string): string | null {
+  const content = text.replace(itemPrefix, '');
+
+  return content.match(/^(CVE-\d{4}-\d{4,})\b[\])）】]*\s*(?:[:：]|$)/i)?.[1]?.toUpperCase() ?? null;
+}
+
 function articleSections(key: string, text: string): Record<SectionKind, string | null> {
   const targetKey = key.toUpperCase();
   const lines = textLines(text);
@@ -224,36 +233,173 @@ function articleSections(key: string, text: string): Record<SectionKind, string 
   return { affected: select('affected'), impact: select('impact'), remediation: select('remediation') };
 }
 
-/** 原文の連続した抜粋だけを使い、本文の概要と影響・対策を文字数枠内で優先する。 */
-export function evidencePrompt(key: string, evidence: Evidence[]) {
-  return {
-    key,
-    evidence: evidence.slice(0, 4).map((item) => {
-      const overview = item.text.search(/(?:^|\n)\s*(?:I\.\s*)?概要\s*(?:\r?\n|$)/m);
-      const cve =
-        [...item.text.matchAll(/\bCVE-\d{4}-\d{4,}\b/gi)].find((match) => match[0].toUpperCase() === key.toUpperCase())
-          ?.index ?? -1;
-      const start = item.scope === 'article' && cve >= 0 ? Math.max(0, cve - 150) : Math.max(0, overview);
-      const sections = {
-        affected: sectionQuote(item, item.affected),
-        impact: sectionQuote(item, item.impact),
-        remediation: sectionQuote(item, item.remediation),
-      };
-      if (item.scope === 'article' && Object.values(sections).some((value) => !value)) {
-        const fallback = articleSections(key, item.text);
-        sections.affected ??= fallback.affected;
-        sections.impact ??= fallback.impact;
-        sections.remediation ??= fallback.remediation;
-      }
+function* matchingOffsets(text: string, value: string) {
+  for (let start = text.indexOf(value); start >= 0; start = text.indexOf(value, start + 1)) {
+    yield start;
+  }
+}
 
-      return {
+function targetRanges(key: string, text: string): TextRange[] {
+  const target = key.toUpperCase();
+  const ranges: TextRange[] = [];
+  let current: TextRange | null = null;
+  let context: 'target' | 'ambiguous' | null = null;
+
+  // 抜粋から解析すると、先頭で落ちた別CVEや空行を見失うため、保存全文で先に帰属を区切る。
+  for (const match of text.matchAll(/[^\r\n]*(?:\r\n|\r|\n|$)/g)) {
+    const line = match[0].replace(/[\r\n]+$/, '');
+    const leading = leadingCve(line);
+    const label = labelledCve(line);
+    if (!line.trim() || (heading(line) && !leading)) {
+      current = null;
+      context = null;
+      continue;
+    }
+
+    const identifiers = cves(line);
+    if (identifiers.length) {
+      current = null;
+      const onlyTarget = identifiers.every((value) => value === target);
+      const range = { start: match.index, end: match.index + line.length };
+      if (label === target && onlyTarget) {
+        ranges.push(range);
+        current = range;
+        context = 'target';
+      } else if (onlyTarget && context !== 'ambiguous') {
+        // 自然文中の言及は対象の説明と参照を区別できないので、後続行へ帰属を継承しない。
+        ranges.push(range);
+      } else if (context !== null || leading !== null) {
+        // 独立した自然文の列記まで項目扱いすると、後の対象CVE段落を不当に拒否する。
+        context = 'ambiguous';
+      }
+      continue;
+    }
+
+    if (current) {
+      current.end = match.index + line.length;
+    }
+  }
+
+  return ranges;
+}
+
+function evidenceInput(key: string, evidence: Evidence[]) {
+  return evidence.slice(0, 4).map((item) => {
+    const overview = item.text.search(/(?:^|\n)\s*(?:I\.\s*)?概要\s*(?:\r?\n|$)/m);
+    const cve =
+      [...item.text.matchAll(/\bCVE-\d{4}-\d{4,}\b/gi)].find((match) => match[0].toUpperCase() === key.toUpperCase())
+        ?.index ?? -1;
+    const start = item.scope === 'article' && cve >= 0 ? Math.max(0, cve - 150) : Math.max(0, overview);
+    const sections = {
+      affected: sectionQuote(item, item.affected),
+      impact: sectionQuote(item, item.impact),
+      remediation: sectionQuote(item, item.remediation),
+    };
+    if (item.scope === 'article' && Object.values(sections).some((value) => !value)) {
+      const fallback = articleSections(key, item.text);
+      sections.affected ??= fallback.affected;
+      sections.impact ??= fallback.impact;
+      sections.remediation ??= fallback.remediation;
+    }
+
+    return {
+      item,
+      start,
+      prompt: {
         id: item.evidenceId,
         scope: item.scope,
         cves: item.cves,
         url: item.url,
         text: item.text.slice(start, start + 1000),
         sections,
-      };
-    }),
+      },
+    };
+  });
+}
+
+/** 原文の連続した抜粋だけを使い、本文の概要と影響・対策を文字数枠内で優先する。 */
+export function evidencePrompt(key: string, evidence: Evidence[]) {
+  return { key, evidence: evidenceInput(key, evidence).map((entry) => entry.prompt) };
+}
+
+/** 送信した原文範囲と対象CVEの項目を共有し、引用の実在・送信範囲・帰属を照合する。 */
+export function evidenceQuoteValidator(key: string, evidence: Evidence[]) {
+  const sources = evidenceInput(key, evidence).map((entry) => ({
+    ...entry,
+    excerpts: [
+      { text: entry.prompt.text, positions: () => [entry.start] },
+      ...Object.values(entry.prompt.sections).flatMap((value) =>
+        value
+          ? // 抽出値には位置情報がないため、最初の一致だけを対象の箇所と決めつけない。
+            [{ text: value, positions: () => matchingOffsets(entry.item.text, value) }]
+          : [],
+      ),
+    ],
+    attribution:
+      entry.item.scope === 'article' && /^CVE-\d{4}-\d{4,}$/i.test(key) ? targetRanges(key, entry.item.text) : null,
+  }));
+
+  const validate = (id: string, quote: string): string | null => {
+    const item = evidence.find((entry) => entry.evidenceId === id);
+    if (!item || !quote || !item.text.includes(quote)) {
+      return 'fabricated evidence';
+    }
+    const source = sources.find((entry) => entry.item === item);
+    if (!source) {
+      return 'evidence not supplied';
+    }
+
+    let supplied = false;
+    for (const excerpt of source.excerpts) {
+      const offsets = [...matchingOffsets(excerpt.text, quote)];
+      if (!offsets.length) {
+        continue;
+      }
+      supplied = true;
+      if (!source.attribution) {
+        return null;
+      }
+      for (const position of excerpt.positions()) {
+        if (containsRange(source.attribution, position + offsets[0]!, position + offsets.at(-1)! + quote.length)) {
+          continue;
+        }
+        for (const offset of offsets) {
+          const start = position + offset;
+          if (!containsRange(source.attribution, start, start + quote.length)) {
+            return 'ambiguous multi-CVE evidence';
+          }
+        }
+      }
+    }
+
+    return supplied ? null : 'evidence not supplied';
   };
+
+  const results = new Map<string, string | null>();
+  return (id: string, quote: string): string | null => {
+    const cacheKey = JSON.stringify([id, quote]);
+    if (!results.has(cacheKey)) {
+      results.set(cacheKey, validate(id, quote));
+    }
+
+    return results.get(cacheKey)!;
+  };
+}
+
+function containsRange(ranges: TextRange[], start: number, end: number): boolean {
+  let low = 0;
+  let high = ranges.length - 1;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const range = ranges[middle]!;
+    if (start < range.start) {
+      high = middle - 1;
+    } else if (start >= range.end) {
+      low = middle + 1;
+    } else {
+      return end <= range.end;
+    }
+  }
+
+  return false;
 }

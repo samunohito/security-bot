@@ -195,7 +195,7 @@ describe('記事本文から補うLLM入力', () => {
     expect(result.text).not.toContain('ヒープバッファオーバーフロー');
     expect(result.sections.affected).toBe(`${jvnKey} GENESIS64およびICONICS Suite 10.97から10.97.2`);
     expect(result.sections.impact).toBe(
-      `${jvnKey}について、細工したファイルをインポートすると、\nヒープバッファオーバーフローにより任意のコードを実行される可能性があります。`,
+      `${jvnKey}：細工したファイルをインポートすると、\nヒープバッファオーバーフローにより任意のコードを実行される可能性があります。`,
     );
     expect(result.sections.remediation).toBe('開発者が提供する情報を確認し、適切な対策を実施してください。');
     expect(result.scope).toBe('article');

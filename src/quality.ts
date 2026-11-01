@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Evidence, Summary, Validation } from './domain';
+import { evidenceQuoteValidator } from './llm/evidence';
 import { EXTRACTED_TAG_PATTERN, THEME_TAGS, USAGE_TAGS } from './social/tags';
 
 const claimSchema = z
@@ -73,6 +74,7 @@ export function validateSummary(
   options: { requireActionKind?: boolean } = {},
 ): Validation {
   const reasons: string[] = [];
+  const validateQuote = evidenceQuoteValidator(key, evidence);
   const tags = summary.tags ?? [];
   if (!summarySchema.safeParse(summary).success) {
     reasons.push('invalid_summary_structure');
@@ -102,13 +104,10 @@ export function validateSummary(
 
     const quotes: string[] = [];
     for (const ref of claim.evidence) {
-      const item = evidence.find((e) => e.evidenceId === ref.id);
-      if (!item || !item.text.includes(ref.quote)) {
-        reasons.push(`${field}: fabricated evidence`);
+      const reason = validateQuote(ref.id, ref.quote);
+      if (reason) {
+        reasons.push(`${field}: ${reason}`);
         continue;
-      }
-      if (item.scope === 'article' && key.startsWith('CVE-') && !ref.quote.includes(key)) {
-        reasons.push(`${field}: ambiguous multi-CVE evidence`);
       }
       quotes.push(ref.quote);
     }

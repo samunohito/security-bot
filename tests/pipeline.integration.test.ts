@@ -277,7 +277,7 @@ describe('complete pipeline', () => {
     expect(await store.dueDeliveries(now + 3600000)).toHaveLength(0);
   });
 
-  it.each([null, undefined])('新しく生成した対策に種別がなければ非表示のまま送らず保留する: %s', async (actionKind) => {
+  it.each([null, undefined])('対策を原則表示しても新規生成の種別必須検査を維持する: %s', async (actionKind) => {
     const { bot: original, store } = harness();
     const bot = new Bot(original.env, original.config, {
       ...original.providers,
@@ -350,7 +350,7 @@ describe('complete pipeline', () => {
       expect(texts).toHaveLength(2);
       expect(texts[0]).toContain('[High] CVE-2026-1111\nAcme\n任意コード実行の脆弱性');
       expect(texts[0]).toContain('#ネットワーク #ACME');
-      expect(texts[0]!.includes('対策:')).toBe(actionKind === 'workaround');
+      expect(texts[0]).toContain(`対策: ${metadata.action.text}`);
       expect(verified).toEqual([expect.objectContaining({ summary: metadata })]);
       const revision = (await store.getRevision(id!))!;
       expect((await store.getSummary(revision))?.summary).toEqual(metadata);
@@ -970,8 +970,76 @@ describe('complete pipeline', () => {
     expect((await store.list('deliveries')).find((d) => d.target_id === 'main')?.state).toBe('held');
   });
 
-  it.each([null, 'workaround'] as const)(
-    '短縮後も対策種別を検証し、合格した対象・タグ・回避策を再送準備で再利用する: %s',
+  it.each(['valid', 'invalid_quote', 'unsupported', 'too_long'] as const)(
+    '通常更新の表示で文字数を超えたときは対策を短縮し、検査と上限を維持する: %s',
+    async (outcome) => {
+      const config = makeConfig();
+      config.targets = config.targets.filter((target) => target.id === 'main');
+      const longAction = 'バックアップを取得し、設定を確認して、バージョン2.0へ更新してください。'.repeat(5);
+      const texts: string[] = [];
+      let shortenings = 0;
+      let verifications = 0;
+      const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            if (request.system === VERIFY_SYSTEM) {
+              verifications++;
+              return {
+                value: schema.parse({
+                  supported: !(outcome === 'unsupported' && verifications === 2),
+                  contradictions: [],
+                  unsupportedClaims: [],
+                }),
+                usage: { inputTokens: 100, outputTokens: 100 },
+              };
+            }
+            const shortening = request.system.includes('at most 45');
+            if (shortening) {
+              shortenings++;
+            }
+            return {
+              value: schema.parse({
+                ...summary,
+                action:
+                  !shortening || outcome === 'too_long'
+                    ? claim(longAction, longAction)
+                    : outcome === 'invalid_quote'
+                      ? claim('2.0へ更新', 'This sentence was never supplied.')
+                      : summary.action,
+              }),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(250).prepare(intent),
+          async publish(post) {
+            texts.push(post.text);
+            return { id: 'short-action', url: 'https://social.example/notes/short-action' };
+          },
+        }),
+      });
+      await bot.store.ingest({ ...item, text: `${item.text} ${longAction}` }, now);
+      await bot.tick(now);
+      await processAll(bot, now);
+
+      expect(shortenings).toBe(1);
+      expect(verifications).toBe(outcome === 'invalid_quote' ? 1 : 2);
+      const delivery = (await bot.store.list('deliveries'))[0]!;
+      if (outcome === 'valid') {
+        expect(delivery.state).toBe('sent');
+        expect(texts).toHaveLength(1);
+        expect(texts[0]).toContain('対策: 2.0へ更新');
+        expect([...texts[0]!].length).toBeLessThanOrEqual(250);
+      } else {
+        expect(delivery.state).toBe('held');
+        expect(texts).toEqual([]);
+      }
+    },
+  );
+
+  it.each([null, 'routine_update', 'workaround'] as const)(
+    '短縮後も対策種別を検証し、分類にかかわらず対策本文を再送準備で再利用する: %s',
     async (shortenedActionKind) => {
       const config = makeConfig();
       config.targets = config.targets.filter((target) => target.id === 'main');
@@ -1021,7 +1089,7 @@ describe('complete pipeline', () => {
         return;
       }
 
-      expect(shortened?.summary).toEqual(metadata);
+      expect(shortened?.summary).toEqual({ ...metadata, actionKind: shortenedActionKind });
       expect(texts).toHaveLength(1);
       expect(texts[0]).toContain('対策: 管理画面を無効にしてください。');
       expect(texts[0]).toContain('#ACME');

@@ -1,0 +1,2797 @@
+{
+  "recordedDate": "2026-11-01",
+  "status": "completed_observational_audit",
+  "codeCommit": "75a8abfacf63cca6d20a7749976ea19989cecd75",
+  "reviewer": "この会話の実装担当AI。人による正解ラベル・独立ブラインド評価ではない。",
+  "newLlmGenerationOrVerificationCalls": 0,
+  "protocol": [
+    "保存済み6資料と68件の選別済みSummaryの本文・引用・表示案・44件の過去検品結果を照合。4件の構造失敗は本文判定しない。",
+    "現行validateSummaryと410引用の判定、入力生成、全68表示案を保存記録へ照合。個別・まとめの対策表示の一致も確認。",
+    "findingsは列挙した論点のAIによる読解記録であり、網羅的正解判定ではない。重要な省略と明示的な誤りは分ける。",
+    "本文に問題がある出力が別のタグ理由で止まった場合、その本文の誤りを検出したとは数えない。",
+    "タグを除く再生は機械検査のみ。他の出力・引用・過去検品結果を書き換えず、実際の新規検品や投稿可否を主張しない。",
+    "strictReferenceRouteは現行機械判定・過去の検品判定・completeを組み合わせた参考経路。新しい検品プロンプト・実運用の成功率ではない。",
+    "同じ6資料の反復を含み、各応答を独立した脆弱性事例として扱わない。モデル順位や一般の偽陽性率・偽陰性率を算出しない。",
+    "Lunaは別ハーネス近似で生成費用不明。料金は以前保存した単価換算を引用し、現在の料金や新規請求額を検証したものではない。"
+  ],
+  "sourceFiles": {
+    "sources": {
+      "path": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "sha256": "9f66d4af4d50339804d34e014bada34d572ed0c73cf597e796a78a090daeda1b"
+    },
+    "generation": {
+      "path": "docs/history/2026-11-01-tag-candidate-limit/measurements.json",
+      "sha256": "8206507a9f6cbd9731dc56e38a3f0ba5fdce9424d6f8dcd121025f0a76c7eb7f"
+    },
+    "replay": {
+      "path": "docs/history/2026-11-01-quote-attribution/measurements.json",
+      "sha256": "7f8593fa638fa4df04fd8def4cd4730aa7e03625e6722082dbcb17ff0f0f73bb"
+    }
+  },
+  "codeFiles": {
+    "src/quality.ts": "79f0db5094c29f8050c9b986b99def9e8851a1f1c2c3613cca9e80aac7bf2b9d",
+    "src/llm/evidence.ts": "351ebb27b3936508da1c4cb792f9fbe9411d5bad43bcb40667a9d8f69a797be9",
+    "src/social/format.ts": "37e23a58bdc27630225635022b94b879450102fb97c617585331c1954f362039"
+  },
+  "findingDefinitions": {
+    "missing_as_unavailable": {
+      "field": "action",
+      "kind": "unsupported_assertion",
+      "assessment": "原文に対策情報がないのにactionを「未提供」とし、remediation: nullを原文として引用している。未確認と未提供を区別できていない。"
+    },
+    "unsupported_update": {
+      "field": "action",
+      "kind": "unsupported_assertion",
+      "assessment": "原文にない「更新する」を補い、対策がある扱いでcompleteにもなる。通常更新として本文表示からは省かれる。"
+    },
+    "unauthorized_as_unauthenticated": {
+      "field": "impact",
+      "kind": "unsupported_assertion",
+      "assessment": "unauthorized（権限がない）を未認証・認証不要へ狭める根拠が、この原文にはない。実際に認証不要かどうかを外部情報で判定したものではない。"
+    },
+    "jvn_import_condition_missing": {
+      "field": "impact",
+      "kind": "important_omission",
+      "assessment": "細工したファイルのインポートという成立条件が、見出し・影響から落ちる。"
+    },
+    "jvn_version_range_missing": {
+      "field": "post",
+      "kind": "important_omission",
+      "assessment": "保存原文・入力にあるGENESIS64 / ICONICS Suite 10.97〜10.97.2が表示されない。"
+    },
+    "jvn_common_action_rejected": {
+      "field": "action",
+      "kind": "context_policy",
+      "assessment": "製品・バージョンごとに開発者情報を参照する共通案内が、対象CVE項目ではないとして保留される。個別の修正版が確認できたという意味ではない。"
+    },
+    "manufacturer_context_rejected": {
+      "field": "tags",
+      "kind": "context_policy",
+      "assessment": "共通概要に明示された三菱電機株式会社と対象製品の関係が、個別CVE番号のない引用として保留される。メーカーの主張自体は保存原文で確認できる。"
+    },
+    "php_patch_available_implied": {
+      "field": "action",
+      "kind": "unsupported_assertion",
+      "assessment": "対象は修正リリース待ちなのに「修正済みバージョンへの更新、または」と、現在選べる対策のように記す。"
+    },
+    "php_configuration_condition_missing": {
+      "field": "overview,impact",
+      "kind": "important_omission",
+      "assessment": "特定の設定とアプリケーションコードの組み合わせに限ることが本文から落ちる。"
+    },
+    "php_all_workers_missing": {
+      "field": "action",
+      "kind": "important_omission",
+      "assessment": "具体的な設定・再起動を書くが、原文の「すべてのワーカー」の限定が落ちる。"
+    },
+    "php_setting_not_supported_by_quote": {
+      "field": "action",
+      "kind": "citation_support",
+      "assessment": "設定名・設定値・再起動を主張するが、引用は緩和策への導入文だけ。引用内のCVE番号に0があるため数値包含検査も通り、設定と値の対応を検証できていない。設定自体は入力の別行にある。"
+    },
+    "php_attack_attribution_unconfirmed": {
+      "field": "impact",
+      "kind": "unsupported_assertion",
+      "assessment": "記事後半の侵害・横展開の報告を対象CVEの被害として引用するが、この範囲から対象CVEへの帰属は確定できない。"
+    },
+    "php_correct_action_rejected": {
+      "field": "action",
+      "kind": "context_policy",
+      "assessment": "対象CVEの自然文に続く設定値と全ワーカー再起動が原文に明示されているのに、項目ラベルからの継続ではないとして引用を保留する。うちmedium試行1・high試行3は他CVEに同じ設定が有効という補足も引用に含み、他CVE併記も保留に関係する。"
+    },
+    "kev_discontinue_missing": {
+      "field": "action",
+      "kind": "important_omission",
+      "assessment": "緩和策が利用できない場合は使用中止、という条件が生成時に落ちる。"
+    },
+    "kev_discontinue_hidden": {
+      "field": "post",
+      "kind": "important_omission",
+      "assessment": "使用中止条件を生成しているがroutine_update分類により、個別・まとめの表示から対策全体が消える。"
+    },
+    "thrift_inclusive_boundary": {
+      "field": "impact",
+      "kind": "unsupported_assertion",
+      "assessment": "before 0.24.0（未満）を0.24.0以前とし、修正版を脆弱な範囲へ含める。"
+    },
+    "thrift_affected_range_missing": {
+      "field": "post",
+      "kind": "important_omission",
+      "assessment": "入力にある影響範囲0.24.0未満を表示へ残していない。"
+    },
+    "routine_fix_hidden_by_policy": {
+      "field": "post",
+      "kind": "display_policy",
+      "assessment": "正しい0.24.0への更新指示が通常更新の省略仕様で非表示。現行仕様どおりであり、誤分類による使用中止欠落とは区別する。"
+    },
+    "transliterator_range_missing": {
+      "field": "post",
+      "kind": "important_omission",
+      "assessment": "入力にある影響範囲2.5.13以下を表示へ残していない。medium試行3はsubjectに残るため、この指摘の対象外。"
+    },
+    "microsoft_not_in_source": {
+      "field": "tags",
+      "kind": "metadata",
+      "assessment": "引用・入力にないMicrosoftをメーカータグに追加している。外部知識で真偽を判定せず、本文の問題と分ける。"
+    },
+    "quote_newline_removed": {
+      "field": "action",
+      "kind": "quotation_format",
+      "assessment": "原文の改行を削除して連結した引用である。対策文が支持されることと、完全一致引用の形式違反は別に評価する。"
+    },
+    "uncertainty_wrongly_rejected": {
+      "field": "uncertainties",
+      "kind": "judge_reason_error",
+      "assessment": "原文にバージョン等がないという妥当な未確認事項を、過去の検品がunsupportedClaimsに入れた。出力全体が安全とは判定しない。"
+    },
+    "judge_detected_tag_only": {
+      "field": "tags",
+      "kind": "judge_correct_reason",
+      "assessment": "過去の意味検証はアクセス制御タグを不支持としたが、本文のバージョン境界の誤りを指摘していない。"
+    },
+    "judge_detected_action_kind": {
+      "field": "actionKind",
+      "kind": "judge_correct_reason",
+      "assessment": "過去の意味検証は使用中止を含む対策のroutine_update分類を指摘している。"
+    }
+  },
+  "sourceAnchors": {
+    "unauthorized": {
+      "label": "nvd-normal",
+      "evidenceId": "nvd:CVE-2026-118147",
+      "startCodePoint": 16,
+      "endCodePoint": 132,
+      "text": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network."
+    },
+    "jvn_affected": {
+      "label": "jvn",
+      "evidenceId": "jvn:https://jvn.jp/vu/JVNVU93251594/",
+      "startCodePoint": 309,
+      "endCodePoint": 383,
+      "text": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで"
+    },
+    "jvn_condition": {
+      "label": "jvn",
+      "evidenceId": "jvn:https://jvn.jp/vu/JVNVU93251594/",
+      "startCodePoint": 1277,
+      "endCodePoint": 1340,
+      "text": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。"
+    },
+    "jvn_manufacturer": {
+      "label": "jvn",
+      "evidenceId": "jvn:https://jvn.jp/vu/JVNVU93251594/",
+      "startCodePoint": 162,
+      "endCodePoint": 206,
+      "text": "三菱電機株式会社が提供するGENESIS、GENESIS64、ICONICS Suite"
+    },
+    "php_pending": {
+      "label": "jpcert-multi-cve",
+      "evidenceId": "jpcert:https://www.jpcert.or.jp/at/2026/at260033.html",
+      "startCodePoint": 1849,
+      "endCodePoint": 1948,
+      "text": "ただし、開発者は、影響を受ける構成が一般的ではないことから、通常のリリースサイクルで修正する方針を示しており、修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。"
+    },
+    "php_mitigation": {
+      "label": "jpcert-multi-cve",
+      "evidenceId": "jpcert:https://www.jpcert.or.jp/at/2026/at260033.html",
+      "startCodePoint": 3414,
+      "endCodePoint": 3531,
+      "text": "The PHP Groupは、CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。\n- session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する"
+    },
+    "kev_stop": {
+      "label": "kev",
+      "evidenceId": "kev:CVE-2026-118527",
+      "startCodePoint": 567,
+      "endCodePoint": 688,
+      "text": "Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable."
+    },
+    "thrift_boundary": {
+      "label": "previous-json-error",
+      "evidenceId": "nvd:CVE-2026-120135",
+      "startCodePoint": 88,
+      "endCodePoint": 136,
+      "text": "This issue affects Apache Thrift: before 0.24.0."
+    },
+    "thrift_fix": {
+      "label": "previous-json-error",
+      "evidenceId": "nvd:CVE-2026-120135",
+      "startCodePoint": 140,
+      "endCodePoint": 214,
+      "text": "Users are recommended to upgrade to version 0.24.0, which fixes the issue."
+    },
+    "transliterator": {
+      "label": "incomplete-information",
+      "evidenceId": "nvd:CVE-2026-39732",
+      "startCodePoint": 15,
+      "endCodePoint": 82,
+      "text": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions."
+    }
+  },
+  "stats": {
+    "total": 72,
+    "structured": 68,
+    "quoteReferences": 410,
+    "localPass": 43,
+    "localHeld": 25,
+    "localPassButIncomplete": 29,
+    "tagRemovalAdditionalLocalPass": 6,
+    "tagRemovalAdditionalWithUnsupportedBody": 5,
+    "historicalMeaningReached": 44,
+    "historicalMeaningPass": 40,
+    "historicalMeaningRejected": 4,
+    "historicalMeaningPassWithUnsupportedAssertion": 6,
+    "strictReferenceRoute": 12,
+    "strictReferenceWithReaderCriticalIssue": 8,
+    "strictReferenceWithUnsupportedHiddenAction": 1,
+    "bodyAssessments": {
+      "unsupported_assertion_identified": 15,
+      "supported_partial_no_listed_body_error_identified": 24,
+      "important_omission_identified": 29,
+      "not_reviewable_structure_failure": 4
+    },
+    "findingCounts": {
+      "judge_detected_action_kind": 1,
+      "judge_detected_tag_only": 2,
+      "jvn_common_action_rejected": 4,
+      "jvn_import_condition_missing": 5,
+      "jvn_version_range_missing": 11,
+      "kev_discontinue_hidden": 3,
+      "kev_discontinue_missing": 6,
+      "manufacturer_context_rejected": 5,
+      "microsoft_not_in_source": 1,
+      "missing_as_unavailable": 1,
+      "php_all_workers_missing": 2,
+      "php_attack_attribution_unconfirmed": 1,
+      "php_configuration_condition_missing": 6,
+      "php_correct_action_rejected": 6,
+      "php_patch_available_implied": 6,
+      "php_setting_not_supported_by_quote": 2,
+      "quote_newline_removed": 3,
+      "routine_fix_hidden_by_policy": 9,
+      "thrift_affected_range_missing": 6,
+      "thrift_inclusive_boundary": 3,
+      "transliterator_range_missing": 3,
+      "unauthorized_as_unauthenticated": 4,
+      "uncertainty_wrongly_rejected": 2,
+      "unsupported_update": 1
+    }
+  },
+  "costs": [
+    {
+      "condition": "llama-before",
+      "historicalGenerationUsd": 0.04758281099999999,
+      "historicalVerificationUsd": 0.0033654789999999998,
+      "verificationCalls": 8,
+      "meanVerificationMs": 1208.625,
+      "verificationShareOfMeasuredLlamaTotal": 0.06605676068814087
+    },
+    {
+      "condition": "llama-after",
+      "historicalGenerationUsd": 0.031100886,
+      "historicalVerificationUsd": 0.00490927,
+      "verificationCalls": 12,
+      "meanVerificationMs": 1253,
+      "verificationShareOfMeasuredLlamaTotal": 0.13633015086077382
+    },
+    {
+      "condition": "luna-medium",
+      "historicalGenerationUsd": null,
+      "historicalVerificationUsd": 0.004531686,
+      "verificationCalls": 11,
+      "meanVerificationMs": 1163.1818181818182,
+      "verificationShareOfMeasuredLlamaTotal": null
+    },
+    {
+      "condition": "luna-high",
+      "historicalGenerationUsd": null,
+      "historicalVerificationUsd": 0.0056635570000000005,
+      "verificationCalls": 13,
+      "meanVerificationMs": 1949.3846153846155,
+      "verificationShareOfMeasuredLlamaTotal": null
+    }
+  ],
+  "rows": [
+    {
+      "id": "llama-before/t1/nvd-normal",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "795de45daf2cd5e3b20ff59aaa21ca777de7351102fd85f491ef1f9a2ce8dc56",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: missing action kind", "action: fabricated evidence"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: missing action kind", "action: fabricated evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "fabricated evidence",
+          "afterReason": "fabricated evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["missing_as_unavailable"]
+    },
+    {
+      "id": "llama-after/t1/nvd-normal",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "006bc6a67f079445ec21031dd389785f9888feb2d20dd7859b37b33b99efbd59",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-after/t1/jvn",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "d3e190ac4a8ac9f60777bb853649c071377aaaebf04ffc3c1e4d7418dede510e",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_import_condition_missing"]
+    },
+    {
+      "id": "llama-before/t1/jvn",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "c8fbfeacbdfb9fdb3e49b85b15b497431b5f288a5922c0aac82fbc39489b43fc",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_import_condition_missing"]
+    },
+    {
+      "id": "llama-before/t1/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["php_patch_available_implied", "php_configuration_condition_missing"]
+    },
+    {
+      "id": "llama-after/t1/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "8e64fb12098d3a5cbc20e9859e0014f4e19c9f108db6c638c43a36a179e1c1ad",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": [
+        "php_patch_available_implied",
+        "php_configuration_condition_missing",
+        "php_all_workers_missing",
+        "php_setting_not_supported_by_quote"
+      ]
+    },
+    {
+      "id": "llama-after/t1/kev",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "551d6d699a7f8952de3b6a5ca5c55af52031f966c448d9f723957f6183f55474",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-before/t1/kev",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "7df51da956de9b51a186cb67b9c38f9ff20f1bec19d3a482c1eedeb9e7a8cfec",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-before/t1/previous-json-error",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": false,
+      "findings": [],
+      "bodyAssessment": "not_reviewable_structure_failure"
+    },
+    {
+      "id": "llama-after/t1/previous-json-error",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "8c484ff9953bfcdb4f410e8f02f090a4fda4f9f5b0ec31a095f1b953eb3a2fe5",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": false,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": ["アクセス制御"]
+      },
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_inclusive_boundary", "judge_detected_tag_only"]
+    },
+    {
+      "id": "llama-after/t1/incomplete-information",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "9d04e9b85df72a8b6bb8ab106301787882b7d079ff1e89a184d4249987a2627b",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-before/t1/incomplete-information",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "b8561ae11fa1cf90c80bb5f0fbf85246dfa947d3723ad5b3664c13b78c15a4db",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-after/t2/nvd-normal",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "30fad0c52e7ae5d61422ac331f0500b26a88fe0c7350f247d29ae88601fe9015",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-before/t2/nvd-normal",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "937126532d82686e7ac549ca6d0de09be9b3789c688757e68fb56fe280024aa3",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["unsupported_update"]
+    },
+    {
+      "id": "llama-before/t2/jvn",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "jvn",
+      "structured": false,
+      "findings": [],
+      "bodyAssessment": "not_reviewable_structure_failure"
+    },
+    {
+      "id": "llama-after/t2/jvn",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_import_condition_missing"]
+    },
+    {
+      "id": "llama-after/t2/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "8e64fb12098d3a5cbc20e9859e0014f4e19c9f108db6c638c43a36a179e1c1ad",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": [
+        "php_patch_available_implied",
+        "php_configuration_condition_missing",
+        "php_all_workers_missing",
+        "php_setting_not_supported_by_quote"
+      ]
+    },
+    {
+      "id": "llama-before/t2/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["php_patch_available_implied", "php_configuration_condition_missing"]
+    },
+    {
+      "id": "llama-before/t2/kev",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "e01e11a6889e9cc1a8842f615db6f7967045900f6971e2f81a7e427015649b25",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-after/t2/kev",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "d2b5f2a296ef19fbc7c634fa704c620001ddd339f570a6a84e15669d745d6e8d",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-after/t2/previous-json-error",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "b8111cdce30084724d3ea97bdaeadbf6ca38d079e0af50bed981a41d9aecbab7",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_inclusive_boundary"]
+    },
+    {
+      "id": "llama-before/t2/previous-json-error",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": false,
+      "findings": [],
+      "bodyAssessment": "not_reviewable_structure_failure"
+    },
+    {
+      "id": "llama-before/t2/incomplete-information",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "9d04e9b85df72a8b6bb8ab106301787882b7d079ff1e89a184d4249987a2627b",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-after/t2/incomplete-information",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "3d926d5491b844ce6b9702ba4f762af69a879409eb202323a984496ad46f7ece",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-before/t3/nvd-normal",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "bd24f8c2ba22cf03ed2d98bdc7fee472f8b96396504d4c9b91964bb9f9fa0d12",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-after/t3/nvd-normal",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "0dd9506321af2cb2dc6271008cfe6cc7d375a049cf334278415b53750e63faa7",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-after/t3/jvn",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_import_condition_missing"]
+    },
+    {
+      "id": "llama-before/t3/jvn",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_import_condition_missing"]
+    },
+    {
+      "id": "llama-before/t3/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["php_patch_available_implied", "php_configuration_condition_missing"]
+    },
+    {
+      "id": "llama-after/t3/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "7a647162a37278ad31fd70332eb9be0131b39830fc09f48b31045b2fb9910077",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "impact: ambiguous multi-CVE evidence",
+          "action: fabricated evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence",
+          "tags.1: fabricated evidence"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "impact: ambiguous multi-CVE evidence",
+          "action: fabricated evidence",
+          "action: unsupported literal 0"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "impact",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "fabricated evidence",
+          "afterReason": "fabricated evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "fabricated evidence",
+          "afterReason": "fabricated evidence"
+        }
+      ],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": [
+        "php_patch_available_implied",
+        "php_configuration_condition_missing",
+        "php_attack_attribution_unconfirmed",
+        "quote_newline_removed"
+      ]
+    },
+    {
+      "id": "llama-after/t3/kev",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "bf140ecfa9aa867453b196ace3f58fc3ccf256a598379371275940cad088b7bc",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-before/t3/kev",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "9014ce89fc110d7c758e152ea92591d053e8300fc6e01a5a8977a777caa4dfbf",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_missing"]
+    },
+    {
+      "id": "llama-before/t3/previous-json-error",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": false,
+      "findings": [],
+      "bodyAssessment": "not_reviewable_structure_failure"
+    },
+    {
+      "id": "llama-after/t3/previous-json-error",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "5514208e6c679e82bb62fb28eb8ae3793fc2140fc8d247a8e4540db54c77923e",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": false,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": ["アクセス制御"]
+      },
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_inclusive_boundary", "judge_detected_tag_only"]
+    },
+    {
+      "id": "llama-after/t3/incomplete-information",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "239d266fb9a32a421392b0972fd0ae8f0e3e4768c6cce396ad2ca6547b80012e",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "llama-before/t3/incomplete-information",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "239d266fb9a32a421392b0972fd0ae8f0e3e4768c6cce396ad2ca6547b80012e",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-medium/t1/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "a7a2b83b17b302c1ad82e8baec66dc503be8a3fb11ba273666501ffbc495a03b",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-medium/t1/jvn",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "81fc653882bfdba3623aa92c879c8233587e15aa2214e0404773df52e602c9c8",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["subject: ambiguous multi-CVE evidence", "action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 1,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_common_action_rejected", "manufacturer_context_rejected"]
+    },
+    {
+      "id": "luna-medium/t1/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "4f4f281f0c7389f95f81e8cebf4db5da3c88bc131b9c3220cb20d5848c8a02e2",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": null,
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-medium/t1/kev",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "683061463ce02796e90f6813ab3b40b36f11769b587f7f63eddf489a0fbfa2a1",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-medium/t1/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "104214d17b973e44842a2d25bb804fb8d18912975765f6762f2236b92396fce9",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-medium/t1/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "c70faad5983c6c74907ed55305ff3d9e80d278bb206d01cd5f02a70f260f47a9",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["transliterator_range_missing"]
+    },
+    {
+      "id": "luna-medium/t2/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "feea57139768c8c1d5c1ae8f6248d2c9f0a8f5994b955b857aa9110a2f130b45",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["unauthorized_as_unauthenticated"]
+    },
+    {
+      "id": "luna-medium/t2/jvn",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "688bf770bd67ae86cc6dd35fc94db6fd663e932312881426f23cfc1db66aa590",
+      "local": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_common_action_rejected", "manufacturer_context_rejected"]
+    },
+    {
+      "id": "luna-medium/t2/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "c14509ef85db7becdfd37d5a7c986df26a1a4c4dfb59663c0997de73fd527e2f",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": null,
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-medium/t2/kev",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "5afe980b26d70da1b8b5e18eb04f0bf8195b01bc2a7fee174b25f03ea4fdc2da",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-medium/t2/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "511fea57f685d74b820c8edfb86f1bb8ef45ae07388125b69c46795140b615cb",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-medium/t2/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "7099afeb37bce2c9a8f891ef3ad971d0088ed35cbac86e8f0c19b5d96bee20b0",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["transliterator_range_missing"]
+    },
+    {
+      "id": "luna-medium/t3/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "fbbc060b9b0bbbe1330ec9ef3375c6dec4d45cf53fdfc2b16078866b3b882349",
+      "local": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["tags.2: unsupported name"]
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["microsoft_not_in_source"]
+    },
+    {
+      "id": "luna-medium/t3/jvn",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "859d8bdb0ce4bbc926e0c27702661ba6f315e31f24299decba5baeb68c7255c1",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.2: ambiguous multi-CVE evidence",
+          "tags.2: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["subject: ambiguous multi-CVE evidence", "action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 1,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.2",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_common_action_rejected", "manufacturer_context_rejected"]
+    },
+    {
+      "id": "luna-medium/t3/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "a324da524b59cdb415137a91374a2a0876340ead9c577666fbfd41bfde5857e5",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence",
+          "tags.2: ambiguous multi-CVE evidence",
+          "tags.2: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.0",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.2",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-medium/t3/kev",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "41e40de1deea07c98464d2fca80e30e34763983fd834892510aa862cdca13f66",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-medium/t3/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "082b45c899d78e3c619c3508940b07e674f996e9086e119391130aa90d495f9f",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-medium/t3/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "7fa3d52735fc5e23f952914fef314857741938a4fab346631c48c3551cacd575",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-high/t1/nvd-normal",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "109789dad704e48a93d75ef0a047601e5c5ae321cb2c17ae825668890b0fd9f6",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["unauthorized_as_unauthenticated"]
+    },
+    {
+      "id": "luna-high/t1/jvn",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "ace9bdae569bd6b4bd5b4f15c58020ca95ec8d353bc44af1d8a30a851d305c6f",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["subject: ambiguous multi-CVE evidence", "action: ambiguous multi-CVE evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "jvn_common_action_rejected", "manufacturer_context_rejected"]
+    },
+    {
+      "id": "luna-high/t1/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "e9a595e3ddf4f08a4d01c92640f2b92c6bf3929cc792e39d835e02fdad2b4808",
+      "local": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0"
+        ]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": null,
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-high/t1/kev",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "75d87c1478bcd8efa0acdf288a16b80aace1ac2815f00df67016d2a520608fe9",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": false,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": ["影響を受けるバージョンと具体的な緩和策の内容は、提示された情報では確認できない。"]
+      },
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_hidden", "uncertainty_wrongly_rejected"]
+    },
+    {
+      "id": "luna-high/t1/previous-json-error",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "ae45f656cc87086e1e7d5d9ddc1bb5d01add2f3ff986270a57fc1634a4bdff30",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-high/t1/incomplete-information",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "1f2cc2fc6649e90b97bdb55a3ab0aa9c178fc8dc46c00e9d4e3bcdb4e3a35076",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-high/t2/nvd-normal",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "485530e1ed00a3e7fd94ae25bd212b867c531a055c2d2f9d944072cd6bce476d",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["unauthorized_as_unauthenticated"]
+    },
+    {
+      "id": "luna-high/t2/jvn",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "8aaa7b6138828dbe6a7188c16e51e1c1153ba90fd0bb6555525df749eb96a9a2",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: fabricated evidence"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: fabricated evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 1,
+          "beforeReason": "fabricated evidence",
+          "afterReason": "fabricated evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "quote_newline_removed"]
+    },
+    {
+      "id": "luna-high/t2/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "be52aa463937435fa6c9a38a181cd4be84650a3d99c9ba5c515209695587d8d3",
+      "local": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": null,
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-high/t2/kev",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "4dfde3a6fe22dc85843abe7e72e02331520ecd73042a098da42535174d54f12a",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": false,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": [
+          "影響を受けるバージョンは示されていません。",
+          "actionKind: routine_update (ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。)"
+        ]
+      },
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_hidden", "uncertainty_wrongly_rejected", "judge_detected_action_kind"]
+    },
+    {
+      "id": "luna-high/t2/previous-json-error",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "db1c344bfdec8e8e247d3d69dfbb9d1e377d96daf7be1cbeca47bce843abc2d6",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-high/t2/incomplete-information",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "dd764b117b72fd39228f7137ff19508f8cbb739a40d127e72924a1f97dea307b",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": []
+    },
+    {
+      "id": "luna-high/t3/nvd-normal",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "becf842f200c0cc04b1139962c94c30482c3b310dff8d9a591c47879136b2cb2",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "unsupported_assertion_identified",
+      "findings": ["unauthorized_as_unauthenticated"]
+    },
+    {
+      "id": "luna-high/t3/jvn",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "7b8b833189d12305955231f46a4d2b8343281a609d25e8c47c316d02111317bd",
+      "local": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: fabricated evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["subject: ambiguous multi-CVE evidence", "action: fabricated evidence"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "subject",
+          "referenceIndex": 1,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        },
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": "fabricated evidence",
+          "afterReason": "fabricated evidence"
+        },
+        {
+          "field": "tags.1",
+          "referenceIndex": 0,
+          "beforeReason": "ambiguous multi-CVE evidence",
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["jvn_version_range_missing", "manufacturer_context_rejected", "quote_newline_removed"]
+    },
+    {
+      "id": "luna-high/t3/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "391bc766abda48f0241597705ced0a5abc2b15e2502fec4008d77750c007321a",
+      "local": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "withoutTags": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "historicalMeaningSupported": null,
+      "historicalVerdict": null,
+      "currentLocalAndHistoricalMeaning": false,
+      "strictReferenceRoute": false,
+      "postShowsAction": true,
+      "digestShowsAction": true,
+      "quotationFailures": [
+        {
+          "field": "action",
+          "referenceIndex": 0,
+          "beforeReason": null,
+          "afterReason": "ambiguous multi-CVE evidence"
+        }
+      ],
+      "bodyAssessment": "supported_partial_no_listed_body_error_identified",
+      "findings": ["php_correct_action_rejected"]
+    },
+    {
+      "id": "luna-high/t3/kev",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "0a041cb0d804d3824ee55a9b1e8f3e435e7b81bac213264de66f7368615cfd8d",
+      "local": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": true,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["kev_discontinue_hidden"]
+    },
+    {
+      "id": "luna-high/t3/previous-json-error",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "35a7d053ad41312b08de358bdddf0c3e182aff16cfd7f943146a3665961767a0",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["routine_fix_hidden_by_policy", "thrift_affected_range_missing"]
+    },
+    {
+      "id": "luna-high/t3/incomplete-information",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "709ee30beb789555c3ecade4a3393ee1edd1ec7cfa0ec7b74640ee8108e8a5b6",
+      "local": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "withoutTags": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "historicalMeaningSupported": true,
+      "historicalVerdict": {
+        "supported": true,
+        "contradictions": [],
+        "unsupportedClaims": []
+      },
+      "currentLocalAndHistoricalMeaning": true,
+      "strictReferenceRoute": false,
+      "postShowsAction": false,
+      "digestShowsAction": false,
+      "quotationFailures": [],
+      "bodyAssessment": "important_omission_identified",
+      "findings": ["transliterator_range_missing"]
+    }
+  ]
+}

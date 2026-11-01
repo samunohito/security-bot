@@ -79,6 +79,10 @@
 
 ### 履歴
 
+- [対策の表示を分類から切り離した変更と再生比較](history/2026-11-01-show-actions/evaluation.md)：
+  Issue #18の通常更新・使用中止の原則表示、同じ72応答での表示比較、文字数と既存検査の維持。
+- [検査が防ぐ誤りと過剰な保留の調査](history/2026-11-01-validation-audit/evaluation.md)：
+  保存済み出力と原文・表示の照合、検査の見逃しと過剰拒否、タグ・情報不足・検品費用の切り分け。
 - [引用の原文位置と対象CVEへの帰属の再生比較](history/2026-11-01-quote-attribution/evaluation.md)：
   Issue #16の原文位置照合、同じ72応答での検証器の比較、自然文の帰属と内容検証の残存課題。
 - [タグ候補上限と固定入力でのモデル再評価](history/2026-11-01-tag-candidate-limit/evaluation.md)：

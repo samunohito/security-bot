@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ActionKind, PostIntent, SummaryTag } from '../src/domain';
+import type { PostIntent, SummaryTag } from '../src/domain';
 import { formatDigestEntry, formatPost } from '../src/social/format';
 
 const claim = (text: string) => ({ text, evidence: [{ id: 'jvn:1', quote: text }] });
@@ -28,17 +28,18 @@ const intent: PostIntent = {
 };
 
 describe('まとめの項目', () => {
-  it('CVE・理由・スコア、対象と概要、影響、出典を空行なしの4行にする', () => {
+  it('CVE・理由・スコア、対象と概要、影響、対策、出典を空行なしの5行にする', () => {
     expect(formatDigestEntry(intent, '新規', 7.1)).toBe(
       'CVE-2026-97860｜新規｜CVSS 7.1\n' +
         'ヤマハ YMS-VPN8／YMS-VPN8-CP：Windowsサービスのファイルパスの引用符不備\n' +
         '影響: 書き込み権限を持つユーザーにより、SYSTEM権限でコードが実行される可能性があります。\n' +
+        '対策: アップデートしてください。\n' +
         'https://jvn.jp/jp/JVN30675482/',
     );
   });
 
-  it.each(['unpatched', 'workaround', 'additional_steps', 'patch_warning'] as const)(
-    '例外対策と未確認事項は追加行に残す: %s',
+  it.each(['routine_update', 'unpatched', 'workaround', 'additional_steps', 'patch_warning', null, undefined] as const)(
+    '対策種別にかかわらず使用中止の条件と未確認事項を残す: %s',
     (actionKind) => {
       const text = formatDigestEntry(
         {
@@ -46,7 +47,7 @@ describe('まとめの項目', () => {
           summary: {
             ...intent.summary,
             actionKind,
-            action: claim('管理機能を無効にしてください。'),
+            action: claim('緩和策が利用できない場合は製品の使用を中止してください。'),
             uncertainties: ['他のバージョンへの影響は未確認'],
           },
           sources: [...intent.sources, 'https://example.com/advisory'],
@@ -55,7 +56,7 @@ describe('まとめの項目', () => {
         8,
       );
       expect(text).toContain('｜High昇格｜CVSS 8\n');
-      expect(text).toContain('\n対策: 管理機能を無効にしてください。\n');
+      expect(text).toContain('\n対策: 緩和策が利用できない場合は製品の使用を中止してください。\n');
       expect(text).toContain('\n未確認事項: 他のバージョンへの影響は未確認\n');
       expect(text).toContain('\nhttps://jvn.jp/jp/JVN30675482/\nhttps://example.com/advisory');
       expect(text).not.toContain('\n\n');
@@ -88,17 +89,18 @@ describe('まとめの項目', () => {
     );
     expect(text).toContain('Acme @\u200beveryone #\u200b任意 $\u200b[\u200bspin x]\u200b：');
     expect(text).not.toContain('#YMS_VPN8');
-    expect(text.split('\n')).toHaveLength(4);
+    expect(text.split('\n')).toHaveLength(5);
   });
 });
 
 describe('投稿本文', () => {
-  it('CVEと深刻度を先頭に置き、対象・問題・影響・出典・タグを重複なく段落にする', () => {
+  it('CVEと深刻度を先頭に置き、対象・問題・影響・対策・出典・タグを重複なく段落にする', () => {
     expect(formatPost(intent)).toBe(
       '[High] CVE-2026-97860\n' +
         'ヤマハ YMS-VPN8／YMS-VPN8-CP\n' +
         'Windowsサービスのファイルパスの引用符不備\n\n' +
         '影響: 書き込み権限を持つユーザーにより、SYSTEM権限でコードが実行される可能性があります。\n\n' +
+        '対策: アップデートしてください。\n\n' +
         '出典: https://jvn.jp/jp/JVN30675482/\n\n' +
         '#ネットワーク #パス処理 #ヤマハ #YMS_VPN8 #YMS_VPN8_CP',
     );
@@ -113,23 +115,24 @@ describe('投稿本文', () => {
     expect(text).toContain(intent.summary.impact!.text);
   });
 
-  it.each(['unpatched', 'workaround', 'additional_steps', 'patch_warning'] as ActionKind[])(
-    '根拠を確認した例外の対策は本文に表示する: %s',
+  it.each(['routine_update', 'unpatched', 'workaround', 'additional_steps', 'patch_warning', null, undefined] as const)(
+    '対策種別にかかわらず使用中止の条件を本文に表示する: %s',
     (actionKind) => {
       const text = formatPost({
         ...intent,
-        summary: { ...intent.summary, actionKind, action: claim('管理機能を無効にしてください。') },
+        summary: {
+          ...intent.summary,
+          actionKind,
+          action: claim('緩和策が利用できない場合は製品の使用を中止してください。'),
+        },
       });
-      expect(text).toContain('\n\n対策: 管理機能を無効にしてください。\n\n出典:');
+      expect(text).toContain('\n\n対策: 緩和策が利用できない場合は製品の使用を中止してください。\n\n出典:');
     },
   );
 
-  it('対策の種類や対策自体が不明な場合は、定型文や未提供の断定を出さない', () => {
-    for (const summary of [
-      { ...intent.summary, actionKind: null },
-      { ...intent.summary, action: null, actionKind: null },
-    ]) {
-      const text = formatPost({ ...intent, summary });
+  it('対策自体が不明なら、分類から定型文や未提供の断定を補わない', () => {
+    for (const actionKind of ['routine_update', 'unpatched', null, undefined] as const) {
+      const text = formatPost({ ...intent, summary: { ...intent.summary, action: null, actionKind } });
       expect(text).not.toContain('対策:');
       expect(text).not.toContain('修正版未提供');
     }
@@ -196,4 +199,18 @@ describe('投稿本文', () => {
     const text = formatPost({ ...intent, summary: { ...intent.summary, tags: [tag('product', name)] } });
     expect(text.split('\n\n').at(-1)).toBe(expected);
   });
+});
+
+it.each([
+  ['個別', (value: PostIntent) => formatPost(value)],
+  ['まとめ', (value: PostIntent) => formatDigestEntry(value, '新規', 7.1)],
+] as const)('%sの対策内の改行・メンション・任意タグ・MFMを安全に表示する', (_label, format) => {
+  const text = format({
+    ...intent,
+    summary: { ...intent.summary, action: claim('設定を無効化\n@everyone #任意 $[spin x]') },
+  });
+  expect(text).toContain('対策: 設定を無効化 @\u200beveryone #\u200b任意 $\u200b[\u200bspin x]\u200b');
+  expect(text).not.toContain('\n@everyone');
+  expect(text).not.toContain('#任意');
+  expect(text).not.toContain('$[spin');
 });

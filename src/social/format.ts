@@ -9,13 +9,10 @@ function escapeText(text: string): string {
 }
 
 function formatAction(summary: Summary): string {
-  return summary.action &&
-    ['unpatched', 'workaround', 'additional_steps', 'patch_warning'].includes(summary.actionKind ?? '')
-    ? `対策: ${escapeText(summary.action.text)}`
-    : '';
+  return summary.action ? `対策: ${escapeText(summary.action.text)}` : '';
 }
 
-/** 検証済みのHighを、概要・影響・必要な例外情報を維持したまとめ用の項目に整形する。 */
+/** 検証済みのHighを、概要・影響・対策を維持したまとめ用の項目に整形する。 */
 export function formatDigestEntry(intent: PostIntent, reason: string, score: number): string {
   const summary = intent.summary;
   const subject = escapeText(summary.subject?.text ?? intent.title);

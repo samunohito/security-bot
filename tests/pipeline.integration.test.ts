@@ -10,6 +10,7 @@ import { UrlReferenceProvider } from '../src/social/url-reference';
 import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
 import type { LlmProvider, LlmRequest } from '../src/llm/provider';
 import type { PostIntent, SourceItem, SummaryTag } from '../src/domain';
+import { otherKey, phpArticle, phpKey, phpMitigation } from './fixtures/evidence-articles';
 
 const db = (env as unknown as { DB: D1Database }).DB;
 const now = Date.parse('2026-10-27T00:00:00Z');
@@ -156,6 +157,78 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('記事の離れた緩和策を生成・検品・短縮と再検品のすべてに渡す', async () => {
+    const config = makeConfig();
+    config.targets = config.targets.filter((target) => target.id === 'main');
+    const requests: LlmRequest[] = [];
+    const quotedImpact = `${phpKey}は任意のコードを実行される可能性があります。`;
+    const articleClaim = (text: string, quote: string) => ({ text, evidence: [{ id: 'jvn:1', quote }] });
+    const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+      llm: {
+        async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+          if (z.object({ key: z.string() }).parse(request.data).key !== phpKey) {
+            return {
+              value: schema.parse({ overview: null, impact: null, action: null, uncertainties: [] }),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          }
+          requests.push(request);
+          const value =
+            request.system === VERIFY_SYSTEM
+              ? { supported: true, contradictions: [], unsupportedClaims: [] }
+              : {
+                  overview: articleClaim(
+                    request.system.includes('at most 45') ? '脆弱性' : '脆弱性'.repeat(200),
+                    `${phpKey}についての注意喚起。`,
+                  ),
+                  impact: articleClaim('任意のコードを実行される可能性', quotedImpact),
+                  action: articleClaim('設定を無効にし、すべてのワーカーを再起動', phpMitigation),
+                  actionKind: 'workaround',
+                  uncertainties: [],
+                };
+          return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };
+        },
+      },
+      social: () => ({
+        prepare: (intent) => new UrlReferenceProvider(500).prepare(intent),
+        publish: async () => ({ id: 'fixture', url: 'https://social.example/notes/fixture' }),
+      }),
+    });
+    await bot.store.ingest(
+      {
+        ...item,
+        text: `${phpArticle}\nImpact\n${quotedImpact}`,
+        cves: [phpKey, otherKey],
+        advisory: true,
+        affected: null,
+        remediation: null,
+      },
+      now,
+    );
+    await bot.tick(now);
+    await processAll(bot, now);
+
+    expect(requests).toHaveLength(4);
+    expect(requests.map((request) => request.system)).toEqual([
+      SUMMARY_SYSTEM,
+      VERIFY_SYSTEM,
+      expect.stringContaining('at most 45'),
+      VERIFY_SYSTEM,
+    ]);
+    for (const request of requests) {
+      expect(request.data).toMatchObject({
+        key: phpKey,
+        evidence: [
+          {
+            scope: 'article',
+            sections: { impact: quotedImpact, remediation: phpMitigation },
+          },
+        ],
+      });
+    }
+    expect((await bot.store.list('deliveries')).some((delivery) => delivery.state === 'sent')).toBe(true);
+  });
+
   it('通常投稿枠が空くまでジョブと配信を延期し毎分再投入しない', async () => {
     const { bot, store } = harness();
     const [id] = await store.ingest(item, now);

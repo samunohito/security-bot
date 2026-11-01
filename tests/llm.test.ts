@@ -80,16 +80,19 @@ describe('LLMへ渡す根拠', () => {
   });
 
   it('根拠は4件まで、1件の抜粋合計は2200文字までに制限する', () => {
+    const section = `${'a'.repeat(399)}。`;
     const long = {
       ...evidence,
-      text: 'a'.repeat(5000),
-      affected: 'a'.repeat(900),
-      impact: 'a'.repeat(900),
-      remediation: 'a'.repeat(900),
+      text: section.repeat(13),
+      affected: section.repeat(3),
+      impact: section.repeat(3),
+      remediation: section.repeat(3),
     };
     const result = evidencePrompt(key, Array(8).fill(long));
     expect(result.evidence).toHaveLength(4);
     const first = result.evidence[0]!;
+    expect(first.text).toHaveLength(1000);
+    expect(first.sections).toEqual({ affected: section, impact: section, remediation: section });
     expect(
       first.text.length + Object.values(first.sections).reduce((n, text) => n + (text?.length ?? 0), 0),
     ).toBeLessThanOrEqual(2200);

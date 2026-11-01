@@ -145,6 +145,7 @@ it('Highは6時間の区切りまで待ち、掲載後のCriticalを個別通知
   expect(sent).toHaveLength(1);
   expect(sent[0]).toContain('NVD Highまとめ');
   expect(sent[0]).toContain('CVE-2026-1111');
+  expect(sent[0]).toContain('\n対策: 2.0へ更新\n');
   await bot.store.ingest(
     { ...item, modifiedAt: boundary + 60000, scores: [{ score: 9.8, version: '3.1', issuer: 'nvd' }] },
     boundary + 60000,
@@ -153,10 +154,11 @@ it('Highは6時間の区切りまで待ち、掲載後のCriticalを個別通知
   await drain(bot, boundary + 60000);
   expect(sent).toHaveLength(2);
   expect(sent[1]).toContain('[Critical]');
+  expect(sent[1]).toContain('\n\n対策: 2.0へ更新\n\n');
   expect(sent[1]).toContain('https://social.example/notes/1');
 });
 it.each([
-  { maxCharacters: 400, expectedCounts: [3, 3] },
+  { maxCharacters: 400, expectedCounts: [2, 2, 2] },
   { maxCharacters: 2000, expectedCounts: [6] },
 ])(
   '投稿先の上限 $maxCharacters 文字で項目を分割し、4件を超えても収容する',
@@ -175,6 +177,9 @@ it.each([
     expect(bodies.map((body) => body.match(/・CVE-/g)?.length ?? 0).sort()).toEqual(expectedCounts);
     expect(bodies.every((body) => [...body].length <= maxCharacters)).toBe(true);
     expect(bodies.every((body) => !body.includes('[High]') && !body.includes('出典:'))).toBe(true);
+    expect(
+      bodies.every((body) => (body.match(/対策: 2.0へ更新/g)?.length ?? 0) === (body.match(/・CVE-/g)?.length ?? 0)),
+    ).toBe(true);
     expect(sent[0]).toContain('・CVE-2026-1111｜新規｜CVSS 8\nAcme：Acmeの脆弱性\n影響: Acme 1.0でコード実行\n');
     const members = (
       await Promise.all(deliveries.map((delivery) => bot.store.publications.members(delivery.id)))

@@ -1,0 +1,2180 @@
+{
+  "recordedDate": "2026-11-01",
+  "baseCommit": "60ae5a8961a607c780e99ac0a3927e92c82986a9",
+  "issue": "https://github.com/samunohito/security-bot/issues/18",
+  "newGenerationOrVerificationCalls": 0,
+  "protocol": "同じ72応答の選別済みSummaryを再生成せず、表示だけを変更。68表示の変更前一致、対策行以外の不変、機械判定・入力の一致を確認。500文字は参考の素の個別表示で、実際の短縮・SNS送信・掲載可否や意味検証を再実行した値ではない。7.4はまとめ整形用の固定スコアで掲載判断には使わない。",
+  "sourceFiles": {
+    "inputs": {
+      "path": "docs/history/2026-11-01-tag-candidate-limit/inputs.json",
+      "sha256": "9f66d4af4d50339804d34e014bada34d572ed0c73cf597e796a78a090daeda1b"
+    },
+    "generation": {
+      "path": "docs/history/2026-11-01-tag-candidate-limit/measurements.json",
+      "sha256": "8206507a9f6cbd9731dc56e38a3f0ba5fdce9424d6f8dcd121025f0a76c7eb7f"
+    },
+    "quotations": {
+      "path": "docs/history/2026-11-01-quote-attribution/measurements.json",
+      "sha256": "7f8593fa638fa4df04fd8def4cd4730aa7e03625e6722082dbcb17ff0f0f73bb"
+    }
+  },
+  "codeFiles": {
+    "src/social/format.ts": "aa61d9acf14b5a7aa4d662135810f93b5e5a63049deae779684f3851a5f73324",
+    "src/llm/evidence.ts": "351ebb27b3936508da1c4cb792f9fbe9411d5bad43bcb40667a9d8f69a797be9",
+    "src/quality.ts": "79f0db5094c29f8050c9b986b99def9e8851a1f1c2c3613cca9e80aac7bf2b9d",
+    "src/llm/prompts.ts": "312f3159e3edba692473b952837ccf9da9b99dcb94bc3c943dda0178806ff2dc"
+  },
+  "beforeFormatSha256": "37e23a58bdc27630225635022b94b879450102fb97c617585331c1954f362039",
+  "stats": {
+    "responses": 72,
+    "structured": 68,
+    "unchangedLocalPass": 43,
+    "actionBefore": 20,
+    "actionAfter": 46,
+    "newlyVisibleActions": 26,
+    "regainedStopConditions": 3,
+    "missingStopInSummaryUnchanged": 6,
+    "knownUnsupportedActionNowVisible": 1,
+    "postWithin500Before": 68,
+    "postWithin500After": 68,
+    "newlyOver500": 0,
+    "maxAddedPostCodePoints": 92,
+    "maxAddedDigestEntryCodePoints": 91
+  },
+  "rows": [
+    {
+      "id": "llama-before/t1/nvd-normal",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "795de45daf2cd5e3b20ff59aaa21ca777de7351102fd85f491ef1f9a2ce8dc56",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: missing action kind", "action: fabricated evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 151,
+        "afterCodePoints": 160,
+        "delta": 9,
+        "actionBefore": null,
+        "actionAfter": "対策: 未提供",
+        "beforeSha256": "bd823d50faf808b7ce7036cb3b6355cc8875e6a5a7c95fa1910d0bd622310eed",
+        "afterSha256": "9d3d5a937180b0f149c71c25c7a97fc9a44036faf0562caa2231a91619535e78"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 134,
+        "afterCodePoints": 142,
+        "delta": 8
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t1/nvd-normal",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "006bc6a67f079445ec21031dd389785f9888feb2d20dd7859b37b33b99efbd59",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 165,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb",
+        "afterSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 147,
+        "afterCodePoints": 147,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t1/jvn",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "d3e190ac4a8ac9f60777bb853649c071377aaaebf04ffc3c1e4d7418dede510e",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 167,
+        "afterCodePoints": 197,
+        "delta": 30,
+        "actionBefore": null,
+        "actionAfter": "対策: アップデートするまたはワークアラウンドを実施する",
+        "beforeSha256": "a0ca97c2001cb779a7accdf466dd971f00ee51074e21b82f1683cc1f8d0d23e2",
+        "afterSha256": "38d7e39ff18685f3ef504c00f10058e572e1a6132d39a3b2ffa56db93c4ae28a"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 151,
+        "afterCodePoints": 180,
+        "delta": 29
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t1/jvn",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "c8fbfeacbdfb9fdb3e49b85b15b497431b5f288a5922c0aac82fbc39489b43fc",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 168,
+        "afterCodePoints": 198,
+        "delta": 30,
+        "actionBefore": null,
+        "actionAfter": "対策: アップデートするまたはワークアラウンドを実施する",
+        "beforeSha256": "22e233b59d19ab700b3dbe287e53ae0fe7c195bb7a2f1a528fd4a1acb179304b",
+        "afterSha256": "3ee427ee2c3b42bb56c3bc5b3ce12480832df226f7a8157ef7b7b43409f6047d"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 151,
+        "afterCodePoints": 180,
+        "delta": 29
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t1/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 170,
+        "afterCodePoints": 170,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "actionAfter": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "beforeSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003",
+        "afterSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 153,
+        "afterCodePoints": 153,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t1/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "8e64fb12098d3a5cbc20e9859e0014f4e19c9f108db6c638c43a36a179e1c1ad",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 209,
+        "afterCodePoints": 209,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+        "actionAfter": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+        "beforeSha256": "6cf573a64fbd0f54f6626a2af3ffc81e6d733d2aaedc68da91861dec0ba88710",
+        "afterSha256": "6cf573a64fbd0f54f6626a2af3ffc81e6d733d2aaedc68da91861dec0ba88710"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 192,
+        "afterCodePoints": 192,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t1/kev",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "551d6d699a7f8952de3b6a5ca5c55af52031f966c448d9f723957f6183f55474",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 271,
+        "afterCodePoints": 319,
+        "delta": 48,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+        "beforeSha256": "137e169fc44044f5b07232b8d51476ea0c77466bc50917556e75398f2c8c24b2",
+        "afterSha256": "66ec02066cb4998313fa0aca43e5ca2bf9b338d65d43ed3e5833fb1ce7efa8aa"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 250,
+        "afterCodePoints": 297,
+        "delta": 47
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t1/kev",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "7df51da956de9b51a186cb67b9c38f9ff20f1bec19d3a482c1eedeb9e7a8cfec",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 273,
+        "afterCodePoints": 365,
+        "delta": 92,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04 Prioritizing Security Updates Based on Riskのガイダンスに従う",
+        "beforeSha256": "5141512020ada725b2876d85cbff1b513e5b08d0a8737bc152f217d4316a4e7f",
+        "afterSha256": "32ab70f9b27097347603357298ea63ed3a6adf649804e40f83d7fda57896e0dc"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 252,
+        "afterCodePoints": 343,
+        "delta": 91
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t1/previous-json-error",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": false,
+      "rawResponseSha256": "038e8c1f8be1a0b706c7a2e7e757b78727fb2085e4cdf778dccad98acb4ad065"
+    },
+    {
+      "id": "llama-after/t1/previous-json-error",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "8c484ff9953bfcdb4f410e8f02f090a4fda4f9f5b0ec31a095f1b953eb3a2fe5",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 190,
+        "afterCodePoints": 211,
+        "delta": 21,
+        "actionBefore": null,
+        "actionAfter": "対策: 0.24.0へのアップグレード",
+        "beforeSha256": "e4fd4a34dcc81bbd78a0d05d1c90a5c93ef4cce7b5ba541e8af69fa3462b4a54",
+        "afterSha256": "b19b89e49aa5c2e0e157e31b2da6d636cc73ce1d6f6037f6757b34fd045503ce"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 185,
+        "delta": 20
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t1/incomplete-information",
+      "condition": "llama-after",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "9d04e9b85df72a8b6bb8ab106301787882b7d079ff1e89a184d4249987a2627b",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 235,
+        "afterCodePoints": 235,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "c10079f532b4b5ccbf28f314eb0fe254cd364c4d90f84e7cadfaed199bb5a66d",
+        "afterSha256": "c10079f532b4b5ccbf28f314eb0fe254cd364c4d90f84e7cadfaed199bb5a66d"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 211,
+        "afterCodePoints": 211,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t1/incomplete-information",
+      "condition": "llama-before",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "b8561ae11fa1cf90c80bb5f0fbf85246dfa947d3723ad5b3664c13b78c15a4db",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 238,
+        "afterCodePoints": 238,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "f902519e9c438583288aed85daef69f0cf830b395cc7209f6b95998abec8abd6",
+        "afterSha256": "f902519e9c438583288aed85daef69f0cf830b395cc7209f6b95998abec8abd6"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 214,
+        "afterCodePoints": 214,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t2/nvd-normal",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "30fad0c52e7ae5d61422ac331f0500b26a88fe0c7350f247d29ae88601fe9015",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 165,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb",
+        "afterSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 147,
+        "afterCodePoints": 147,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t2/nvd-normal",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "937126532d82686e7ac549ca6d0de09be9b3789c688757e68fb56fe280024aa3",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 155,
+        "afterCodePoints": 165,
+        "delta": 10,
+        "actionBefore": null,
+        "actionAfter": "対策: 更新する",
+        "beforeSha256": "58e3de90aadfa59193665c7e381481af1fa47d5b1764108b2b0399c1550f34fb",
+        "afterSha256": "fa80683ac05e2866ef5d89fe791a205455c8b217de2f23cb605b315244269c9b"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 134,
+        "afterCodePoints": 143,
+        "delta": 9
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": true
+    },
+    {
+      "id": "llama-before/t2/jvn",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "jvn",
+      "structured": false,
+      "rawResponseSha256": "2d49aafe5f1c7f0588743be620baf30ed986f36a2c19b2ac249f85f94871bdeb"
+    },
+    {
+      "id": "llama-after/t2/jvn",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 182,
+        "afterCodePoints": 212,
+        "delta": 30,
+        "actionBefore": null,
+        "actionAfter": "対策: アップデートするまたはワークアラウンドを実施する",
+        "beforeSha256": "ae503b424d2c3998c77370a3bebef7fd21029dd85d58c386ae9ad75ecd849c04",
+        "afterSha256": "192a562ef9f577fc893318e9732e6666c58d870dac774fdd93defe6a5f73393c"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 194,
+        "delta": 29
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t2/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "8e64fb12098d3a5cbc20e9859e0014f4e19c9f108db6c638c43a36a179e1c1ad",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 209,
+        "afterCodePoints": 209,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+        "actionAfter": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+        "beforeSha256": "6cf573a64fbd0f54f6626a2af3ffc81e6d733d2aaedc68da91861dec0ba88710",
+        "afterSha256": "6cf573a64fbd0f54f6626a2af3ffc81e6d733d2aaedc68da91861dec0ba88710"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 192,
+        "afterCodePoints": 192,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t2/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 170,
+        "afterCodePoints": 170,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "actionAfter": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "beforeSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003",
+        "afterSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 153,
+        "afterCodePoints": 153,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t2/kev",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "e01e11a6889e9cc1a8842f615db6f7967045900f6971e2f81a7e427015649b25",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 269,
+        "afterCodePoints": 316,
+        "delta": 47,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04ガイダンスに従う",
+        "beforeSha256": "641287561a559b6da1a4d36fd2be4954227f971067aa9e427b61cbaaf39b92cb",
+        "afterSha256": "5627d82a2d43fac6ee2b07cfc8ace67e706cfae2da67f0ddfb36c4b95ded23d6"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 248,
+        "afterCodePoints": 294,
+        "delta": 46
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t2/kev",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "d2b5f2a296ef19fbc7c634fa704c620001ddd339f570a6a84e15669d745d6e8d",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 267,
+        "afterCodePoints": 315,
+        "delta": 48,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+        "beforeSha256": "f77d0a685fb009e1e7712b254839294575a165e50ba631d9394792170161ecd4",
+        "afterSha256": "f5c8d6662d2d06d3eb2beb5c855ed894a2607aa63654d253a7f043bb64854ca3"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 246,
+        "afterCodePoints": 293,
+        "delta": 47
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t2/previous-json-error",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "b8111cdce30084724d3ea97bdaeadbf6ca38d079e0af50bed981a41d9aecbab7",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 190,
+        "afterCodePoints": 214,
+        "delta": 24,
+        "actionBefore": null,
+        "actionAfter": "対策: 0.24.0へのアップグレードが推奨",
+        "beforeSha256": "e4fd4a34dcc81bbd78a0d05d1c90a5c93ef4cce7b5ba541e8af69fa3462b4a54",
+        "afterSha256": "384823778d7abba4ee6c099c7051ea23904985913c5755916f59e82a793458fd"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 188,
+        "delta": 23
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t2/previous-json-error",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": false,
+      "rawResponseSha256": "5348ee99cca7046497dd99ac0803b59f3950b71d0fcc1f20e247de2c248105fa"
+    },
+    {
+      "id": "llama-before/t2/incomplete-information",
+      "condition": "llama-before",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "9d04e9b85df72a8b6bb8ab106301787882b7d079ff1e89a184d4249987a2627b",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 235,
+        "afterCodePoints": 235,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "c10079f532b4b5ccbf28f314eb0fe254cd364c4d90f84e7cadfaed199bb5a66d",
+        "afterSha256": "c10079f532b4b5ccbf28f314eb0fe254cd364c4d90f84e7cadfaed199bb5a66d"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 211,
+        "afterCodePoints": 211,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t2/incomplete-information",
+      "condition": "llama-after",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "3d926d5491b844ce6b9702ba4f762af69a879409eb202323a984496ad46f7ece",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 235,
+        "afterCodePoints": 235,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "b12a549307eb46f8821baff457e7811a9b4d7281b7864b2e121d969abb9ba623",
+        "afterSha256": "b12a549307eb46f8821baff457e7811a9b4d7281b7864b2e121d969abb9ba623"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 211,
+        "afterCodePoints": 211,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/nvd-normal",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "bd24f8c2ba22cf03ed2d98bdc7fee472f8b96396504d4c9b91964bb9f9fa0d12",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 165,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb",
+        "afterSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 147,
+        "afterCodePoints": 147,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t3/nvd-normal",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "0dd9506321af2cb2dc6271008cfe6cc7d375a049cf334278415b53750e63faa7",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 165,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb",
+        "afterSha256": "46bebfc16d5c4b1c6b4307bf1c09fb44a301290c2d01fa95afea4bcdee5abcfb"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 147,
+        "afterCodePoints": 147,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t3/jvn",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 182,
+        "afterCodePoints": 212,
+        "delta": 30,
+        "actionBefore": null,
+        "actionAfter": "対策: アップデートするまたはワークアラウンドを実施する",
+        "beforeSha256": "ae503b424d2c3998c77370a3bebef7fd21029dd85d58c386ae9ad75ecd849c04",
+        "afterSha256": "192a562ef9f577fc893318e9732e6666c58d870dac774fdd93defe6a5f73393c"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 194,
+        "delta": 29
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/jvn",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "68239381095eb1deaba71992315d0e1784e5af41a34db6e0c0f807603393bab4",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "subject: unsupported literal 64",
+          "action: ambiguous multi-CVE evidence",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 182,
+        "afterCodePoints": 212,
+        "delta": 30,
+        "actionBefore": null,
+        "actionAfter": "対策: アップデートするまたはワークアラウンドを実施する",
+        "beforeSha256": "ae503b424d2c3998c77370a3bebef7fd21029dd85d58c386ae9ad75ecd849c04",
+        "afterSha256": "192a562ef9f577fc893318e9732e6666c58d870dac774fdd93defe6a5f73393c"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 194,
+        "delta": 29
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/jpcert-multi-cve",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "90adb840965e4d8150e1953819875171cd020d4217dc0ba8ceb57ec0272b19fd",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["tags.0: ambiguous multi-CVE evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 170,
+        "afterCodePoints": 170,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "actionAfter": "対策: 修正済みバージョンへの更新、または緩和策の設定",
+        "beforeSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003",
+        "afterSha256": "a9b9cdbe8298dadc727b6a5b0fac53d318965391a5ab08bcf13cf51653605003"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 153,
+        "afterCodePoints": 153,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t3/jpcert-multi-cve",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "7a647162a37278ad31fd70332eb9be0131b39830fc09f48b31045b2fb9910077",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "impact: ambiguous multi-CVE evidence",
+          "action: fabricated evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence",
+          "tags.1: fabricated evidence"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 257,
+        "afterCodePoints": 257,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+        "actionAfter": "対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+        "beforeSha256": "74982d8e7c9826751c50a828a69a47d4cd1cfcbb9a12064a82664701635fbd08",
+        "afterSha256": "74982d8e7c9826751c50a828a69a47d4cd1cfcbb9a12064a82664701635fbd08"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 244,
+        "afterCodePoints": 244,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t3/kev",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "bf140ecfa9aa867453b196ace3f58fc3ccf256a598379371275940cad088b7bc",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 269,
+        "afterCodePoints": 317,
+        "delta": 48,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+        "beforeSha256": "be0cb8ca9b6434aa3741043362367c2e24b2ea350d4c992a4605bfbdbdfaa8ea",
+        "afterSha256": "1e8eb91a349af7b3f5ed622a458ae56cf71e5129aea2ff9ca0233c8939b45414"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 248,
+        "afterCodePoints": 295,
+        "delta": 47
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/kev",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "9014ce89fc110d7c758e152ea92591d053e8300fc6e01a5a8977a777caa4dfbf",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 272,
+        "afterCodePoints": 320,
+        "delta": 48,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+        "beforeSha256": "733b41ca5666720fd7c58dd36688e16dc48314d6cb82d586fcf55aecef49058c",
+        "afterSha256": "7470241baa0c0d0f37ea6f646a4ffa48f88f02cc73b548d60f545062ecf2ebf8"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 251,
+        "afterCodePoints": 298,
+        "delta": 47
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": true,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/previous-json-error",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": false,
+      "rawResponseSha256": "5348ee99cca7046497dd99ac0803b59f3950b71d0fcc1f20e247de2c248105fa"
+    },
+    {
+      "id": "llama-after/t3/previous-json-error",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "5514208e6c679e82bb62fb28eb8ae3793fc2140fc8d247a8e4540db54c77923e",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 190,
+        "afterCodePoints": 211,
+        "delta": 21,
+        "actionBefore": null,
+        "actionAfter": "対策: 0.24.0へのアップグレード",
+        "beforeSha256": "e4fd4a34dcc81bbd78a0d05d1c90a5c93ef4cce7b5ba541e8af69fa3462b4a54",
+        "afterSha256": "b19b89e49aa5c2e0e157e31b2da6d636cc73ce1d6f6037f6757b34fd045503ce"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 185,
+        "delta": 20
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-after/t3/incomplete-information",
+      "condition": "llama-after",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "239d266fb9a32a421392b0972fd0ae8f0e3e4768c6cce396ad2ca6547b80012e",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 235,
+        "afterCodePoints": 235,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "a7141df8cd332498c3e72e7822a4284bf8161f0be6fdcc742ba54e9e9045c330",
+        "afterSha256": "a7141df8cd332498c3e72e7822a4284bf8161f0be6fdcc742ba54e9e9045c330"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 211,
+        "afterCodePoints": 211,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "llama-before/t3/incomplete-information",
+      "condition": "llama-before",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "239d266fb9a32a421392b0972fd0ae8f0e3e4768c6cce396ad2ca6547b80012e",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 235,
+        "afterCodePoints": 235,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "a7141df8cd332498c3e72e7822a4284bf8161f0be6fdcc742ba54e9e9045c330",
+        "afterSha256": "a7141df8cd332498c3e72e7822a4284bf8161f0be6fdcc742ba54e9e9045c330"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 211,
+        "afterCodePoints": 211,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "a7a2b83b17b302c1ad82e8baec66dc503be8a3fb11ba273666501ffbc495a03b",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 177,
+        "afterCodePoints": 177,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "c8c5d63a70e40236a0004135116e66c131296691c9cb5f9582b082be0e7f0179",
+        "afterSha256": "c8c5d63a70e40236a0004135116e66c131296691c9cb5f9582b082be0e7f0179"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 156,
+        "afterCodePoints": 156,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/jvn",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "81fc653882bfdba3623aa92c879c8233587e15aa2214e0404773df52e602c9c8",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 245,
+        "afterCodePoints": 289,
+        "delta": 44,
+        "actionBefore": null,
+        "actionAfter": "対策: 開発者が提供する情報を確認し、アップデートまたはワークアラウンドを実施する。",
+        "beforeSha256": "d2581429f01d0efa87b04f84630d52c109fcf4797ee2f75419cacea8d708608b",
+        "afterSha256": "0034a56c3923457e6e7994f74465afbabd271d9d8822d7ed7b5b629ec0988fd3"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 200,
+        "afterCodePoints": 243,
+        "delta": 43
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "4f4f281f0c7389f95f81e8cebf4db5da3c88bc131b9c3220cb20d5848c8a02e2",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "post": {
+        "beforeCodePoints": 272,
+        "afterCodePoints": 272,
+        "delta": 0,
+        "actionBefore": "対策: 修正版が提供されるまで、session.upload_progress.enabled=0に設定してすべてのワーカーを再起動してください。すでにこの設定を適用済みなら追加対応は不要です。",
+        "actionAfter": "対策: 修正版が提供されるまで、session.upload_progress.enabled=0に設定してすべてのワーカーを再起動してください。すでにこの設定を適用済みなら追加対応は不要です。",
+        "beforeSha256": "5d07461fb5ec5b93fcb1698ff67ee69505d70214694235a481024093e549803b",
+        "afterSha256": "5d07461fb5ec5b93fcb1698ff67ee69505d70214694235a481024093e549803b"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 255,
+        "afterCodePoints": 255,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/kev",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "683061463ce02796e90f6813ab3b40b36f11769b587f7f63eddf489a0fbfa2a1",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 417,
+        "afterCodePoints": 417,
+        "delta": 0,
+        "actionBefore": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04およびForensics Triage Requirementsに従う。緩和策が利用できない場合は製品の使用を中止する。",
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04およびForensics Triage Requirementsに従う。緩和策が利用できない場合は製品の使用を中止する。",
+        "beforeSha256": "992b079367bf67d8049bc1c12c3b5ba76c7262d9492a9c553507c054120599e5",
+        "afterSha256": "992b079367bf67d8049bc1c12c3b5ba76c7262d9492a9c553507c054120599e5"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 376,
+        "afterCodePoints": 376,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "104214d17b973e44842a2d25bb804fb8d18912975765f6762f2236b92396fce9",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 180,
+        "afterCodePoints": 203,
+        "delta": 23,
+        "actionBefore": null,
+        "actionAfter": "対策: 0.24.0へアップグレードする。",
+        "beforeSha256": "5c6f7feec7972a2cab3fc1a78b0f952563d0ca6f1e192c6378ab91322433fb00",
+        "afterSha256": "93068993eb257b083b34b06475b84eeab363c9b93e9bab5e38af737d8464f091"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 155,
+        "afterCodePoints": 177,
+        "delta": 22
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t1/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "c70faad5983c6c74907ed55305ff3d9e80d278bb206d01cd5f02a70f260f47a9",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 186,
+        "afterCodePoints": 186,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "8e765204853f08d087bee9ec2f1aec2374cce4fb67640fddc97da7305eb2f6a7",
+        "afterSha256": "8e765204853f08d087bee9ec2f1aec2374cce4fb67640fddc97da7305eb2f6a7"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 153,
+        "afterCodePoints": 153,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "feea57139768c8c1d5c1ae8f6248d2c9f0a8f5994b955b857aa9110a2f130b45",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 185,
+        "afterCodePoints": 185,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "511712b157f0e80dddf0caeb3a10f5d404c0949cf8de55c87c3674b868787727",
+        "afterSha256": "511712b157f0e80dddf0caeb3a10f5d404c0949cf8de55c87c3674b868787727"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 157,
+        "afterCodePoints": 157,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/jvn",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "688bf770bd67ae86cc6dd35fc94db6fd663e932312881426f23cfc1db66aa590",
+      "validation": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 378,
+        "afterCodePoints": 378,
+        "delta": 0,
+        "actionBefore": "対策: 開発者が提供する情報を確認し、該当する対策版へのアップデートまたはワークアラウンドを実施してください。",
+        "actionAfter": "対策: 開発者が提供する情報を確認し、該当する対策版へのアップデートまたはワークアラウンドを実施してください。",
+        "beforeSha256": "d9d71543ffa53c351a5c0b4cbd4de224b7a3300aeb79e6c3d8b413c0fda85629",
+        "afterSha256": "d9d71543ffa53c351a5c0b4cbd4de224b7a3300aeb79e6c3d8b413c0fda85629"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 331,
+        "afterCodePoints": 331,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "c14509ef85db7becdfd37d5a7c986df26a1a4c4dfb59663c0997de73fd527e2f",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 227,
+        "afterCodePoints": 227,
+        "delta": 0,
+        "actionBefore": "対策: 修正版の提供まではsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "actionAfter": "対策: 修正版の提供まではsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "beforeSha256": "50884e8bf927fdd879230573ff0b407eb403ff81375eb62575100c13d2a58f13",
+        "afterSha256": "50884e8bf927fdd879230573ff0b407eb403ff81375eb62575100c13d2a58f13"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 213,
+        "afterCodePoints": 213,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/kev",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "5afe980b26d70da1b8b5e18eb04f0bf8195b01bc2a7fee174b25f03ea4fdc2da",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 408,
+        "afterCodePoints": 408,
+        "delta": 0,
+        "actionBefore": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04とForensics Triage Requirementsに従う。緩和策が利用できない場合は製品の使用を中止する。",
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04とForensics Triage Requirementsに従う。緩和策が利用できない場合は製品の使用を中止する。",
+        "beforeSha256": "f0ce8b08f6a37e8accce068cc16c0c8917b09256588d1e96f9b824f821ffbff9",
+        "afterSha256": "f0ce8b08f6a37e8accce068cc16c0c8917b09256588d1e96f9b824f821ffbff9"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 367,
+        "afterCodePoints": 367,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "511fea57f685d74b820c8edfb86f1bb8ef45ae07388125b69c46795140b615cb",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 165,
+        "afterCodePoints": 192,
+        "delta": 27,
+        "actionBefore": null,
+        "actionAfter": "対策: 0.24.0へアップグレードしてください。",
+        "beforeSha256": "72bbae4cb954ce1dfb9bcc209be747ffa349ff01435a0dbe56e907430c74286e",
+        "afterSha256": "88ae1245d36ba8023ccf6788f538d12b4d281f39619b5d2bc9f5db12bd55c2bf"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 148,
+        "afterCodePoints": 174,
+        "delta": 26
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t2/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "7099afeb37bce2c9a8f891ef3ad971d0088ed35cbac86e8f0c19b5d96bee20b0",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 199,
+        "afterCodePoints": 199,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "bcd2a84f999ca5ff44e3c02de064cbbd1dc7f21b5b3d734234315bf2c65b6b4a",
+        "afterSha256": "bcd2a84f999ca5ff44e3c02de064cbbd1dc7f21b5b3d734234315bf2c65b6b4a"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 166,
+        "afterCodePoints": 166,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/nvd-normal",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "fbbc060b9b0bbbe1330ec9ef3375c6dec4d45cf53fdfc2b16078866b3b882349",
+      "validation": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["tags.2: unsupported name"]
+      },
+      "post": {
+        "beforeCodePoints": 196,
+        "afterCodePoints": 196,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "a33c93b18132ffb2ed0cae3dc0d78ca75437799cf0fc803478b3b304d19fd19a",
+        "afterSha256": "a33c93b18132ffb2ed0cae3dc0d78ca75437799cf0fc803478b3b304d19fd19a"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 157,
+        "afterCodePoints": 157,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/jvn",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "859d8bdb0ce4bbc926e0c27702661ba6f315e31f24299decba5baeb68c7255c1",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.2: ambiguous multi-CVE evidence",
+          "tags.2: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 384,
+        "afterCodePoints": 384,
+        "delta": 0,
+        "actionBefore": "対策: 開発者が提供する情報を確認し、アップデートまたはワークアラウンドを実施してください。対策方法は製品・バージョンにより異なり、対策版が提供されない場合は回避策・軽減策を適用してください。",
+        "actionAfter": "対策: 開発者が提供する情報を確認し、アップデートまたはワークアラウンドを実施してください。対策方法は製品・バージョンにより異なり、対策版が提供されない場合は回避策・軽減策を適用してください。",
+        "beforeSha256": "bd1d3b40365de5a60268886edb7bb14c0376f3ea4f43b78eec53b7da35314f54",
+        "afterSha256": "bd1d3b40365de5a60268886edb7bb14c0376f3ea4f43b78eec53b7da35314f54"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 331,
+        "afterCodePoints": 331,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/jpcert-multi-cve",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "a324da524b59cdb415137a91374a2a0876340ead9c577666fbfd41bfde5857e5",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.0: ambiguous multi-CVE evidence",
+          "tags.2: ambiguous multi-CVE evidence",
+          "tags.2: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 239,
+        "afterCodePoints": 239,
+        "delta": 0,
+        "actionBefore": "対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "actionAfter": "対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "beforeSha256": "e1458f386ded82921a5cdc5593b7631194747915098d0a8cdcbfa0664d2fa0da",
+        "afterSha256": "e1458f386ded82921a5cdc5593b7631194747915098d0a8cdcbfa0664d2fa0da"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 217,
+        "afterCodePoints": 217,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/kev",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "41e40de1deea07c98464d2fca80e30e34763983fd834892510aa862cdca13f66",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 374,
+        "afterCodePoints": 374,
+        "delta": 0,
+        "actionBefore": "対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。",
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。",
+        "beforeSha256": "52df4e7189aedde9f0ab0f147aed03b1d99891eb35a7ef3c47a2b35a13c66d8a",
+        "afterSha256": "52df4e7189aedde9f0ab0f147aed03b1d99891eb35a7ef3c47a2b35a13c66d8a"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 333,
+        "afterCodePoints": 333,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/previous-json-error",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "082b45c899d78e3c619c3508940b07e674f996e9086e119391130aa90d495f9f",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 217,
+        "afterCodePoints": 258,
+        "delta": 41,
+        "actionBefore": null,
+        "actionAfter": "対策: Apache Thriftを0.24.0へアップグレードしてください。",
+        "beforeSha256": "ce1ddbacce8edcb32335b7f9d5a280068a9a0ff37b3be261e7c0ff9254ac30d5",
+        "afterSha256": "158940f7db7cd7ced611fbe7230c084cb0cde0b94aeae0b0f57af6b5380927ea"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 191,
+        "afterCodePoints": 231,
+        "delta": 40
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-medium/t3/incomplete-information",
+      "condition": "luna-medium",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "7fa3d52735fc5e23f952914fef314857741938a4fab346631c48c3551cacd575",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 208,
+        "afterCodePoints": 208,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "a4f8e444cad55570b10a2f8b39c67749cd427b37cf9884733a5de6f5b580264a",
+        "afterSha256": "a4f8e444cad55570b10a2f8b39c67749cd427b37cf9884733a5de6f5b580264a"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 175,
+        "afterCodePoints": 175,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/nvd-normal",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "109789dad704e48a93d75ef0a047601e5c5ae321cb2c17ae825668890b0fd9f6",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 209,
+        "afterCodePoints": 209,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "538cde30213dd1fe952b9600fbc98e742f990449f5d3aa91a4a552665d23e85d",
+        "afterSha256": "538cde30213dd1fe952b9600fbc98e742f990449f5d3aa91a4a552665d23e85d"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 187,
+        "afterCodePoints": 187,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/jvn",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "ace9bdae569bd6b4bd5b4f15c58020ca95ec8d353bc44af1d8a30a851d305c6f",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 339,
+        "afterCodePoints": 339,
+        "delta": 0,
+        "actionBefore": "対策: 製品・バージョンに応じたアップデートまたは回避・軽減策を適用し、開発者の情報で詳細を確認してください。対策版が提供されない場合は回避・軽減策が推奨されています。",
+        "actionAfter": "対策: 製品・バージョンに応じたアップデートまたは回避・軽減策を適用し、開発者の情報で詳細を確認してください。対策版が提供されない場合は回避・軽減策が推奨されています。",
+        "beforeSha256": "4835d4cd445281fc74d5a29d70316eaf7c6c278d73974d297d0765801e30c45c",
+        "afterSha256": "4835d4cd445281fc74d5a29d70316eaf7c6c278d73974d297d0765801e30c45c"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 293,
+        "afterCodePoints": 293,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "e9a595e3ddf4f08a4d01c92640f2b92c6bf3929cc792e39d835e02fdad2b4808",
+      "validation": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: ambiguous multi-CVE evidence",
+          "action: unsupported literal 0",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 322,
+        "afterCodePoints": 322,
+        "delta": 0,
+        "actionBefore": "対策: 修正リリースまでsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する。",
+        "actionAfter": "対策: 修正リリースまでsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する。",
+        "beforeSha256": "cf38772e8918be66afb6f57342020680debba7d6fce0e8fe320cb2eb4ad53231",
+        "afterSha256": "cf38772e8918be66afb6f57342020680debba7d6fce0e8fe320cb2eb4ad53231"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 299,
+        "afterCodePoints": 299,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/kev",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "75d87c1478bcd8efa0acdf288a16b80aace1ac2815f00df67016d2a520608fe9",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 338,
+        "afterCodePoints": 383,
+        "delta": 45,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、適用できない場合は製品の使用を中止する。",
+        "beforeSha256": "7264eaf6dc0981ca83458c89e2ca0e969851dd1dc51696e3884a67899bf1015d",
+        "afterSha256": "8a2f7d9d678a1b419d6dfbaaa134623560dcd9e46d0162ae073c80fab82ede50"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 313,
+        "afterCodePoints": 357,
+        "delta": 44
+      },
+      "regainedStopCondition": true,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/previous-json-error",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "ae45f656cc87086e1e7d5d9ddc1bb5d01add2f3ff986270a57fc1634a4bdff30",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 175,
+        "afterCodePoints": 203,
+        "delta": 28,
+        "actionBefore": null,
+        "actionAfter": "対策: バージョン0.24.0へアップグレードする。",
+        "beforeSha256": "0a15bfd1b4332335c3e187c805d3f7e872c7059bbc10c00102b5644f6c38f6e3",
+        "afterSha256": "0cb7964f849a5b9dc4bbffe084b2a0981e8d08b6c7a03fc552058b76f0b00c0e"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 157,
+        "afterCodePoints": 184,
+        "delta": 27
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t1/incomplete-information",
+      "condition": "luna-high",
+      "trial": 1,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "1f2cc2fc6649e90b97bdb55a3ab0aa9c178fc8dc46c00e9d4e3bcdb4e3a35076",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 184,
+        "afterCodePoints": 184,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "69079433ef9f54fda111e017c442de6243f4da04d30c72e90e84715ad2256c38",
+        "afterSha256": "69079433ef9f54fda111e017c442de6243f4da04d30c72e90e84715ad2256c38"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 151,
+        "afterCodePoints": 151,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/nvd-normal",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "485530e1ed00a3e7fd94ae25bd212b867c531a055c2d2f9d944072cd6bce476d",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 219,
+        "afterCodePoints": 219,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "bfa6f35d1a3d33eefa444b692ae5c37fb75535c846c4c4c44d7f4b34af58e486",
+        "afterSha256": "bfa6f35d1a3d33eefa444b692ae5c37fb75535c846c4c4c44d7f4b34af58e486"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 197,
+        "afterCodePoints": 197,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/jvn",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "8aaa7b6138828dbe6a7188c16e51e1c1153ba90fd0bb6555525df749eb96a9a2",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: fabricated evidence"]
+      },
+      "post": {
+        "beforeCodePoints": 321,
+        "afterCodePoints": 321,
+        "delta": 0,
+        "actionBefore": "対策: 製品・バージョンに応じてアップデートまたはワークアラウンドを実施し、開発者の情報で詳細を確認してください。対策版が提供されない場合は回避策・軽減策を適用してください。",
+        "actionAfter": "対策: 製品・バージョンに応じてアップデートまたはワークアラウンドを実施し、開発者の情報で詳細を確認してください。対策版が提供されない場合は回避策・軽減策を適用してください。",
+        "beforeSha256": "48d72929726ca86ceea0c5fd0fa81f8075092feb6aba7e1cc434265c13189c11",
+        "afterSha256": "48d72929726ca86ceea0c5fd0fa81f8075092feb6aba7e1cc434265c13189c11"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 285,
+        "afterCodePoints": 285,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "be52aa463937435fa6c9a38a181cd4be84650a3d99c9ba5c515209695587d8d3",
+      "validation": {
+        "valid": false,
+        "complete": false,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "post": {
+        "beforeCodePoints": 332,
+        "afterCodePoints": 332,
+        "delta": 0,
+        "actionBefore": "対策: 修正アップデートが提供されるまで、session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "actionAfter": "対策: 修正アップデートが提供されるまで、session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+        "beforeSha256": "2bae7ae683561f9cf453828879cf876666db46e87dba0fa81130bf044d185832",
+        "afterSha256": "2bae7ae683561f9cf453828879cf876666db46e87dba0fa81130bf044d185832"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 314,
+        "afterCodePoints": 314,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/kev",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "4dfde3a6fe22dc85843abe7e72e02331520ecd73042a098da42535174d54f12a",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 339,
+        "afterCodePoints": 397,
+        "delta": 58,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。",
+        "beforeSha256": "9595c809f20fee34d35259ed5142733b69957f24426f0fa2e29c9f277bd3f611",
+        "afterSha256": "d8774c5b5700f8c7a0565ebb7748a1b4c9b9fff548602bfdbae6c4d2d500d98f"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 306,
+        "afterCodePoints": 363,
+        "delta": 57
+      },
+      "regainedStopCondition": true,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/previous-json-error",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "db1c344bfdec8e8e247d3d69dfbb9d1e377d96daf7be1cbeca47bce843abc2d6",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 174,
+        "afterCodePoints": 202,
+        "delta": 28,
+        "actionBefore": null,
+        "actionAfter": "対策: バージョン0.24.0へアップグレードする。",
+        "beforeSha256": "723a831ea88497ee46e76f9a350fa0613e52f266e47c9ffd742a8810b90dddb5",
+        "afterSha256": "4b55b7d9025f713b843bce4fdbad00307d38c6f90f9abf92ae3ee6f482ddab39"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 156,
+        "afterCodePoints": 183,
+        "delta": 27
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t2/incomplete-information",
+      "condition": "luna-high",
+      "trial": 2,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "dd764b117b72fd39228f7137ff19508f8cbb739a40d127e72924a1f97dea307b",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 186,
+        "afterCodePoints": 186,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "7d43510e510c09cb91645647514b1088c95e95afbff5e68a7890adff2b8990e0",
+        "afterSha256": "7d43510e510c09cb91645647514b1088c95e95afbff5e68a7890adff2b8990e0"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 154,
+        "afterCodePoints": 154,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/nvd-normal",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "nvd-normal",
+      "structured": true,
+      "rawResponseSha256": "becf842f200c0cc04b1139962c94c30482c3b310dff8d9a591c47879136b2cb2",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 199,
+        "afterCodePoints": 199,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "2e5c34d0ec5f23306a904db14492dcc60cd4741902b0b61259956a8e9a27cc01",
+        "afterSha256": "2e5c34d0ec5f23306a904db14492dcc60cd4741902b0b61259956a8e9a27cc01"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 192,
+        "afterCodePoints": 192,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/jvn",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "jvn",
+      "structured": true,
+      "rawResponseSha256": "7b8b833189d12305955231f46a4d2b8343281a609d25e8c47c316d02111317bd",
+      "validation": {
+        "valid": false,
+        "complete": false,
+        "reasons": [
+          "subject: ambiguous multi-CVE evidence",
+          "action: fabricated evidence",
+          "tags.1: ambiguous multi-CVE evidence",
+          "tags.1: unsupported name"
+        ]
+      },
+      "post": {
+        "beforeCodePoints": 352,
+        "afterCodePoints": 352,
+        "delta": 0,
+        "actionBefore": "対策: 開発者の情報を確認し、対策版が提供されない製品・バージョンでは回避策・軽減策を適用してください。",
+        "actionAfter": "対策: 開発者の情報を確認し、対策版が提供されない製品・バージョンでは回避策・軽減策を適用してください。",
+        "beforeSha256": "123e0ccd549f0ebf1f39eb208a651affd07b202ebecbb992ff639115fa5b2e49",
+        "afterSha256": "123e0ccd549f0ebf1f39eb208a651affd07b202ebecbb992ff639115fa5b2e49"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 305,
+        "afterCodePoints": 305,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/jpcert-multi-cve",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "jpcert-multi-cve",
+      "structured": true,
+      "rawResponseSha256": "391bc766abda48f0241597705ced0a5abc2b15e2502fec4008d77750c007321a",
+      "validation": {
+        "valid": false,
+        "complete": true,
+        "reasons": ["action: ambiguous multi-CVE evidence", "action: unsupported literal 0"]
+      },
+      "post": {
+        "beforeCodePoints": 275,
+        "afterCodePoints": 275,
+        "delta": 0,
+        "actionBefore": "対策: 修正済みバージョンへの更新まで、session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。すでにこの設定を適用している場合、追加対応は不要です。",
+        "actionAfter": "対策: 修正済みバージョンへの更新まで、session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。すでにこの設定を適用している場合、追加対応は不要です。",
+        "beforeSha256": "5e69f57039193e4e5876e7681f2a7955d26e7cc9ccf7d901790863547102de63",
+        "afterSha256": "5e69f57039193e4e5876e7681f2a7955d26e7cc9ccf7d901790863547102de63"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 258,
+        "afterCodePoints": 258,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/kev",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "kev",
+      "structured": true,
+      "rawResponseSha256": "0a041cb0d804d3824ee55a9b1e8f3e435e7b81bac213264de66f7368615cfd8d",
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 331,
+        "afterCodePoints": 401,
+        "delta": 70,
+        "actionBefore": null,
+        "actionAfter": "対策: ベンダーの指示に従って緩和策を適用し、BOD 26-04の該当ガイダンスに従う。緩和策が利用できない場合は製品の使用を中止する。",
+        "beforeSha256": "72ad32c8a31baf1cbf7a234d60de36351eb68606e0aaff160873ce6026705024",
+        "afterSha256": "95d819b184623382e2c22479131fe6f302c43beacc47e0db6d964eadcf5420ea"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 299,
+        "afterCodePoints": 368,
+        "delta": 69
+      },
+      "regainedStopCondition": true,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/previous-json-error",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "previous-json-error",
+      "structured": true,
+      "rawResponseSha256": "35a7d053ad41312b08de358bdddf0c3e182aff16cfd7f943146a3665961767a0",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 227,
+        "afterCodePoints": 273,
+        "delta": 46,
+        "actionBefore": null,
+        "actionAfter": "対策: バージョン0.24.0へアップグレードしてください。この版で問題が修正されます。",
+        "beforeSha256": "6dfc371fe1e14091a0b3c62434eb7549c6fad7c88fe29144ad3ddfdbf158021b",
+        "afterSha256": "b62e05329f821338e9d3563ee356fa5cb66b724e4d8968810a589ca1cb561f4c"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 209,
+        "afterCodePoints": 254,
+        "delta": 45
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    },
+    {
+      "id": "luna-high/t3/incomplete-information",
+      "condition": "luna-high",
+      "trial": 3,
+      "label": "incomplete-information",
+      "structured": true,
+      "rawResponseSha256": "709ee30beb789555c3ecade4a3393ee1edd1ec7cfa0ec7b74640ee8108e8a5b6",
+      "validation": {
+        "valid": true,
+        "complete": false,
+        "reasons": []
+      },
+      "post": {
+        "beforeCodePoints": 202,
+        "afterCodePoints": 202,
+        "delta": 0,
+        "actionBefore": null,
+        "actionAfter": null,
+        "beforeSha256": "81ae3e0dd80a1d5cad6c97bed26a0371a78647cdb189f567673ce2dda25b7fd4",
+        "afterSha256": "81ae3e0dd80a1d5cad6c97bed26a0371a78647cdb189f567673ce2dda25b7fd4"
+      },
+      "digestEntry": {
+        "beforeCodePoints": 169,
+        "afterCodePoints": 169,
+        "delta": 0
+      },
+      "regainedStopCondition": false,
+      "missingStopInSummary": false,
+      "knownUnsupportedActionNowVisible": false
+    }
+  ]
+}

@@ -31,7 +31,35 @@ const otherHeadings = [
   'Acknowledgements',
   'Revision History',
 ];
-const headingNumber = /^(?:(?:[IVXLCDM]+|[0-9０-９]+)(?:[.．、)）]|\s+)\s*|[（(][0-9０-９]+[)）]\s*)/i;
+const headingNumber =
+  /^(?:(?:[IVXLCDM]+|[0-9０-９]+)(?:[.．、)）](?![0-9０-９]|[xX*＊](?:[.．\s]|$))|\s+)\s*|[（(][0-9０-９]+[)）]\s*)/i;
+const quotePairs: Record<string, string> = { '"': '"', "'": "'", '`': '`', '「': '」', '『': '』', '“': '”', '‘': '’' };
+const bracketPairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
+const itemPrefix = /^(?:[\p{P}\p{S}\p{N}\s]+|(?:[ivxlcdm]+|[a-z])[\p{Pe}\p{Pf}.．、]\s*|[ivxlcdm]+\s+)*/iu;
+
+function hasStringPrefix(before: string): boolean {
+  return /(?:^|[^a-z0-9_])(?:[rbufentxl]|br|rb|fr|rf|tr|rt|u8)$/i.test(before) || /=\s*[a-z_]\w*$/i.test(before);
+}
+
+interface QuoteContext {
+  kind: 'quote';
+  opening: string | null;
+  closing: string;
+  braces: boolean;
+  dollars: boolean;
+}
+
+function quoteContext(value: string, index: number, closing: string): QuoteContext {
+  const before = value.slice(0, index);
+
+  return {
+    kind: 'quote',
+    opening: quotePairs[value[index]!] !== value[index] ? value[index]! : null,
+    closing,
+    braces: /(?:^|[^a-z0-9_])(?:f|fr|rf|t|tr|rt)$/i.test(before) || /(?:\$@?|@\$)$/.test(before),
+    dollars: closing === '`',
+  };
+}
 
 function clippedSection(value: string): string | null {
   if (value.length <= 400) {
@@ -40,12 +68,67 @@ function clippedSection(value: string): string | null {
 
   // 固定位置で切るとCVEや設定値が変わるため、完全な行・文が収まらなければ候補を渡さない。
   let end = 0;
-  for (const match of value.matchAll(/\r\n|[\r\n]|[。！？]|[.!?](?=\s|$)/g)) {
-    const boundary = match.index + match[0].length;
-    if (boundary > 400) {
-      break;
+  const contexts: (QuoteContext | { kind: 'bracket'; closing: string })[] = [];
+  for (let index = 0; index <= 400 && index < value.length; index++) {
+    const character = value[index]!;
+    const context = contexts.at(-1);
+    if (character === '\\') {
+      index++;
+      continue;
     }
-    end = boundary;
+    if (context?.kind === 'quote') {
+      if (character === context.opening) {
+        contexts.push(quoteContext(value, index, context.closing));
+      } else if (value.startsWith(context.closing, index)) {
+        if (['"', "'"].includes(context.closing) && value.startsWith(context.closing.repeat(2), index)) {
+          index++;
+        } else {
+          index += context.closing.length - 1;
+          contexts.pop();
+        }
+      } else if (context.braces && character === '{') {
+        if (value[index + 1] === '{') {
+          index++;
+        } else {
+          contexts.push({ kind: 'bracket', closing: '}' });
+        }
+      } else if (context.dollars && character === '$' && value[index + 1] === '{') {
+        contexts.push({ kind: 'bracket', closing: '}' });
+        index++;
+      }
+      continue;
+    }
+    if (['"', "'", '`'].includes(character) && value.startsWith(character.repeat(3), index)) {
+      contexts.push(quoteContext(value, index, character.repeat(3)));
+      index += 2;
+      continue;
+    }
+    const wordApostrophe =
+      character === "'" && /[a-z0-9]/i.test(value.charAt(index - 1)) && !hasStringPrefix(value.slice(0, index));
+    if (quotePairs[character] && !wordApostrophe) {
+      contexts.push(quoteContext(value, index, quotePairs[character]));
+      continue;
+    }
+    if (bracketPairs[character]) {
+      contexts.push({ kind: 'bracket', closing: bracketPairs[character] });
+      continue;
+    }
+    if (character === context?.closing) {
+      contexts.pop();
+      continue;
+    }
+    if (contexts.length) {
+      continue;
+    }
+
+    if (character === '\r' || character === '\n') {
+      end = index;
+    } else if (
+      index < 400 &&
+      (/[。！？]/.test(character) || (/[.!?]/.test(character) && /\s|^$/.test(value.charAt(index + 1))))
+    ) {
+      end = index + 1;
+    }
   }
 
   return value.slice(0, end).trimEnd() || null;
@@ -94,7 +177,14 @@ function cves(text: string): string[] {
   return (text.match(/\bCVE-\d{4}-\d{4,}\b/gi) ?? []).map((value) => value.toUpperCase());
 }
 
+function leadingCve(text: string): string | null {
+  const content = text.replace(itemPrefix, '');
+
+  return content.match(/^(CVE-\d{4}-\d{4,})\b/i)?.[1]?.toUpperCase() ?? null;
+}
+
 function articleSections(key: string, text: string): Record<SectionKind, string | null> {
+  const targetKey = key.toUpperCase();
   const lines = textLines(text);
   const headings = lines.flatMap((line, index) => {
     const kind = heading(line.text);
@@ -108,15 +198,16 @@ function articleSections(key: string, text: string): Record<SectionKind, string 
       continue;
     }
     const body = lines.slice(entry.index + 1, headings[index + 1]?.index ?? lines.length);
-    const explicit = body.findIndex((line) => cves(line.text).includes(key.toUpperCase()));
+    const explicit = body.findIndex((line) => {
+      const leading = leadingCve(line.text);
+      return cves(line.text).includes(targetKey) && (!leading || leading === targetKey);
+    });
     if (explicit >= 0) {
       const remaining = body.slice(explicit);
-      const next = remaining.findIndex(
-        (line, offset) =>
-          offset > 0 &&
-          /^[\s\-*+•●○・\d０-９.．、()（）\[\]【】]*CVE-/i.test(line.text) &&
-          cves(line.text)[0] !== key.toUpperCase(),
-      );
+      const next = remaining.findIndex((line, offset) => {
+        const leading = leadingCve(line.text);
+        return offset > 0 && leading !== null && leading !== targetKey;
+      });
       const end = next >= 0 ? remaining[next]!.start : remaining.at(-1)!.end;
       target[entry.kind].push(text.slice(remaining[0]!.start, end).trim());
     } else if (body.length && !body.some((line) => cves(line.text).length > 0)) {

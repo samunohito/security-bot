@@ -28,6 +28,165 @@ function article(text: string, key = jvnKey): Evidence {
 }
 
 describe('記事本文から補うLLM入力', () => {
+  it('入れ子の日本語引用符の内側を値全体の終端とみなさない', () => {
+    const text = `緩和策\n${jvnKey}: banner=「注記「即時」を表示。 ${'x'.repeat(430)}」に設定。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it('入れ子の日本語引用符が閉じた短い設定は保持する', () => {
+    const first = `${jvnKey}: banner=「注記「即時」」 に設定。`;
+    expect(
+      evidencePrompt(jvnKey, [article(`緩和策\n${first} ${'x'.repeat(430)}`)]).evidence[0]!.sections.remediation,
+    ).toBe(first);
+  });
+
+  it('同じ段落の長い補足にかかわらず完結した短い設定・再起動指示を残す', () => {
+    const first = `${jvnKey}: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。`;
+    const text = `${jvnKey}について\n${'背景。'.repeat(400)}\n緩和策\n${first} ${'x'.repeat(430)}`;
+    const result = evidencePrompt(jvnKey, [article(text)]).evidence[0]!;
+    expect(result.text).not.toContain('session.upload_progress.enabled=0');
+    expect(result.sections.remediation).toBe(first);
+  });
+
+  it.each(['f"Select {mapping["Stop."]} now"', '$"Select {mapping["Stop."]} now"', '`Select ${mapping[`Stop.`]} now`'])(
+    '短い補間設定値と文末までが収まる場合は値と再起動を残す: %s',
+    (value) => {
+      const first = `${jvnKey}: banner=${value} に設定し再起動。`;
+      const text = `緩和策\n${first} ${'x'.repeat(430)}`;
+      expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(first);
+    },
+  );
+
+  it.each(['1.x before 1.9.0', '2.*', '1.x.y before 1.9.0'])(
+    'ワイルドカードの影響バージョン行を見出しとみなさない: %s',
+    (version) => {
+      const body = `${jvnKey}\n${version}`;
+      const text = `Affected Products\n${body}\nReferences\n資料。`;
+      expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.affected).toBe(body);
+    },
+  );
+
+  it('代入された補間文字列の内部引用符で設定値を切らない', () => {
+    const text = `緩和策\n${jvnKey}: banner=f"Select {mapping["Stop. ${'x'.repeat(430)}"]} now" に設定。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it.each(["Don't disable authentication.", "users' authentication is not affected."])(
+    'CVE行のコロンの直後でも英文の短縮形・所有格を保持する: %s',
+    (sentence) => {
+      const first = `${jvnKey}: ${sentence}`;
+      const text = `Impact\n${first} ${'x'.repeat(430)}`;
+      expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.impact).toBe(first);
+    },
+  );
+
+  it.each(["'''Don't stop. ", '"""Use "Stop. ', '```Use `Stop. '])(
+    '複数文字の引用符を文字列内の単独引用符で閉じない: %s',
+    (quoted) => {
+      const delimiter = quoted.slice(0, 3);
+      const text = `緩和策\n${jvnKey}: banner = ${quoted}${'x'.repeat(430)}${delimiter} に設定してください。`;
+      expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+    },
+  );
+
+  it('三重引用符の完全な値と後続文が上限内なら保持する', () => {
+    const first = `${jvnKey}: banner="""Use "Stop. Don't stop.""" に設定。`;
+    const text = `緩和策\n${first}\n${'x'.repeat(430)}`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(first);
+  });
+
+  it.each(['t', 'tr', 'rt'])('テンプレート設定値の接頭辞も引用符として扱う: %s', (prefix) => {
+    const text = `緩和策\n${jvnKey}: Use ${prefix}'Stop. ${'x'.repeat(430)}' as the setting value.`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it.each(['r', 'E', 'fr'])('設定例の単独の接頭辞付き文字列も途中で切らない: %s', (prefix) => {
+    const text = `緩和策\n${jvnKey}: Use ${prefix}'Stop. ${'x'.repeat(430)}' as the setting value.`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it.each(['r', 'rb', 'f', 'fr', 'E', 'N', 'custom'])('接頭辞付きの設定文字列を途中で切らない: %s', (prefix) => {
+    const text = `緩和策\n${jvnKey}: banner=${prefix}'Stop. ${'x'.repeat(430)}' に設定し再起動してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it('英文の短縮形や所有格のアポストロフィを設定値の引用符とみなさない', () => {
+    const first = `${jvnKey}: Don't disable users' authentication.`;
+    const text = `Mitigations\n${first} ${'x'.repeat(430)}`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(first);
+  });
+
+  it.each([
+    `settings={\n "allowlist": [\n "trusted.example",\n "${'x'.repeat(430)}"\n ]\n}`,
+    `limits=[\n 10,\n ${'2'.repeat(430)}\n]`,
+  ])('複数行の配列・オブジェクト設定値を途中で切らない: %s', (setting) => {
+    const prefix = `${jvnKey}の対策。`;
+    const text = `緩和策\n${prefix}\n${setting}\nに設定し再起動してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(prefix);
+  });
+
+  it.each([
+    'I. ',
+    'ii) ',
+    '■ ',
+    '① ',
+    'a) ',
+    '— [',
+    '● (iv) ',
+    '- [x] ',
+    '- [X] ',
+    '- [ ] ',
+    '- [a] ',
+    '(IV) [x] ',
+    '- [✓] ',
+  ])('項目番号や箇条書き記号にかかわらず先頭CVEで対象を選択・区切る: %s', (prefix) => {
+    const target = `${prefix}${jvnKey}: 修正版を適用してください。`;
+    const other = `${prefix}${otherKey}: ${jvnKey}と異なり、認証を無効化してください。`;
+    const before = `緩和策\n${other}\n${target}`;
+    const after = `緩和策\n${target}\n${other}`;
+    expect(evidencePrompt(jvnKey, [article(before)]).evidence[0]!.sections.remediation).toBe(target);
+    expect(evidencePrompt(jvnKey, [article(after)]).evidence[0]!.sections.remediation).toBe(target);
+  });
+
+  it('別CVEの項目内の対象CVE参照から対策を選ばない', () => {
+    const target = `- ${jvnKey}: 修正版を適用してください。`;
+    const text = `緩和策\n- ${otherKey}: ${jvnKey}と異なり、認証機能を無効化してください。\n${target}`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(target);
+  });
+
+  it('別CVE項目内の参照しかないときは対象の対策として補完しない', () => {
+    const text = `緩和策\n- ${otherKey}: ${jvnKey}と異なり、認証機能を無効化してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it.each(['"', "'", '`'])('設定文字列内の文末や改行で値を途中まで抜粋しない: %s', (quote) => {
+    const prefix = `${jvnKey}の対策。`;
+    const text = `緩和策\n${prefix}\nbanner=${quote}Stop. \n${'x'.repeat(430)}${quote} に設定して再起動してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(prefix);
+  });
+
+  it('エスケープされた引用符を設定文字列の終わりとみなさない', () => {
+    const text = `緩和策\n${jvnKey}: banner="Stop\\\". ${'x'.repeat(430)}" に設定して再起動してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBeNull();
+  });
+
+  it.each([
+    [400, '\n'],
+    [399, '\r\n'],
+    [400, '\r\n'],
+  ] as const)('改行を除けば上限内の設定行を残す: %i文字 %j', (length, newline) => {
+    const prefix = `${jvnKey} setting=`;
+    const body = `${prefix}${'x'.repeat(length - prefix.length)}`;
+    const text = `緩和策\n${body}${newline}再起動してください。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.remediation).toBe(body);
+  });
+
+  it('番号付き見出しと区別できるバージョン行を影響範囲から落とさない', () => {
+    const body = `${jvnKey}\n1.0.0\n2.0.0より前`;
+    const text = `Affected Products\n${body}\nReferences\n資料。`;
+    expect(evidencePrompt(jvnKey, [article(text)]).evidence[0]!.sections.affected).toBe(body);
+  });
+
   it('JVN型の離れた影響範囲・被害と共通対策を保存原文から渡す', () => {
     const source = article(jvnArticle);
     const before = structuredClone(source);

@@ -1,0 +1,2641 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>現行処理のモデル比較</title><style>body{font:15px/1.6 system-ui;margin:24px;background:#f5f6fa;color:#202632}pre{white-space:pre-wrap;overflow-wrap:anywhere}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}article{background:white;padding:16px;border:1px solid #ddd}h2{margin-top:36px}.held{color:#9a4500}</style><h1>現行処理のモデル比較（2026-11-02）</h1><p>固定9資料・各3回。Lunaは近似。保留の本文も診断用として表示しており、公開済みの投稿ではありません。原文・引用全文は収録していません。</p><h2>nvd-normal / CVE-2026-118147</h2><section><article><h3>llama / 試行1</h3><p class="held">保留 / 165文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの不正な証明書検証
+
+影響: ネットワーク上でのスプーフィング
+
+未確認事項: 対策の内容
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="held">保留 / 204文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの証明書検証不備によるスプーフィングリスク
+
+影響: 悪意ある攻撃者がネットワーク経由でスプーフィングが可能
+
+対策: Visual Studioの最新バージョンへの更新を推奨
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / 177文字</p><pre>[High] CVE-2026-118147
+Microsoft Visual Studio
+Visual Studioにおける不適切な証明書検証
+
+影響: ネットワーク経由で、権限のない攻撃者がなりすましを行うことが可能になる
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="">品質経路通過 / 196文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの証明書検証不備によるスプーフィングのリスク
+
+影響: 不正な攻撃者がネットワーク経由でスプーフィングが可能
+
+対策: 証明書検証の強化と最新版への更新
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #暗号 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / 177文字</p><pre>[High] CVE-2026-118147
+Microsoft Visual Studio
+Visual Studioにおける不適切な証明書検証
+
+影響: ネットワーク経由で、権限のない攻撃者がなりすましを行うことが可能になる
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 165文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの不正な証明書検証
+
+影響: ネットワーク上でのスプーフィング
+
+未確認事項: 対策の内容
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 174文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioにおける不適切な証明書検証
+
+影響: ネットワーク経由で、権限のない攻撃者がなりすましを行うことが可能になる
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 165文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの不正な証明書検証
+
+影響: ネットワーク上でのスプーフィング
+
+未確認事項: 対策の内容
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #認証 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="">品質経路通過 / 197文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+Visual Studioの証明書検証不備によるスプーフィングのリスク
+
+影響: 悪意ある攻撃者がネットワーク経由でスプーフィングが可能
+
+対策: 証明書検証の強化と最新版への更新
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #暗号 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 146文字</p><pre>[High] CVE-2026-118147
+CVE-2026-118147
+概要: 未確認
+
+影響: 未確認
+
+未確認事項: 脆弱性の概要・影響・対策を裏付ける情報を確認できません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: [
+      &quot;overview_missing&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 190文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+証明書の検証不備
+
+影響: ネットワーク経由で、未認証の攻撃者がなりすましを行う可能性がある。
+
+未確認事項: 影響バージョンと対処方法は不明。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #暗号 #VISUAL_STUDIO</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 180文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+証明書の検証不備
+
+影響: ネットワーク経由で、未承認の攻撃者によるなりすましが可能です。
+
+未確認事項: 修正や回避策の有無は不明です。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#暗号 #VISUAL_STUDIO</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / 174文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+証明書の不適切な検証
+
+影響: ネットワーク経由で、未認証の攻撃者にスプーフィングを実行される可能性があります。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#開発ツール #暗号 #VISUAL_STUDIO</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / 198文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+証明書の検証不備
+
+影響: ネットワーク経由で未認証の攻撃者にスプーフィングを行われるおそれがあります。
+
+未確認事項: 影響を受けるバージョンと修正方法は示されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#暗号 #VISUAL_STUDIO</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 215文字</p><pre>[High] CVE-2026-118147
+Visual Studio
+証明書の検証不備
+
+影響: ネットワーク経由で、権限のない攻撃者にスプーフィングを行われるおそれがあります。
+
+未確認事項: 影響を受けるバージョンは記載されていません。／修正や対処方法は記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-118147
+
+#暗号 #VISUAL_STUDIO</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section><h2>jvn / CVE-2023-4863</h2><section><article><h3>qwen / 試行1</h3><p class="held">保留 / 442文字</p><pre>[未評価] CVE-2023-4863
+三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz
+三菱電機の製品群に複数の脆弱性が存在
+
+影響: 細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。
+
+対策: アップデートするまたはワークアラウンドを実施する。特定の製品・バージョンについては、対策版がリリースされないものもあり、その場合には回避策・軽減策を適用することが推奨されています。
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 32&quot;,
+      &quot;overview: ambiguous multi-CVE evidence&quot;,
+      &quot;impact: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.1: fabricated evidence&quot;,
+      &quot;tags.2: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.2: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / 305文字</p><pre>[未評価] CVE-2023-4863
+三菱電機 GENESIS64、ICONICS Suite
+libwebpライブラリの処理におけるヒープベースのバッファオーバフロー
+
+影響: 細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="held">保留 / 212文字</p><pre>[未評価] CVE-2023-4863
+三菱電機 GENESIS64、ICONICS Suite
+ヒープベースのバッファオーバーフロー
+
+影響: 内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 212文字</p><pre>[未評価] CVE-2023-4863
+三菱電機 GENESIS64、ICONICS Suite
+ヒープベースのバッファオーバーフロー
+
+影響: 内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 305文字</p><pre>[未評価] CVE-2023-4863
+三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz
+三菱電機の製品群に複数の脆弱性が存在
+
+影響: 細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 32&quot;,
+      &quot;overview: ambiguous multi-CVE evidence&quot;,
+      &quot;impact: fabricated evidence&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 198文字</p><pre>[未評価] CVE-2023-4863
+三菱電機 GENESIS64
+ヒープベースのバッファオーバーフロー
+
+影響: 内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 305文字</p><pre>[未評価] CVE-2023-4863
+三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz
+三菱電機の製品群に複数の脆弱性が存在
+
+影響: 細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;subject: unsupported literal 32&quot;,
+      &quot;overview: ambiguous multi-CVE evidence&quot;,
+      &quot;impact: fabricated evidence&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 305文字</p><pre>[未評価] CVE-2023-4863
+三菱電機 GENESIS64、ICONICS Suite
+libwebpライブラリの処理におけるヒープベースのバッファオーバフロー
+
+影響: 細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。結果として、内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性があります。
+
+対策: アップデートするまたはワークアラウンドを実施する
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#組み込み機器 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;,
+      &quot;subject: unsupported literal 64&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 299文字</p><pre>[未評価] CVE-2023-4863
+GENESIS64 10.97から10.97.2まで、ICONICS Suite 10.97から10.97.2まで
+libwebpの処理におけるヒープベースのバッファオーバーフロー
+
+影響: 細工したファイルをインポートすると任意のコードを実行され、内部情報の窃取・改ざん・破壊・削除や、サービス運用妨害状態にされる可能性があります。
+
+未確認事項: 対象CVEに適用される具体的な更新・回避策は確認できません。
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#メモリ安全性 #GENESIS64 #ICONICS_SUITE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 354文字</p><pre>[未評価] CVE-2023-4863
+三菱電機株式会社のGENESIS64およびICONICS Suite
+libwebpライブラリの処理におけるヒープベースのバッファオーバフロー
+
+影響: 細工したファイルをインポートすると任意のコードを実行され、内部情報の窃取・改ざん・破壊・削除や、サービス運用妨害状態にされる可能性があります。
+
+対策: アップデートまたはワークアラウンドを実施し、詳細は開発者が提供する情報を確認してください。製品・バージョンによっては対策版がリリースされず、回避策・軽減策の適用が推奨されています。
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#業務アプリ #メモリ安全性 #三菱電機株式会社 #GENESIS64 #ICONICS_SUITE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: ambiguous multi-CVE evidence&quot;,
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.2: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.2: unsupported name&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / 105文字</p><pre>[未評価] CVE-2023-4863
+三菱電機製の複数製品における複数の脆弱性（2026-006）
+概要: 未確認
+
+影響: 未確認
+
+出典: https://jvn.jp/vu/JVNVU93251594/</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: [
+      &quot;overview_missing&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 294文字</p><pre>[未評価] CVE-2023-4863
+GENESIS64、ICONICS Suite
+libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（CWE-122）
+
+影響: 細工したファイルをインポートされると任意のコードを実行され、内部情報の窃取・改ざん・破壊・削除や、サービス運用妨害状態にされる可能性があります。
+
+未確認事項: 対象CVEに対する具体的な修正版や対処方法は、提示された対象固有の範囲から確認できません。
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#メモリ安全性 #GENESIS64 #ICONICS_SUITE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 257文字</p><pre>[未評価] CVE-2023-4863
+GENESIS64、ICONICS Suite
+細工ファイルのインポートでヒープベースのバッファオーバーフロー
+
+影響: 細工したファイルをインポートされた場合、任意のコードを実行され、内部情報の窃取・改ざん・破壊・削除やサービス運用妨害が起こる可能性があります。
+
+未確認事項: 対象製品・バージョンに適用する対策方法は不明。
+
+出典: https://jvn.jp/vu/JVNVU93251594/
+
+#メモリ安全性 #GENESIS64 #ICONICS_SUITE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / ?文字</p><pre>生成JSON未取得（空ファイル。モデルのJSON不正とは未確認）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;executionIssue&quot;: &quot;agent reported save failed; empty output artifact; generated JSON unavailable; no regeneration&quot;
+}</pre></details></article></section><h2>jpcert-multi-cve / CVE-2026-115560</h2><section><article><h3>gemma / 試行1</h3><p class="held">保留 / ?文字</p><pre>API応答未取得（60秒タイムアウト）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;The operation was aborted due to timeout&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="held">保留 / 170文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPのセッションアップロードプログレス機能の脆弱性
+
+影響: 任意のコードを実行される可能性
+
+対策: 修正済みバージョンへの更新、または緩和策の設定
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#開発ツール #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="held">保留 / 222文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPのセッションアップロード進捗機能に脆弱性
+
+影響: 特定の設定とアプリケーションコードの組み合わせで任意のコード実行が可能
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #インジェクション #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 211文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPのセッションアップロードプログレス機能の脆弱性
+
+影響: 任意のコードを実行される可能性
+
+対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#開発ツール #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 218文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPの特定設定で任意コード実行の脆弱性
+
+影響: 特定の設定とアプリケーションコードの組み合わせで任意コード実行が可能
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #インジェクション #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / 252文字</p><pre>[未評価] CVE-2026-115560
+The PHP Group PHP
+特定の設定とアプリケーションコードの組み合わせ下での任意のコード実行の可能性
+
+影響: 特定の設定とアプリケーションコードの組み合わせの下で、任意のコードを実行される可能性がある。
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.1: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 222文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPの特定設定で任意コード実行の脆弱性
+
+影響: 特定の設定とアプリケーションコードの組み合わせで任意コード実行が可能
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #インジェクション #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 252文字</p><pre>[未評価] CVE-2026-115560
+The PHP Group PHP
+特定の設定とアプリケーションコードの組み合わせ下での任意のコード実行の可能性
+
+影響: 特定の設定とアプリケーションコードの組み合わせの下で、任意のコードを実行される可能性がある。
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;,
+      &quot;tags.1: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 261文字</p><pre>[未評価] CVE-2026-115560
+PHP
+PHPの脆弱性（CVE-2026-115560）が公表され、任意のコードを実行される可能性がある
+
+影響: 任意のコードを実行される可能性があり、内部ネットワークへの横展開が試みられる
+
+対策: 修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#開発ツール #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: ambiguous multi-CVE evidence&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 0&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 156文字</p><pre>[未評価] CVE-2026-115560
+注意喚起: PHPにおける複数の脆弱性（CVE-2026-109618、CVE-2026-109619）に関する注意喚起 (更新)
+概要: 未確認
+
+影響: 未確認
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: [
+      &quot;overview_missing&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 274文字</p><pre>[未評価] CVE-2026-115560
+The PHP Group
+特定の設定とアプリケーションコードの組み合わせで発生し、修正済みバージョンの提供まで設定変更が推奨される脆弱性。
+
+影響: 悪用されると任意のコードを実行される可能性があります。
+
+対策: 修正済みバージョンが提供されるまで、session.upload_progress.enabled=0に設定してすべてのワーカーを再起動してください。
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#THE_PHP_GROUP</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 232文字</p><pre>[未評価] CVE-2026-115560
+The PHP Group
+特定の設定とアプリケーションコードの組み合わせで発生する脆弱性が公表された。
+
+影響: 悪用されると任意のコードを実行される可能性がある。
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する。
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#THE_PHP_GROUP</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / ?文字</p><pre>生成JSON未取得（空ファイル。モデルのJSON不正とは未確認）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;executionIssue&quot;: &quot;empty output artifact; generated JSON unavailable; no regeneration&quot;
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / 285文字</p><pre>[未評価] CVE-2026-115560
+PHP
+特定の設定とアプリケーションコードの組み合わせで任意コード実行
+
+影響: 特定の設定とアプリケーションコードの組み合わせの下で悪用されると、任意のコードを実行される可能性があります。
+
+対策: session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。
+
+未確認事項: 修正済みバージョンは本文で確認できません。
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#Web基盤 #インジェクション #PHP</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;,
+      &quot;tags.0: ambiguous multi-CVE evidence&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 317文字</p><pre>[未評価] CVE-2026-115560
+The PHP Group
+特定の設定とアプリケーションコードの組み合わせで発生する脆弱性。
+
+影響: 特定の設定とアプリケーションコードの組み合わせの下で悪用されると、任意のコードを実行される可能性がある。
+
+対策: 修正版の提供までsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する。
+
+未確認事項: 影響を受ける具体的な設定・アプリケーションコードの組み合わせや対象バージョンは示されていない。
+
+出典: https://www.jpcert.or.jp/at/2026/at260033.html
+
+#THE_PHP_GROUP</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: [
+      &quot;action: ambiguous multi-CVE evidence&quot;,
+      &quot;action: unsupported literal 0&quot;
+    ]
+  }
+}</pre></details></article></section><h2>kev / CVE-2026-118527</h2><section><article><h3>llama / 試行1</h3><p class="">品質経路通過 / 320文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureに予測可能な数字または識別子の生成の脆弱性がある
+
+影響: リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる
+
+対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #認証 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="">品質経路通過 / 293文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureの予測可能な番号生成の脆弱性
+
+影響: リモート認証ユーザがファイルをアップロード可能で、他の脆弱性と連携可能
+
+対策: CISAのBOD 26-04に従った対応を実施し、修正プログラムの適用を推奨
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #アクセス制御 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / 357文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な数値または識別子の生成による脆弱性
+
+影響: リモートの認証済み攻撃者が、攻撃者が制御するコンテンツを含むファイルをディスク上の既知の場所にアップロードできる。この脆弱性はCVE-2026-104935およびCVE-2026-111357と連鎖させることが可能である。
+
+対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は、製品の使用を中止してください。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="">品質経路通過 / 322文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureの予測可能な番号生成の脆弱性
+
+影響: リモート認証された攻撃者がファイルをアップロード可能で、他の脆弱性と連携して深刻な影響を及ぼす可能性がある
+
+対策: CISAのBOD 26-04ガイドラインに従って対応し、修正プログラムが利用できない場合は製品の使用を中止する
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #アクセス制御 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / 358文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な数値または識別子の生成による脆弱性
+
+影響: リモートの認証済み攻撃者が、攻撃者が制御可能なコンテンツを含むファイルをディスク上の既知の場所にアップロードできる。この脆弱性はCVE-2026-104935およびCVE-2026-111357と連鎖させることが可能である。
+
+対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は、製品の使用を中止してください。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="">品質経路通過 / 364文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureに予測可能な数字または識別子の生成の脆弱性がある
+
+影響: リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる
+
+対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04 Prioritizing Security Updates Based on Riskのガイダンスに従う
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #認証 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 346文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な数値または識別子の生成による脆弱性
+
+影響: リモートの認証済み攻撃者が、攻撃者が制御可能なコンテンツを含むファイルをディスク上の既知の場所にアップロードできる。この脆弱性はCVE-2026-104935およびCVE-2026-111357と連鎖させることが可能。
+
+対策: ベンダーの指示に従って緩和策を適用する。緩和策が利用できない場合は製品の使用を中止する。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="">品質経路通過 / 396文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureの予測可能な数字または識別子の生成の脆弱性
+
+影響: リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる
+
+対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04 Prioritizing Security Updates Based on RiskのガイダンスとCISAのForensics Triage Requirementsに従う
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #アクセス制御 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="">品質経路通過 / 270文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+Ivanti Connect Secureの予測可能な番号生成の脆弱性
+
+影響: リモート認証された攻撃者がファイルをアップロードできる
+
+対策: CISAのBOD 26-04に従った対応を実施
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #アクセス制御 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / ?文字</p><pre>生成JSON未取得（空ファイル。モデルのJSON不正とは未確認）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;executionIssue&quot;: &quot;agent reported save failed; empty output artifact; generated JSON unavailable; no regeneration&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 477文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な番号・識別子により、攻撃者が制御する内容のファイルを既知のディスク上の場所へアップロードされるおそれがあります。
+
+影響: リモート認証済みの攻撃者が、攻撃者制御の内容を含むファイルを既知のディスク上の場所にアップロードできます。また、CVE-2026-104935およびCVE-2026-111357と連鎖する可能性があります。
+
+対策: ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04の指針に沿ってください。緩和策が利用できない場合は、製品の使用を中止してください。
+
+未確認事項: 影響を受けるバージョンと具体的な緩和策の内容は、この情報源に記載されていません。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#IVANTI #IVANTI_CONNECT_SECURE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / 381文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な番号・識別子を悪用し、攻撃者が制御する内容のファイルを既知のディスク上の場所へアップロードされる脆弱性。
+
+影響: リモートの認証済み攻撃者に、攻撃者が制御する内容のファイルを既知のディスク上の場所へアップロードされる。
+
+対策: ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。
+
+未確認事項: 影響を受ける製品バージョンは確認できない。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#IVANTI #IVANTI_CONNECT_SECURE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 438文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な番号・識別子の生成により、認証済みの遠隔攻撃者が既知のディスク上の場所へ任意内容のファイルをアップロードできる。
+
+影響: 認証済みの遠隔攻撃者が、攻撃者指定の内容を既知のディスク上の場所にアップロードできる。この脆弱性はCVE-2026-104935およびCVE-2026-111357と連鎖する可能性がある。
+
+対策: ベンダーの指示に従って緩和策を適用する。緩和策を利用できない場合は製品の使用を中止する。
+
+未確認事項: 影響する具体的な製品バージョンと、適用すべき緩和策の詳細は本文に示されていない。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#IVANTI #IVANTI_CONNECT_SECURE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 389文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な番号・識別子の生成不備
+
+影響: リモート認証済みの攻撃者が、攻撃者制御の内容を含むファイルを既知のディスク上の場所へアップロードできます。
+
+対策: ベンダーの指示に従って緩和策を適用し、BOD 26-04の指針に従ってください。クラウドサービスには該当するBOD 26-04の指針を適用し、緩和策が利用できない場合は製品の使用を中止してください。
+
+未確認事項: 影響を受けるバージョンは記載されていません。
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#IVANTI #IVANTI_CONNECT_SECURE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="">品質経路通過 / 426文字</p><pre>[未評価] CVE-2026-118527
+Ivanti Connect Secure
+予測可能な識別子により、認証済みリモート攻撃者が任意内容のファイルを既知のディスク位置へアップロードできる
+
+影響: 認証済みのリモート攻撃者が、攻撃者制御の内容を含むファイルを既知のディスク位置へアップロードできる。この脆弱性はCVE-2026-104935およびCVE-2026-111357と連鎖可能
+
+対策: ベンダーの指示に従って緩和策を適用し、CISA BOD 26-04の指針とフォレンジック・トリアージ要件を遵守する。緩和策が利用できない場合は製品の使用を中止する
+
+出典: https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-118527
+
+#ネットワーク #IVANTI #IVANTI_CONNECT_SECURE</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section><h2>previous-json-error / CVE-2026-120135</h2><section><article><h3>qwen / 試行1</h3><p class="held">保留 / 220文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの再帰制御不備
+
+影響: Apache Thrift 0.24.0未満では再帰呼び出しによるリソース消費攻撃が可能
+
+対策: 0.24.0にアップグレードすることを推奨
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#Web基盤 #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="held">保留 / 211文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの制御されない再帰の脆弱性
+
+影響: Apache Thrift 0.24.0以前のバージョンに影響
+
+対策: 0.24.0へのアップグレード
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#開発ツール #メモリ安全性 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;アクセス制御&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="">品質経路通過 / 211文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの制御されない再帰の脆弱性
+
+影響: Apache Thrift 0.24.0以前のバージョンに影響
+
+対策: 0.24.0へのアップグレード
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#開発ツール #メモリ安全性 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 217文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの再帰制御不備
+
+影響: Apache Thrift 0.24.0未満では再帰呼び出しによるリソース消費攻撃が可能
+
+対策: 0.24.0へのアップグレードを推奨
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#Web基盤 #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 211文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの制御されない再帰の脆弱性
+
+影響: Apache Thrift 0.24.0以前のバージョンに影響
+
+対策: 0.24.0へのアップグレード
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#開発ツール #メモリ安全性 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;アクセス制御&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="">品質経路通過 / 244文字</p><pre>[High] CVE-2026-120135
+Apache Thrift
+Apache Thrift Javaバインディングの再帰制御不備
+
+影響: Apache Thriftのバージョン0.24.0未満で再帰呼び出しによるリソース消費攻撃が可能
+
+対策: Apache Thriftを0.24.0にアップグレードすることを推奨
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#開発ツール #インジェクション #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 167文字</p><pre>[High] CVE-2026-120135
+Apache Thrift Javaバインディング
+制御されない再帰の脆弱性
+
+影響: 未確認
+
+対策: 0.24.0へアップグレードしてください。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#APACHE_THRIFT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 216文字</p><pre>[High] CVE-2026-120135
+Apache ThriftのJavaバインディング
+制御されない再帰の脆弱性
+
+影響: 未確認
+
+対策: 修正を含むApache Thrift 0.24.0へ更新してください。
+
+未確認事項: 脆弱性の具体的な影響と成立条件は記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#APACHE_THRIFT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 224文字</p><pre>[High] CVE-2026-120135
+Apache Thrift Java bindings
+Javaバインディングに制御されない再帰の脆弱性。
+
+影響: 未確認
+
+対策: Apache Thriftを0.24.0へ更新してください。
+
+未確認事項: 悪用成立条件や具体的な影響は記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#APACHE_THRIFT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / 189文字</p><pre>[High] CVE-2026-120135
+Apache Thrift Javaバインディング
+Javaバインディングに制御されない再帰の脆弱性。
+
+影響: 未確認
+
+対策: 修正を含むバージョン0.24.0へ更新する。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#APACHE #APACHE_THRIFT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / ?文字</p><pre>生成JSON未取得（空ファイル。モデルのJSON不正とは未確認）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;executionIssue&quot;: &quot;agent reported save failed; empty output artifact; generated JSON unavailable; no regeneration&quot;
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 210文字</p><pre>[High] CVE-2026-120135
+Apache Thrift Javaバインディング
+制御されない再帰の脆弱性
+
+影響: 未確認
+
+対策: Apache Thriftを0.24.0へ更新してください。
+
+未確認事項: 攻撃条件と具体的な被害は本文に記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-120135
+
+#APACHE_THRIFT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section><h2>incomplete-information / CVE-2026-39732</h2><section><article><h3>gemma / 試行1</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="">品質経路通過 / 217文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+Transliterator 2.5.13以前のバージョンで認証なしのSQLインジェクション
+
+影響: 認証なしでSQLインジェクションが可能
+
+対策: Transliteratorを2.5.13以降に更新する
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#開発ツール #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="">品質経路通過 / 195文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+TransliteratorのSQLインジェクション脆弱性
+
+影響: 未認証でSQLインジェクションが可能
+
+対策: 該当バージョンの更新または代替ソフトウェアの利用
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#Web基盤 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 220文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+Transliterator 2.5.13以下のバージョンにおける認証不要のSQLインジェクション
+
+影響: Transliterator 2.5.13以下のバージョンで、認証なしにSQLインジェクションが可能となる
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#開発ツール #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 195文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+TransliteratorのSQLインジェクション脆弱性
+
+影響: 未認証でSQLインジェクションが可能
+
+対策: 該当バージョンの更新または代替ソフトウェアの利用
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#Web基盤 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 195文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+TransliteratorのSQLインジェクション脆弱性
+
+影響: 未認証でSQLインジェクションが可能
+
+対策: 該当バージョンの更新または代替ソフトウェアの利用
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#Web基盤 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / ?文字</p><pre>出力上限2,048 tokensに達し、完結したJSONを取得できなかった</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;generationFinishReason&quot;: &quot;length&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 219文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+Transliterator 2.5.13以下のバージョンにおける認証なしSQLインジェクション
+
+影響: Transliterator 2.5.13以下のバージョンで、認証なしでSQLインジェクションが可能となる
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#開発ツール #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 186文字</p><pre>[Critical] CVE-2026-39732
+Transliterator（2.5.13以下）
+未認証SQLインジェクション
+
+影響: 未確認
+
+未確認事項: 具体的な被害内容と対処方法は記載されていない。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 187文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+2.5.13以下のバージョンに認証不要のSQLインジェクション脆弱性
+
+影響: 認証なしでSQLインジェクションを受ける可能性がある
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="held">保留 / 186文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+未認証で悪用可能なSQLインジェクション脆弱性
+
+影響: 未確認
+
+未確認事項: 具体的な被害内容と対処方法は記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="held">保留 / 196文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+認証不要のSQLインジェクション。
+
+影響: 認証なしでSQLインジェクションが可能です。
+
+未確認事項: 具体的な被害や対処方法は示されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="held">保留 / 193文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+未認証SQLインジェクション
+
+影響: 未認証でSQLインジェクションが可能です。
+
+未確認事項: 修正方法や修正版の有無は記載されていません。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / 163文字</p><pre>[Critical] CVE-2026-39732
+Transliterator
+未認証SQLインジェクション
+
+影響: 認証なしでSQLインジェクションが可能です。
+
+出典: https://nvd.nist.gov/vuln/detail/CVE-2026-39732
+
+#インジェクション #TRANSLITERATOR</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section><h2>pan-os / CVE-2024-3400</h2><section><article><h3>llama / 試行1</h3><p class="held">保留 / 400文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtect機能に任意のファイル作成の脆弱性により、OSコマンドインジェクションの脆弱性が存在する
+
+影響: 認証されていない攻撃者が、特定のPAN-OSバージョンと機能構成でGlobalProtectゲートウェイまたはポータル（または両方）が構成されたPAN-OS 10.2、PAN-OS 11.0、PAN-OS 11.1ファイアウォールで任意のコードをルート権限で実行できる
+
+対策: PAN-OSをバージョン10.2.9-h1、11.0.4-h1、11.1.2-h3、またはそれ以降のバージョンにアップグレードする
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: unsupported literal 10.2&quot;,
+      &quot;impact: unsupported literal 11.0&quot;,
+      &quot;impact: unsupported literal 11.1&quot;,
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="held">保留 / 328文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtectで任意ファイル作成によるOSコマンドインジェクションの脆弱性
+
+影響: 特定のPAN-OSバージョンでGlobalProtectを構成したファイアウォールに未認証の攻撃者がroot権限で任意コードを実行できる可能性
+
+対策: 特定のPAN-OSバージョンでGlobalProtectを構成したファイアウォールは、すぐに修正版のPAN-OSにアップグレードすることを強く推奨する
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#OS #アクセス制御 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / 620文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OS: Arbitrary File Creation Leads to OS Command Injection Vulnerability in GlobalProtect
+
+影響: An unauthenticated attacker to execute arbitrary code with root privileges on the firewall. This issue is applicable only to PAN-OS 10.2, PAN-OS 11.0, and PAN-OS 11.1 firewalls configured with GlobalProtect gateway or GlobalProtect portal (or both).
+
+対策: Immediately upgrade to a fixed version of PAN-OS: PAN-OS 10.2.9-h1, PAN-OS 11.0.4-h1, PAN-OS 11.1.2-h3, and in all later PAN-OS versions.
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: fabricated evidence&quot;,
+      &quot;impact: unsupported literal 10.2&quot;,
+      &quot;impact: unsupported literal 11.0&quot;,
+      &quot;impact: unsupported literal 11.1&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;,
+      &quot;tags.0: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 304文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtectで任意ファイル作成によるOSコマンドインジェクションの脆弱性
+
+影響: 特定のPAN-OSバージョンでGlobalProtectを構成したファイアウォールに未認証の攻撃者がroot権限で任意コードを実行できる
+
+対策: PAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3以降にアップグレードすること
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #アクセス制御 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / 620文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OS: Arbitrary File Creation Leads to OS Command Injection Vulnerability in GlobalProtect
+
+影響: An unauthenticated attacker to execute arbitrary code with root privileges on the firewall. This issue is applicable only to PAN-OS 10.2, PAN-OS 11.0, and PAN-OS 11.1 firewalls configured with GlobalProtect gateway or GlobalProtect portal (or both).
+
+対策: Immediately upgrade to a fixed version of PAN-OS: PAN-OS 10.2.9-h1, PAN-OS 11.0.4-h1, PAN-OS 11.1.2-h3, and in all later PAN-OS versions.
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: fabricated evidence&quot;,
+      &quot;impact: unsupported literal 10.2&quot;,
+      &quot;impact: unsupported literal 11.0&quot;,
+      &quot;impact: unsupported literal 11.1&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;,
+      &quot;tags.0: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 334文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtect機能に任意のファイル作成の脆弱性により、OSコマンドインジェクションの脆弱性が存在する
+
+影響: 認証されていない攻撃者が、特定のPAN-OSバージョンと機能構成を持つPAN-OSファイアウォールで任意のコードをルート権限で実行できる
+
+対策: PAN-OSをバージョン10.2.9-h1、11.0.4-h1、11.1.2-h3、またはそれ以降のバージョンにアップグレードする
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 447文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+Arbitrary File Creation Leads to OS Command Injection Vulnerability in GlobalProtect
+
+影響: An unauthenticated attacker to execute arbitrary code with root privileges on the firewall.
+
+対策: Immediately upgrade to a fixed version of PAN-OS to protect their devices even when workarounds and mitigations have been applied.
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #アクセス制御 #インジェクション</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;tags.0: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 273文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtect機能に任意のファイル作成の脆弱性がある
+
+影響: 認証なしの攻撃者がファイアウォールで任意のコードをroot権限で実行できる
+
+対策: PAN-OSをバージョン10.2.9-h1、11.0.4-h1、11.1.2-h3、またはそれ以降にアップグレードする
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: unsupported literal 10.2.9&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.0.4&quot;,
+      &quot;action: unsupported literal 1&quot;,
+      &quot;action: unsupported literal 11.1.2&quot;,
+      &quot;action: unsupported literal 3&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 332文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+PAN-OSのGlobalProtectで任意ファイル作成によるOSコマンドインジェクションの脆弱性
+
+影響: 特定のPAN-OSバージョンでGlobalProtectを構成したファイアウォールに未認証の攻撃者がroot権限で任意コードを実行できる可能性
+
+対策: 特定のPAN-OSバージョンでGlobalProtectを構成したファイアウォールは、すぐに修正版のPAN-OSにアップグレードすることを強く推奨する
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #アクセス制御 #暗号</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;tags.0: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="">品質経路通過 / 365文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+GlobalProtectの任意ファイル作成に起因するコマンドインジェクション脆弱性
+
+影響: 特定のPAN-OSバージョンと機能設定では、未認証の攻撃者がファイアウォール上でroot権限の任意コードを実行できる可能性があります。
+
+対策: 回避策や緩和策を適用済みでも、直ちに修正版へアップグレードしてください。修正済みはPAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3およびそれ以降です。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="">品質経路通過 / 372文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OS
+GlobalProtect機能で任意ファイル作成に起因するコマンドインジェクション
+
+影響: 特定のPAN-OSバージョンと機能設定で、未認証の攻撃者がファイアウォール上でroot権限の任意コードを実行できる可能性があります。
+
+対策: 回避策や緩和策を適用済みでも、直ちに修正版へアップグレードしてください。修正はPAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3およびそれ以降の全バージョンに含まれます。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="">品質経路通過 / 400文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto NetworksのPAN-OS（GlobalProtect機能）
+任意ファイル作成に起因するコマンドインジェクション脆弱性
+
+影響: PAN-OS 10.2、11.0、11.1でGlobalProtect gatewayまたはportal（または両方）が設定されたファイアウォールでは、未認証の攻撃者がroot権限で任意コードを実行する可能性があります。
+
+対策: 修正済みのPAN-OSへ直ちにアップグレードしてください。修正バージョンは10.2.9-h1、11.0.4-h1、11.1.2-h3およびそれ以降です。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="">品質経路通過 / 396文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OSのGlobalProtect機能
+GlobalProtectの任意ファイル作成に起因するOSコマンドインジェクション
+
+影響: 該当バージョンでGlobalProtectのgatewayまたはportal（または両方）を設定したファイアウォールでは、認証されていない攻撃者がroot権限で任意コードを実行できる可能性があります。
+
+対策: 該当する修正版（PAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3またはそれ以降）へ直ちにアップグレードしてください。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / 383文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto Networks PAN-OSファイアウォールのGlobalProtect機能
+任意ファイル作成によるコマンドインジェクション
+
+影響: GlobalProtect gatewayまたはportal（または両方）を設定した対象バージョンのファイアウォールで、未認証の攻撃者がroot権限で任意コードを実行する可能性があります。
+
+対策: PAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3またはそれ以降の修正版へ直ちにアップグレードしてください。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;tags.2: unsupported name&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="">品質経路通過 / 382文字</p><pre>[未評価] CVE-2024-3400
+Palo Alto NetworksのPAN-OS（GlobalProtect機能）
+GlobalProtect機能に任意ファイル作成を起点とするコマンドインジェクションの脆弱性。
+
+影響: 特定バージョン・機能設定のファイアウォールで、認証不要の攻撃者がroot権限で任意コードを実行できる可能性があります。
+
+対策: 回避策や緩和策を適用済みでも、修正版へ直ちに更新してください。修正済みはPAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3およびそれ以降です。
+
+出典: https://security.paloaltonetworks.com/CVE-2024-3400
+
+#ネットワーク #インジェクション #PALO_ALTO_NETWORKS #PAN_OS #GLOBALPROTECT</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section><h2>confluence / CVE-2023-22515</h2><section><article><h3>qwen / 試行1</h3><p class="held">保留 / 395文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data CenterとServer
+Confluence Data CenterとServerのアクセス制御不備
+
+影響: 外部攻撃者が未確認の脆弱性を悪用し、不正なConfluence管理者アカウントを作成し、Confluenceインスタンスにアクセス可能に
+
+対策: インスタンスをアップグレードし、脅威検出を実施する。または、/setup/*​エンドポイントへのアクセスをブロックする
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#Web基盤 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;,
+      &quot;tags.0: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行1</h3><p class="held">保留 / 1306文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data Center and Server
+Broken Access Control Vulnerability in Confluence Data Center and Server
+
+影響: external attackers may have exploited a previously unknown vulnerability in publicly accessible Confluence Data Center and Server instances to create unauthorized Confluence administrator accounts and access Confluence instances.
+
+対策: Upgrade your instance. Alternatively, if you cannot restrict external network access or upgrade, apply the following interim measures to mitigate known attack vectors by blocking access to the /setup/*​ endpoints on Confluence instances. This is possible at the network layer or by making the following changes to Confluence configuration files. On each node, modify /&lt;​confluence-install-dir&gt;​/confluence/WEB-INF/web.xml and add the following block of code (just before the &lt;​/web-app&gt;​ tag at the end of the file): &lt;​security-constraint&gt;​ &lt;​web-resource-collection&gt;​ &lt;​url-pattern&gt;​/setup/*​&lt;​/url-pattern&gt;​ &lt;​http-method-omission&gt;​*​&lt;​/http-method-omission&gt;​ &lt;​/web-resource-collection&gt;​ &lt;​auth-constraint /&gt;​ &lt;​/security-constraint&gt;​ Restart Confluence.
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#業務アプリ #アクセス制御 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="held">保留 / 397文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data CenterおよびServer
+Confluence Data CenterおよびServerのアクセス制御脆弱性
+
+影響: 外部攻撃者がConfluence管理者アカウントを作成し、Confluenceインスタンスにアクセスする可能性
+
+対策: インスタンスをアップグレードする、または一時的な対策として/setup/*​エンドポイントへのアクセスをブロックする
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#ネットワーク #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="held">保留 / 1302文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data Center and Server
+Broken Access Control Vulnerability in Confluence Data Center and Server
+
+影響: external attackers may have exploited a previously unknown vulnerability in publicly accessible Confluence Data Center and Server instances to create unauthorized Confluence administrator accounts and access Confluence instances.
+
+対策: Upgrade your instance. Alternatively, if you cannot restrict external network access or upgrade, apply the following interim measures to mitigate known attack vectors by blocking access to the /setup/*​ endpoints on Confluence instances. This is possible at the network layer or by making the following changes to Confluence configuration files. On each node, modify /&lt;​confluence-install-dir&gt;​/confluence/WEB-INF/web.xml and add the following block of code (just before the &lt;​/web-app&gt;​ tag at the end of the file): &lt;​security-constraint&gt;​ &lt;​web-resource-collection&gt;​ &lt;​url-pattern&gt;​/setup/*​&lt;​/url-pattern&gt;​ &lt;​http-method-omission&gt;​*​&lt;​/http-method-omission&gt;​ &lt;​/web-resource-collection&gt;​ &lt;​auth-constraint /&gt;​ &lt;​/security-constraint&gt;​ Restart Confluence.
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#業務アプリ #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 370文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data CenterおよびServer
+Confluence Data CenterおよびServerのアクセス制御脆弱性
+
+影響: 外部攻撃者がConfluence管理者アカウントを作成し、Confluenceインスタンスにアクセスする可能性
+
+対策: インスタンスのアップグレードまたは一時的な緩和策の適用
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#ネットワーク #アクセス制御 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 358文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data CenterとServer
+Confluence Data CenterとServerのアクセス制御不備
+
+影響: 外部攻撃者が未認証で管理者アカウントを作成し、Confluenceインスタンスにアクセス可能に
+
+対策: インスタンスをアップグレードし、/setup/*​エンドポイントへのアクセスを制限する
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#Web基盤 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: evidence not supplied&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 377文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data CenterおよびServer
+Confluence Data CenterおよびServerのアクセス制御脆弱性
+
+影響: 外部攻撃者がConfluence管理者アカウントを作成し、Confluenceインスタンスにアクセスする可能性
+
+対策: インスタンスをアップグレードする、または設定ページへのアクセスをブロックする
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#ネットワーク #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 358文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data CenterとServer
+Confluence Data CenterとServerのアクセス制御不備
+
+影響: 外部攻撃者が未認証で管理者アカウントを作成し、Confluenceインスタンスにアクセス可能に
+
+対策: インスタンスをアップグレードし、/setup/*​エンドポイントへのアクセスを制限する
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#Web基盤 #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: evidence not supplied&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="held">保留 / 1302文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data Center and Server
+Broken Access Control Vulnerability in Confluence Data Center and Server
+
+影響: external attackers may have exploited a previously unknown vulnerability in publicly accessible Confluence Data Center and Server instances to create unauthorized Confluence administrator accounts and access Confluence instances.
+
+対策: Upgrade your instance. Alternatively, if you cannot restrict external network access or upgrade, apply the following interim measures to mitigate known attack vectors by blocking access to the /setup/*​ endpoints on Confluence instances. This is possible at the network layer or by making the following changes to Confluence configuration files. On each node, modify /&lt;​confluence-install-dir&gt;​/confluence/WEB-INF/web.xml and add the following block of code (just before the &lt;​/web-app&gt;​ tag at the end of the file): &lt;​security-constraint&gt;​ &lt;​web-resource-collection&gt;​ &lt;​url-pattern&gt;​/setup/*​&lt;​/url-pattern&gt;​ &lt;​http-method-omission&gt;​*​&lt;​/http-method-omission&gt;​ &lt;​/web-resource-collection&gt;​ &lt;​auth-constraint /&gt;​ &lt;​/security-constraint&gt;​ Restart Confluence.
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#業務アプリ #アクセス制御</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;subject: fabricated evidence&quot;,
+      &quot;action: fabricated evidence&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 515文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data Center、Confluence Server
+不正アクセス制御の脆弱性
+
+影響: 外部の攻撃者が、インターネットに公開されたインスタンスで脆弱性を悪用し、不正なConfluence管理者アカウントを作成してインスタンスにアクセスする可能性がある。
+
+対策: アップグレードまで外部ネットワークからのアクセスを制限する。制限もアップグレードもできない場合は、ネットワーク層またはConfluence設定で/setup/*​へのアクセスを遮断する。
+
+未確認事項: 影響を受ける具体的なバージョン範囲は提示資料から確認できない。
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#アクセス制御 #ATLASSIAN #CONFLUENCE_DATA_CENTER #CONFLUENCE_SERVER</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: false,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 476文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data Center and Server
+アクセス制御の不備により、公開されたインスタンスが攻撃された可能性
+
+影響: 外部攻撃者が不正なConfluence管理者アカウントを作成し、インスタンスにアクセスする可能性があります。
+
+対策: アップグレードまたは外部ネットワークアクセスを制限できない場合は、ネットワーク層で/setup/*​へのアクセスを遮断するか、各ノードのweb.xmlを変更してConfluenceを再起動してください。
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#業務アプリ #アクセス制御 #ATLASSIAN #CONFLUENCE_DATA_CENTER #CONFLUENCE_SERVER</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;action: fabricated evidence&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="">品質経路通過 / 537文字</p><pre>[未評価] CVE-2023-22515
+AtlassianのConfluence Data CenterおよびConfluence Server
+不正な管理者アカウント作成につながるアクセス制御の脆弱性
+
+影響: 外部攻撃者が公開アクセス可能なインスタンスを悪用し、不正なConfluence管理者アカウントを作成してインスタンスにアクセスする可能性があります。
+
+対策: インターネットからアクセス可能な環境では、アップグレードできるまで外部ネットワークからのアクセスを制限してください。制限もアップグレードもできない場合は、各ノードの設定で/setup/*​へのアクセスをブロックし、Confluenceを再起動してください。
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#業務アプリ #アクセス制御 #ATLASSIAN #CONFLUENCE_DATA_CENTER #CONFLUENCE_SERVER</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="">品質経路通過 / 538文字</p><pre>[未評価] CVE-2023-22515
+Confluence Data CenterおよびConfluence Server
+公開されたConfluence Data CenterおよびServerで、外部攻撃者により未知の脆弱性が悪用された可能性があります。
+
+影響: 外部攻撃者が不正なConfluence管理者アカウントを作成し、Confluenceインスタンスにアクセスする可能性があります。
+
+対策: 公開インスタンスはアップグレードまで外部ネットワークアクセスを制限してください。制限やアップグレードができない場合は、/setup/*​へのアクセスをネットワーク層または設定ファイルで遮断し、Confluenceを再起動してください。
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#アクセス制御 #ATLASSIAN #CONFLUENCE_DATA_CENTER #CONFLUENCE_SERVER</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="">品質経路通過 / 445文字</p><pre>[未評価] CVE-2023-22515
+Atlassian Confluence Data Center／Confluence Server
+公開アクセス可能なインスタンスで不正な管理者アカウント作成やアクセスにつながる脆弱性
+
+影響: 外部攻撃者が、公開アクセス可能なインスタンスで不正なConfluence管理者アカウントを作成し、インスタンスにアクセスする可能性があります。
+
+対策: インスタンスをアップグレードし、包括的な脅威検出を実施してください。
+
+出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html
+
+#アクセス制御 #ATLASSIAN #CONFLUENCE_DATA_CENTER #CONFLUENCE_SERVER</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / ?文字</p><pre>生成JSON未取得（空ファイル。モデルのJSON不正とは未確認）</pre><details><summary>工程別判定</summary><pre>{
+  &quot;error&quot;: &quot;invalid_json&quot;,
+  &quot;executionIssue&quot;: &quot;empty output artifact; generated JSON unavailable; no regeneration&quot;
+}</pre></details></article></section><h2>curl / CVE-2023-38545</h2><section><article><h3>gemma / 試行1</h3><p class="">品質経路通過 / 266文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541.
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行1</h3><p class="held">保留 / 269文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行1</h3><p class="">品質経路通過 / 168文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5プロキシでのヒープバッファオーバーフロー
+
+影響: 特定の設定下でメモリ破損が発生する可能性
+
+対策: 8.4.0へのアップグレードまたはパッチ適用
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#Web基盤 #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行2</h3><p class="held">保留 / 269文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行2</h3><p class="held">保留 / 178文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5プロキシでのヒープバッファオーバーフロー
+
+影響: 特定の設定下でメモリ破損が発生する可能性がある
+
+対策: 8.4.0へのアップグレードまたはパッチ適用が必要
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#Web基盤 #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行2</h3><p class="">品質経路通過 / 266文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541.
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>qwen / 試行3</h3><p class="held">保留 / 237文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5プロキシでのヒープバッファオーバーフロー
+
+影響: 特定の設定下でヒープバッファオーバーフローが発生し、リモートコード実行の可能性がある
+
+対策: curlをバージョン8.4.0にアップグレードするか、パッチを適用する。SOCKS5_HOSTNAMEプロキシの使用を避ける。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#Web基盤 #インジェクション #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>gemma / 試行3</h3><p class="">品質経路通過 / 266文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541.
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>llama / 試行3</h3><p class="held">保留 / 269文字</p><pre>[未評価] CVE-2023-38545
+curl
+SOCKS5 heap buffer overflow
+
+影響: An overflow is only possible in applications that do not set CURLOPT_BUFFERSIZE or set it smaller than 65541
+
+対策: Upgrade curl to version 8.4.0
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性 #認証</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: [
+      &quot;認証&quot;
+    ]
+  },
+  &quot;generationFinishReason&quot;: &quot;stop&quot;
+}</pre></details></article><article><h3>luna-medium / 試行1</h3><p class="held">保留 / 390文字</p><pre>[未評価] CVE-2023-38545
+curl（libcurlとcurl tool）
+SOCKS5プロキシ接続時にヒープバッファオーバーフローが発生する。
+
+影響: ホスト名をSOCKS5プロキシ側で解決する設定で、遅いハンドシェイク中に、長さ255バイトを超えるホスト名がバッファへコピーされる場合がある。影響を受けるのはCURLOPT_BUFFERSIZEを設定しない、または65541未満に設定したアプリケーションである。
+
+対策: curlを8.4.0へ更新するか、ローカル版にパッチを適用する。回避策として、CURLPROXY_SOCKS5_HOSTNAMEプロキシを使わず、socks5h://のプロキシ環境変数も設定しない。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#ネットワーク #メモリ安全性 #CURL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: fabricated evidence&quot;,
+      &quot;impact: unsupported literal 255&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行1</h3><p class="held">保留 / 419文字</p><pre>[未評価] CVE-2023-38545
+curl（libcurlとcurlツール）
+SOCKS5プロキシのハンドシェイク中にヒープバッファがオーバーフローする。
+
+影響: ホスト名解決をSOCKS5プロキシに委ね、255バイトを超えるホスト名を扱う遅いハンドシェイクで、アプリがCURLOPT_BUFFERSIZEを設定しないか65541未満にするとオーバーフローし得る。curlツールは既定では該当しないが、レート制限を65541 bytes/second未満にすると脆弱になり得る。
+
+対策: curlを8.4.0へ更新するかローカル版にパッチを適用する。回避策として、CURLPROXY_SOCKS5_HOSTNAMEプロキシを使わず、環境変数にsocks5h://のプロキシを設定しない。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#メモリ安全性 #CURL #LIBCURL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: fabricated evidence&quot;,
+      &quot;impact: unsupported literal 255&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行2</h3><p class="">品質経路通過 / 318文字</p><pre>[未評価] CVE-2023-38545
+curl（libcurl）
+SOCKS5プロキシのハンドシェイク中にヒープバッファオーバーフローが発生する。
+
+影響: CURLOPT_BUFFERSIZEを設定しない、または65541未満に設定したアプリケーションでオーバーフローが起こり得る。
+
+対策: curlを8.4.0へ更新するかローカル版にパッチを適用する。回避策として、CURLPROXY_SOCKS5_HOSTNAMEプロキシを使わず、socks5h://のプロキシ環境変数も設定しない。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#メモリ安全性 #LIBCURL #CURL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行2</h3><p class="">品質経路通過 / 411文字</p><pre>[未評価] CVE-2023-38545
+curl／libcurl
+SOCKS5プロキシのハンドシェイク中にヒープバッファオーバーフローが発生する
+
+影響: 影響を受けるのはlibcurl 7.69.0～8.3.0。バッファサイズを設定しない、または65541未満に設定したアプリケーションでのみオーバーフローが可能。curlツールは既定で100kBに設定されているため、ユーザーがレート制限を65541バイト/秒未満に設定していない限り脆弱ではない。
+
+対策: curlを8.4.0にアップグレードするか、ローカル版にパッチを適用する。回避策としてCURLPROXY_SOCKS5_HOSTNAMEプロキシを使用しない、または環境変数にsocks5h://のプロキシを設定しない。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#メモリ安全性 #CURL #LIBCURL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article><article><h3>luna-medium / 試行3</h3><p class="held">保留 / 372文字</p><pre>[未評価] CVE-2023-38545
+curl（libcurlおよびcurlツール）
+SOCKS5プロキシ接続時にヒープバッファオーバーフロー
+
+影響: libcurl 7.69.0～8.3.0で、SOCKS5プロキシにホスト名解決を任せ、ホスト名が255バイトを超え、かつアプリケーションがCURLOPT_BUFFERSIZEを設定しないか65541未満に設定した場合、ヒープバッファがオーバーフローする可能性がある。curlツールは既定で100kBに設定するため、ユーザーがレート制限を65541 bytes/second未満にしない限り脆弱ではない。
+
+対策: curlを8.4.0へ更新する。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#メモリ安全性 #CURL #LIBCURL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: false,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: [
+      &quot;impact: unsupported literal 7.69.0&quot;,
+      &quot;impact: unsupported literal 8.3.0&quot;
+    ]
+  }
+}</pre></details></article><article><h3>luna-high / 試行3</h3><p class="">品質経路通過 / 451文字</p><pre>[未評価] CVE-2023-38545
+curl（libcurlおよびcurl tool）
+SOCKS5プロキシ接続時のヒープバッファオーバーフロー
+
+影響: SOCKS5プロキシにホスト名解決を任せる接続で、ホスト名が255バイトを超え、遅いハンドシェイク中に発生し得ます。影響するのは、CURLOPT_BUFFERSIZEを設定しないか65541未満に設定したアプリケーションです。curl toolは通常影響を受けませんが、ユーザーがレート制限を65541 bytes/second未満に設定すると脆弱です。
+
+対策: libcurlを8.4.0へ更新するか、ローカル版にパッチを適用してください。回避策として、CURLPROXY_SOCKS5_HOSTNAMEプロキシを使用せず、socks5h://のプロキシ環境変数も設定しないでください。
+
+出典: https://curl.se/docs/CVE-2023-38545.html
+
+#メモリ安全性 #LIBCURL #CURL_TOOL</pre><details><summary>工程別判定</summary><pre>{
+  &quot;local&quot;: {
+    &quot;valid&quot;: true,
+    &quot;complete&quot;: true,
+    &quot;reasons&quot;: []
+  },
+  &quot;verdict&quot;: {
+    &quot;supported&quot;: true,
+    &quot;contradictions&quot;: [],
+    &quot;unsupportedClaims&quot;: []
+  }
+}</pre></details></article></section>

@@ -1,0 +1,1152 @@
+{
+  "reviewer": "独立AIレビュアー（条件を伏せた18出力の所見。人のgoldではない）",
+  "limitations": [
+    "生成方式名、検査/検品結果、results.json、blind-map.json、プロンプトを参照せずblind-inputs.jsonだけを読んだ。",
+    "判定は提示inputと事前固定criteriaに限定する。原文全体にしかなくinputにない情報を追加の必須条件にしない。",
+    "retainedは重要な意味と境界の保持、omittedは全部又は重要部分の省略、changedは意味・設定の変更、not_applicableは条件付き基準の前提が出力にない場合を示す。",
+    "omittedは自動的にmaterialErrorsへ算入しない。対象条件等の単なる省略、逆の断定、誤った設定、必須の侵害確認を対策から落とす場合を区別する。informationLossesには実質的誤りと別に扱った欠落を記録する。",
+    "引用形式、タグ、actionKind単独は実質的誤りとしない。投稿全体の500文字内への適合や機械的ゲートの合否は本評価から分離する。",
+    "3資料×各6件の小規模な補助ストレス条件であり、一般精度や本番2000文字設定での効果を示さない。"
+  ],
+  "criteria": {
+    "fixedByCase": {
+      "pan-os": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "importance": "material",
+          "description": "認証不要の攻撃者によるroot権限でのコード実行という被害を変えない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "importance": "material",
+          "description": "10.2/11.0/11.1のGlobalProtect gateway又はportal（片方でも可）という対象条件を保持する。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "importance": "material",
+          "description": "telemetryが有効である必要はないという条件を保持する。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "importance": "material",
+          "description": "回避策適用済みでも直ちに修正版へ更新するという強い推奨を保持し、法令や動作上の絶対必須条件と混同しない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "importance": "information",
+          "description": "選択された3修正版の具体的な版を保持し、境界を取り違えない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "importance": "information",
+          "description": "Cloud NGFW/Panorama/Prisma Accessの非対象情報を保持する。"
+        }
+      ],
+      "confluence": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "importance": "material",
+          "description": "公開Data Center/Serverで不正な管理者アカウント作成・アクセスという被害を保持する。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "importance": "material",
+          "description": "ユーザー認証があっても外部アクセスを制限し、更新まで維持する条件を保持する。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "importance": "material",
+          "description": "外部アクセス制限も更新もできない場合の暫定策として/setup/*をブロックする条件を保持する。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "importance": "material",
+          "description": "構成ファイル方式の具体的手順を案内するなら各ノードへの適用と再起動を保持する。ネットワーク層の遮断だけを書く場合は再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "importance": "material",
+          "description": "更新だけでなく脅威検出も必要なことを保持する。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "importance": "information",
+          "description": "Cloud/atlassian.net/8.0.0未満の非対象情報を変えない。"
+        }
+      ],
+      "curl": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "importance": "material",
+          "description": "SOCKS5のリモート名前解決と遅いハンドシェイクでの問題であることを保持する。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "importance": "material",
+          "description": "CURLOPT_BUFFERSIZE/65541境界とcurlコマンドの既定バッファ・レート制限の例外を保持し、全curlが無条件で影響するとしない。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "importance": "material",
+          "description": "7.69.0〜8.3.0（8.3.0含む）、8.4.0以降対象外という境界を保持する。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "importance": "material",
+          "description": "少なくとも1つの有効な対処を残す。8.4.0への更新だけ、又はパッチだけでも正しい選択肢であり、他の選択肢の省略は情報損失として分ける。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "importance": "material",
+          "description": "回避策を書く場合、CURLPROXY_SOCKS5_HOSTNAMEとsocks5h://の設定を誤らない。更新又はパッチのみを案内し回避策全体を省く場合は重大な誤りにしない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "importance": "information",
+          "description": "255バイトを超えるホスト名というバグ説明の境界を保持する。"
+        }
+      ]
+    },
+    "interpretation": [
+      "構成ファイル変更手順を案内しない/setup/*遮断では各ノード・再起動を必須としない。",
+      "curlは更新又はパッチのどちらか1つでも有効な対処として認め、回避策の全設定を必須にしない。",
+      "情報省略だけで対象が無条件に広がると自動的に解釈しない。重要条件の欠落はassessmentsとinformationLossesへ残す。",
+      "Confluenceで対策を更新だけに縮めて脅威検出を欠落させた場合は、更新が侵害確認を代替しないため実質的に危険な対応手順の欠落とする。",
+      "PAN-OSの具体的更新版を単一の下限へ一般化して別系列の修正境界を失う場合は、全版の列挙を単に省く場合と区別する。"
+    ]
+  },
+  "independentAiNotHumanGold": true,
+  "preflight": {
+    "decision": "approved_for_planned_generation",
+    "inputSha256": "10a34185b161abfa16a69916cb4d130db6bb101a1daaaec9df09cc4120aca8b7"
+  },
+  "rows": [
+    {
+      "id": "after/t2/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "retained",
+          "explanation": "外部アクセス制限も更新もできない場合、既知の攻撃経路への暫定策として/setup/*を遮断する条件を保持している。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "retained",
+          "explanation": "更新と脅威検出の双方を保持している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "0752c1860b045b22"
+    },
+    {
+      "id": "after/t1/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "retained",
+          "explanation": "影響範囲7.69.0〜8.3.0（含む）と更新先8.4.0を保持しており、脆弱な範囲と修正版の境界は正しい。8.4.0以降非対象の独立した文は省いたが境界を反転させていない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "retained",
+          "explanation": "8.4.0への更新又はローカル版へのパッチという有効な対処を保持している。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を全体として省略しているため、設定名保持の条件は適用しない。更新又はパッチだけを選択すること自体は正しい。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "1323b4f7a71c7c2b"
+    },
+    {
+      "id": "before/t2/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "omitted",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "omitted",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を案内していないため、誤設定を判定する条件は適用しない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "22b9976a637a0d58"
+    },
+    {
+      "id": "after/t3/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "retained",
+          "explanation": "認証されていない攻撃者によるroot権限の任意コード実行を保持している。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "retained",
+          "explanation": "10.2/11.0/11.1とGlobalProtect gateway又はportal、片方でもよいという条件を保持している。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "retained",
+          "explanation": "device telemetryが有効である必要はない、と明記している。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "retained",
+          "explanation": "回避策・緩和策を適用済みでも直ちに修正版へ更新するという推奨を保持している。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "retained",
+          "explanation": "10.2.9-h1、11.0.4-h1、11.1.2-h3とそれぞれ以降を保持している。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "retained",
+          "explanation": "Cloud NGFW、Panorama appliances、Prisma Accessの非対象情報を保持している。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [],
+      "uncertain": [],
+      "opaqueId": "2f8b5c618c32c584"
+    },
+    {
+      "id": "after/t1/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "retained",
+          "explanation": "認証されていない攻撃者によるroot権限の任意コード実行を保持している。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "retained",
+          "explanation": "10.2/11.0/11.1とGlobalProtect gateway又はportal、片方でもよいという条件を保持している。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "retained",
+          "explanation": "device telemetryが有効である必要はない、と明記している。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "retained",
+          "explanation": "回避策・緩和策を適用済みでも直ちに修正版へ更新するという推奨を保持している。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "retained",
+          "explanation": "10.2.9-h1、11.0.4-h1、11.1.2-h3とそれぞれ以降を保持している。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "retained",
+          "explanation": "Cloud NGFW、Panorama appliances、Prisma Accessの非対象情報を保持している。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [],
+      "uncertain": [],
+      "opaqueId": "310acde59567f3ec"
+    },
+    {
+      "id": "before/t1/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "omitted",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "omitted",
+          "explanation": "対策が「更新」だけになり、更新に加えて実施すべき脅威検出が欠落している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "claim": "対策: 更新",
+          "sourceEvidenceId": "vendor:CVE-2023-22515",
+          "explanation": "原文は緊急対応として更新と包括的な脅威検出の両方を要求する。既に不正な管理者アカウントを作成される可能性がある脆弱性のため、更新だけを対策とする要約は侵害の有無を確認せず対応を完了する判断を招く。単に別の同等な対処を選んだ場合ではない。",
+          "sourceQuoteSha256": "a375d934a8fd002747a9828f4bcbdfd2e202b7ad7d46f78a243886fb1dcf6e7f",
+          "sourceQuotePositions": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "a375d934a8fd002747a9828f4bcbdfd2e202b7ad7d46f78a243886fb1dcf6e7f",
+              "quoteCharacters": 68,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 225,
+                  "end": 293
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "49f377dd70ef92ca"
+    },
+    {
+      "id": "before/t1/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "omitted",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "omitted",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を案内していないため、誤設定を判定する条件は適用しない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "63d994a1dcf0ee75"
+    },
+    {
+      "id": "before/t3/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "omitted",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "retained",
+          "explanation": "更新と脅威検出の双方を保持している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "65e6db9d5b287872"
+    },
+    {
+      "id": "before/t2/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "omitted",
+          "explanation": "「認証なし」だけで、root権限のコード実行という被害が欠落している。認証が必要だと反転させたわけではない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "omitted",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "omitted",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "omitted",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "omitted",
+          "explanation": "修正済みの具体的な版がなく「PAN-OS更新」だけになっている。誤った版は指定していない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "explanation": "「認証なし」だけで、root権限のコード実行という被害が欠落している。認証が必要だと反転させたわけではない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "explanation": "修正済みの具体的な版がなく「PAN-OS更新」だけになっている。誤った版は指定していない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "78da1b4436432e97"
+    },
+    {
+      "id": "after/t1/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "retained",
+          "explanation": "外部アクセス制限も更新もできない場合、既知の攻撃経路への暫定策として/setup/*を遮断する条件を保持している。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "retained",
+          "explanation": "更新と脅威検出の双方を保持している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "79bcf10a59e90179"
+    },
+    {
+      "id": "after/t3/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "retained",
+          "explanation": "影響範囲7.69.0〜8.3.0（含む）と更新先8.4.0を保持しており、脆弱な範囲と修正版の境界は正しい。8.4.0以降非対象の独立した文は省いたが境界を反転させていない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "retained",
+          "explanation": "8.4.0への更新又はローカル版へのパッチという有効な対処を保持している。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を全体として省略しているため、設定名保持の条件は適用しない。更新又はパッチだけを選択すること自体は正しい。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "7a367b5e48d91a5d"
+    },
+    {
+      "id": "before/t3/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "omitted",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "omitted",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を案内していないため、誤設定を判定する条件は適用しない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "「SOCKS5」だけで、リモート名前解決、遅いhandshake、ヒープオーバーフローという説明が欠落している。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "「バッファ」だけで、CURLOPT_BUFFERSIZE未設定又は65541未満、curlコマンドの既定とレート制限の例外が全て欠落している。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "explanation": "影響する版、影響しない版、修正された版を全て省略している。誤った版の指定はない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "explanation": "「更新」だけで、8.4.0という修正版もパッチも示していない。更新自体は妥当な方向であり、特定の未修正版への更新を勧める誤案内とは区別する。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8beadddde97e9a7e"
+    },
+    {
+      "id": "after/t3/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "retained",
+          "explanation": "外部アクセス制限も更新もできない場合、既知の攻撃経路への暫定策として/setup/*を遮断する条件を保持している。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "retained",
+          "explanation": "更新と脅威検出の双方を保持している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "Data Center/Serverと不正な管理者作成・アクセスは保持したが、公開アクセス可能な環境という条件が省略された。全環境が無条件に影響するとは明言していない。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8cae1018b0a36202"
+    },
+    {
+      "id": "before/t2/confluence",
+      "assessments": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "status": "omitted",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "status": "omitted",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "status": "omitted",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "status": "not_applicable",
+          "explanation": "具体的な構成ファイル変更手順を案内していない。単なる/setup/*遮断、又は更新の案内には各ノードの設定変更と再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "status": "omitted",
+          "explanation": "対策が「更新」だけになり、更新に加えて実施すべき脅威検出が欠落している。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "materialErrors": [
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "claim": "対策: 更新",
+          "sourceEvidenceId": "vendor:CVE-2023-22515",
+          "explanation": "原文は緊急対応として更新と包括的な脅威検出の両方を要求する。既に不正な管理者アカウントを作成される可能性がある脆弱性のため、更新だけを対策とする要約は侵害の有無を確認せず対応を完了する判断を招く。単に別の同等な対処を選んだ場合ではない。",
+          "sourceQuoteSha256": "a375d934a8fd002747a9828f4bcbdfd2e202b7ad7d46f78a243886fb1dcf6e7f",
+          "sourceQuotePositions": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "a375d934a8fd002747a9828f4bcbdfd2e202b7ad7d46f78a243886fb1dcf6e7f",
+              "quoteCharacters": 68,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 225,
+                  "end": 293
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "informationLosses": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "explanation": "公開Data Center/Serverという対象と不正な管理者作成という具体的被害が欠落し、「不正アクセス」又は「外部攻撃」だけになっている。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "explanation": "ユーザー認証があっても更新まで外部アクセスを制限する、という一次対応が省略された。重要な運用情報の損失だが、「認証があれば公開継続して安全」などの逆の案内はしていないため、単独では実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "explanation": "更新不能時の/setup/*遮断という暫定策全体を省略している。更新という有効な選択肢は残しており、暫定策の省略だけを実質的誤りとしない。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "explanation": "Cloud/atlassian.net/8.0.0未満の非対象情報は全て省略されている。対象だと反転させてはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8d04b2387416717e"
+    },
+    {
+      "id": "after/t2/curl",
+      "assessments": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "status": "omitted",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "status": "omitted",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "status": "retained",
+          "explanation": "影響範囲7.69.0〜8.3.0（含む）と更新先8.4.0を保持しており、脆弱な範囲と修正版の境界は正しい。8.4.0以降非対象の独立した文は省いたが境界を反転させていない。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "status": "retained",
+          "explanation": "8.4.0への更新又はローカル版へのパッチという有効な対処を保持している。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "status": "not_applicable",
+          "explanation": "回避策の設定変更を全体として省略しているため、設定名保持の条件は適用しない。更新又はパッチだけを選択すること自体は正しい。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "status": "omitted",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "explanation": "SOCKS5 handshake中のヒープオーバーフローは保持したが、プロキシ側の名前解決と遅いhandshakeという条件を省略した。全SOCKS5利用で無条件に起きるとは明言していない。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "explanation": "CURLOPT_BUFFERSIZE未設定又は65541未満という境界は保持したが、curlコマンド既定100kBと65541 bytes/second未満のレート制限の例外を省略した。全curlが無条件に影響するとする断定はない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "explanation": "255バイトを超えるホスト名という境界が省略されている。誤った閾値は提示していない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "98c9aa59f729410a"
+    },
+    {
+      "id": "after/t2/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "retained",
+          "explanation": "認証されていない攻撃者によるroot権限の任意コード実行を保持している。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "retained",
+          "explanation": "10.2/11.0/11.1とGlobalProtect gateway又はportal、片方でもよいという条件を保持している。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "retained",
+          "explanation": "device telemetryが有効である必要はない、と明記している。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "retained",
+          "explanation": "回避策・緩和策を適用済みでも直ちに修正版へ更新するという推奨を保持している。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "retained",
+          "explanation": "10.2.9-h1、11.0.4-h1、11.1.2-h3とそれぞれ以降を保持している。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "retained",
+          "explanation": "Cloud NGFW、Panorama appliances、Prisma Accessの非対象情報を保持している。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [],
+      "uncertain": [],
+      "opaqueId": "af5f4abb31dad45e"
+    },
+    {
+      "id": "before/t3/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "retained",
+          "explanation": "認証不要とroot権限のコード実行を保持している。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "omitted",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "omitted",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "omitted",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "changed",
+          "explanation": "3系列の修正境界を「PAN-OSを10.2.9-h1以降に更新」だけへ一本化した。10.2系列という限定がなく、11.0/11.1にもこの単一の下限を適用できるように読める。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "materialErrors": [
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "claim": "PAN-OSを10.2.9-h1以降に更新",
+          "sourceEvidenceId": "vendor:CVE-2024-3400",
+          "explanation": "11.0と11.1には独自の修正境界がある。系列を限定せず10.2.9-h1以降だけを安全な更新先とすると、11.0.4-h1未満や11.1.2-h3未満の版を排除できない。単に全修正版の列挙を省いた場合と区別する。",
+          "sourceQuoteSha256": "72f0f30a3f69d93367e0f741cae7229aee2b4283f0f8d6b9fe19e260064f83ec",
+          "sourceQuotePositions": [
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "72f0f30a3f69d93367e0f741cae7229aee2b4283f0f8d6b9fe19e260064f83ec",
+              "quoteCharacters": 110,
+              "suppliedMatches": [
+                {
+                  "part": "remediation",
+                  "start": 164,
+                  "end": 274
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "informationLosses": [
+        {
+          "code": "PAN_GP_OR",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "d604991785f25a52"
+    },
+    {
+      "id": "before/t1/pan-os",
+      "assessments": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "status": "omitted",
+          "explanation": "「認証なし」だけで、root権限のコード実行という被害が欠落している。認証が必要だと反転させたわけではない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "status": "omitted",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "status": "omitted",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "status": "omitted",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "status": "omitted",
+          "explanation": "修正済みの具体的な版がなく「PAN-OS更新」だけになっている。誤った版は指定していない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "status": "omitted",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "materialErrors": [],
+      "informationLosses": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "explanation": "「認証なし」だけで、root権限のコード実行という被害が欠落している。認証が必要だと反転させたわけではない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "explanation": "対象3系列とGlobalProtect gateway又はportalの構成条件が全て欠落している。全PAN-OSが無条件に脆弱だとは明言していないため、ここでは対象を判断する情報の損失とする。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "explanation": "telemetry無効でも対象になり得ることが欠落している。telemetry有効が必要という逆の条件は述べていない。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "explanation": "更新は勧めているが、回避策適用済みでも直ちに更新するという限定を省略している。回避策で更新不要とは案内していない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "explanation": "修正済みの具体的な版がなく「PAN-OS更新」だけになっている。誤った版は指定していない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "explanation": "非対象3製品の情報が省略されている。対象へ反転させたわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "f99d15aa31d7830e"
+    }
+  ]
+}

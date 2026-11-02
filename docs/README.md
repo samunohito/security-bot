@@ -79,6 +79,8 @@
 
 ### 履歴
 
+- [未使用の実資料による短縮の追加測定](history/2026-11-02-real-shortening/evaluation.md)：
+  PR #21後の公式資料3件、実設定2,000文字での短縮要否、500文字の補助比較と残る省略・保留・費用。
 - [短縮時に重要条件を残す変更と初期生成指示の不採用](history/2026-11-02-keep-critical-conditions/evaluation.md)：
   Issue #20の投稿全体の文字数予算、短縮の比較、初期生成3案の不採用と残存課題。
 - [追加LLM検品の効果比較](history/2026-11-02-critic-comparison/evaluation.md)：

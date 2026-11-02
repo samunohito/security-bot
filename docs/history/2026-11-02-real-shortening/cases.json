@@ -1,0 +1,607 @@
+{
+  "recordedDate": "2026-11-02",
+  "cases": [
+    {
+      "label": "pan-os",
+      "key": "CVE-2024-3400",
+      "url": "https://security.paloaltonetworks.com/CVE-2024-3400",
+      "provenance": {
+        "label": "pan-os",
+        "url": "https://security.paloaltonetworks.com/CVE-2024-3400",
+        "start": "CVE-2024-3400 PAN-OS:",
+        "end": "Timeline",
+        "resolvedUrl": "https://security.paloaltonetworks.com/CVE-2024-3400",
+        "fetchedAt": "2026-11-02T00:51:52.161Z",
+        "rawSha256": "d5d77b8d560efa8aafe8e691dce64d214f4ed5d57fb0153ccc3d8161288ee0c8",
+        "textSha256": "4034f920345bad6b637f7a63419677db6197670c8a744dd8d9d8175178cb733b",
+        "characters": 12345,
+        "bodyStart": 0,
+        "bodySha256": "4034f920345bad6b637f7a63419677db6197670c8a744dd8d9d8175178cb733b",
+        "bodyCharacters": 12345,
+        "inputSha256": "52639f87650633f05ab3356b8b838d65c37f2a10dc7803a3d36e381c0b4d5163"
+      },
+      "seedSha256": "91b1ce4830cd00b968c10ea1e4f841bae5999bfacfc8f0732b59d153ba3e8150",
+      "sourceInputSha256": "52639f87650633f05ab3356b8b838d65c37f2a10dc7803a3d36e381c0b4d5163",
+      "seedValidation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "seed": {
+        "subject": "PAN-OS GlobalProtect",
+        "overview": "GlobalProtect機能で任意ファイルの作成に起因するコマンドインジェクションがあり、特定のPAN-OSのバージョンと機能構成がそろうファイアウォールで、認証されていない攻撃者がroot権限の任意コードを実行できる可能性がある。",
+        "impact": "対象になるのは、PAN-OS 10.2、11.0、11.1のうち、GlobalProtect gatewayまたはGlobalProtect portalのいずれか、もしくは両方を構成したファイアウォールである。攻撃を受けるためにdevice telemetryが有効である必要はない。Cloud NGFW、Panorama appliances、Prisma Accessはこの脆弱性の影響を受けない。",
+        "action": "回避策や緩和策を既に適用していても、それだけで対応を完了したとせず、PAN-OSの修正済みバージョンへ直ちに更新する。原文が修正済みとして挙げるのはPAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3、およびそれぞれ以降のバージョンである。",
+        "actionKind": "routine_update",
+        "uncertainties": [],
+        "tags": [],
+        "references": {
+          "subject": [
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "d6594f198eef81deb06ffbd7dbc306b7b06024d85f72cde26d87372c9d7cf480",
+              "quoteCharacters": 399,
+              "suppliedMatches": [
+                {
+                  "part": "impact",
+                  "start": 0,
+                  "end": 399
+                }
+              ]
+            }
+          ],
+          "overview": [
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "d6594f198eef81deb06ffbd7dbc306b7b06024d85f72cde26d87372c9d7cf480",
+              "quoteCharacters": 399,
+              "suppliedMatches": [
+                {
+                  "part": "impact",
+                  "start": 0,
+                  "end": 399
+                }
+              ]
+            }
+          ],
+          "impact": [
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "a668478e9f17401303289207da168d9fde9e29851a3de2f1ebdff670d325fe7b",
+              "quoteCharacters": 279,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 0,
+                  "end": 279
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "d6594f198eef81deb06ffbd7dbc306b7b06024d85f72cde26d87372c9d7cf480",
+              "quoteCharacters": 399,
+              "suppliedMatches": [
+                {
+                  "part": "impact",
+                  "start": 0,
+                  "end": 399
+                }
+              ]
+            }
+          ],
+          "action": [
+            {
+              "evidenceId": "vendor:CVE-2024-3400",
+              "quoteSha256": "beb86c36d2ac0bb1493daceb72b90afd68cd81146c3a4dea5e5ff1594b0587d7",
+              "quoteCharacters": 274,
+              "suppliedMatches": [
+                {
+                  "part": "remediation",
+                  "start": 0,
+                  "end": 274
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "seedPost": "[High] CVE-2024-3400\nPAN-OS GlobalProtect\nGlobalProtect機能で任意ファイルの作成に起因するコマンドインジェクションがあり、特定のPAN-OSのバージョンと機能構成がそろうファイアウォールで、認証されていない攻撃者がroot権限の任意コードを実行できる可能性がある。\n\n影響: 対象になるのは、PAN-OS 10.2、11.0、11.1のうち、GlobalProtect gatewayまたはGlobalProtect portalのいずれか、もしくは両方を構成したファイアウォールである。攻撃を受けるためにdevice telemetryが有効である必要はない。Cloud NGFW、Panorama appliances、Prisma Accessはこの脆弱性の影響を受けない。\n\n対策: 回避策や緩和策を既に適用していても、それだけで対応を完了したとせず、PAN-OSの修正済みバージョンへ直ちに更新する。原文が修正済みとして挙げるのはPAN-OS 10.2.9-h1、11.0.4-h1、11.1.2-h3、およびそれぞれ以降のバージョンである。\n\n出典: https://security.paloaltonetworks.com/CVE-2024-3400",
+      "seedPostCodePoints": 560,
+      "criteria": [
+        {
+          "code": "PAN_UNAUTH_ROOT",
+          "importance": "material",
+          "description": "認証不要の攻撃者によるroot権限でのコード実行という被害を変えない。"
+        },
+        {
+          "code": "PAN_GP_OR",
+          "importance": "material",
+          "description": "10.2/11.0/11.1のGlobalProtect gateway又はportal（片方でも可）という対象条件を保持する。"
+        },
+        {
+          "code": "PAN_TELEMETRY_NOT_REQUIRED",
+          "importance": "material",
+          "description": "telemetryが有効である必要はないという条件を保持する。"
+        },
+        {
+          "code": "PAN_UPGRADE_DESPITE_MITIGATION",
+          "importance": "material",
+          "description": "回避策適用済みでも直ちに修正版へ更新するという強い推奨を保持し、法令や動作上の絶対必須条件と混同しない。"
+        },
+        {
+          "code": "PAN_FIX_VERSIONS",
+          "importance": "information",
+          "description": "選択された3修正版の具体的な版を保持し、境界を取り違えない。"
+        },
+        {
+          "code": "PAN_EXCLUSIONS",
+          "importance": "information",
+          "description": "Cloud NGFW/Panorama/Prisma Accessの非対象情報を保持する。"
+        }
+      ],
+      "operationalShorteningRequired": false,
+      "sources": [
+        {
+          "id": "vendor:CVE-2024-3400",
+          "scope": "cve",
+          "cves": ["CVE-2024-3400"],
+          "url": "https://security.paloaltonetworks.com/CVE-2024-3400",
+          "bodyCharacters": 12345,
+          "bodySha256": "4034f920345bad6b637f7a63419677db6197670c8a744dd8d9d8175178cb733b",
+          "sourceOriginStart": 0,
+          "providedParts": {
+            "text": {
+              "sourceStart": 0,
+              "sourceEnd": 1000,
+              "characters": 1000,
+              "sha256": "11466ddfd6ba600f0b6e632e47be49982d80c9e1919d698d879ea3680a554cd1"
+            },
+            "affected": {
+              "sourceStart": 2231,
+              "sourceEnd": 2510,
+              "characters": 279,
+              "sha256": "a668478e9f17401303289207da168d9fde9e29851a3de2f1ebdff670d325fe7b"
+            },
+            "impact": {
+              "sourceStart": 975,
+              "sourceEnd": 1374,
+              "characters": 399,
+              "sha256": "d6594f198eef81deb06ffbd7dbc306b7b06024d85f72cde26d87372c9d7cf480"
+            },
+            "remediation": {
+              "sourceStart": 3987,
+              "sourceEnd": 4261,
+              "characters": 274,
+              "sha256": "beb86c36d2ac0bb1493daceb72b90afd68cd81146c3a4dea5e5ff1594b0587d7"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "confluence",
+      "key": "CVE-2023-22515",
+      "url": "https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+      "provenance": {
+        "label": "confluence",
+        "url": "https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+        "start": "Summary CVE-2023-22515",
+        "end": "Last modified",
+        "resolvedUrl": "https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+        "fetchedAt": "2026-11-02T00:51:52.369Z",
+        "rawSha256": "6a1ef4e9912b264ba3e08092638992122dceedc0643b1aad78edde8d743dede8",
+        "textSha256": "a06e2206002ebc70be822957050cdd9e74e442ea90c8a7d6a19c5501f76ca74a",
+        "characters": 10019,
+        "bodyStart": 2706,
+        "bodySha256": "a29df7881cd58b823fc107a57222c769ddf5c3d36ce60fa34c95d9b4f43fdf3c",
+        "bodyCharacters": 7313,
+        "inputSha256": "352b45af28a07550c2b4698232197dc51ca8490bb53b044fc5e1515552e1cf1b"
+      },
+      "seedSha256": "2ae33c566cd04638f82cf63fd2d430a4465b4ffa8a5d932f16acec2ed47a883f",
+      "sourceInputSha256": "352b45af28a07550c2b4698232197dc51ca8490bb53b044fc5e1515552e1cf1b",
+      "seedValidation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "seed": {
+        "subject": "Confluence Data Center / Server",
+        "overview": "公開アクセス可能なConfluence Data CenterとConfluence Serverで、外部の攻撃者が不正なConfluence管理者アカウントを作成し、インスタンスへアクセスする可能性があるBroken Access Controlの脆弱性が報告されている。",
+        "impact": "Atlassian Cloudのサイトはこの脆弱性の影響を受けず、atlassian.netドメインでアクセスするConfluenceサイトも対象外である。Confluenceの8.0.0より前のバージョンも対象外と明記されている。公開インターネットからアクセス可能なData Center/Serverについては、ユーザー認証を設けている場合も含め、更新できるまで外部ネットワークからのアクセスを制限する必要がある。",
+        "action": "インスタンスを更新し、包括的な脅威検出も実施する。外部ネットワークからのアクセス制限も更新もできない場合には、既知の攻撃経路に対する暫定措置として/setup/*へのアクセスをブロックする。構成ファイルを変更する方法を選ぶ場合は各ノードの/<confluence-install-dir>/confluence/WEB-INF/web.xmlを変更し、</web-app>の直前に原文のsecurity-constraintを追加して、Confluenceを再起動する。",
+        "actionKind": "workaround",
+        "uncertainties": [],
+        "tags": [],
+        "references": {
+          "subject": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "3718357c38285b27c9c988840f788481ff616935197ab2928b6e5fe4f4172f0c",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            }
+          ],
+          "overview": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "769fc069ac73d391f7d81d0769b2218c0158982b985018498d1b575442856a7d",
+              "quoteCharacters": 312,
+              "suppliedMatches": [
+                {
+                  "part": "impact",
+                  "start": 0,
+                  "end": 312
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "3718357c38285b27c9c988840f788481ff616935197ab2928b6e5fe4f4172f0c",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            }
+          ],
+          "impact": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "ea7cffdb70f4ed672332ca298b8d7e8c276172819b580ec9a397ef0f53aa20c4",
+              "quoteCharacters": 293,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 0,
+                  "end": 293
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "3718357c38285b27c9c988840f788481ff616935197ab2928b6e5fe4f4172f0c",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-22515:mitigation",
+              "quoteSha256": "b651ff6eebb4228be5ae8fd4cb8aa22918a4989b12f4b12c5c1767e284fa98ff",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            }
+          ],
+          "action": [
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "ea7cffdb70f4ed672332ca298b8d7e8c276172819b580ec9a397ef0f53aa20c4",
+              "quoteCharacters": 293,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 0,
+                  "end": 293
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-22515:mitigation",
+              "quoteSha256": "b651ff6eebb4228be5ae8fd4cb8aa22918a4989b12f4b12c5c1767e284fa98ff",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-22515",
+              "quoteSha256": "a2ce02106aa8ad9e37735bbd8e330d8bf4170b367de0253ed09f7a246cd0c51e",
+              "quoteCharacters": 396,
+              "suppliedMatches": [
+                {
+                  "part": "remediation",
+                  "start": 0,
+                  "end": 396
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "seedPost": "[High] CVE-2023-22515\nConfluence Data Center / Server\n公開アクセス可能なConfluence Data CenterとConfluence Serverで、外部の攻撃者が不正なConfluence管理者アカウントを作成し、インスタンスへアクセスする可能性があるBroken Access Controlの脆弱性が報告されている。\n\n影響: Atlassian Cloudのサイトはこの脆弱性の影響を受けず、atlassian.netドメインでアクセスするConfluenceサイトも対象外である。Confluenceの8.0.0より前のバージョンも対象外と明記されている。公開インターネットからアクセス可能なData Center/Serverについては、ユーザー認証を設けている場合も含め、更新できるまで外部ネットワークからのアクセスを制限する必要がある。\n\n対策: インスタンスを更新し、包括的な脅威検出も実施する。外部ネットワークからのアクセス制限も更新もできない場合には、既知の攻撃経路に対する暫定措置として/setup/*​へのアクセスをブロックする。構成ファイルを変更する方法を選ぶ場合は各ノードの/<​confluence-install-dir>​/confluence/WEB-INF/web.xmlを変更し、<​/web-app>​の直前に原文のsecurity-constraintを追加して、Confluenceを再起動する。\n\n出典: https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+      "seedPostCodePoints": 803,
+      "criteria": [
+        {
+          "code": "CONF_PUBLIC_ADMIN",
+          "importance": "material",
+          "description": "公開Data Center/Serverで不正な管理者アカウント作成・アクセスという被害を保持する。"
+        },
+        {
+          "code": "CONF_AUTH_NOT_ENOUGH",
+          "importance": "material",
+          "description": "ユーザー認証があっても外部アクセスを制限し、更新まで維持する条件を保持する。"
+        },
+        {
+          "code": "CONF_INTERIM_IF_UNABLE",
+          "importance": "material",
+          "description": "外部アクセス制限も更新もできない場合の暫定策として/setup/*をブロックする条件を保持する。"
+        },
+        {
+          "code": "CONF_EACH_NODE_RESTART",
+          "importance": "material",
+          "description": "構成ファイル方式の具体的手順を案内するなら各ノードへの適用と再起動を保持する。ネットワーク層の遮断だけを書く場合は再起動を必須としない。"
+        },
+        {
+          "code": "CONF_UPGRADE_DETECT",
+          "importance": "material",
+          "description": "更新だけでなく脅威検出も必要なことを保持する。"
+        },
+        {
+          "code": "CONF_EXCLUSIONS",
+          "importance": "information",
+          "description": "Cloud/atlassian.net/8.0.0未満の非対象情報を変えない。"
+        }
+      ],
+      "operationalShorteningRequired": false,
+      "sources": [
+        {
+          "id": "vendor:CVE-2023-22515",
+          "scope": "cve",
+          "cves": ["CVE-2023-22515"],
+          "url": "https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+          "bodyCharacters": 7313,
+          "bodySha256": "a29df7881cd58b823fc107a57222c769ddf5c3d36ce60fa34c95d9b4f43fdf3c",
+          "sourceOriginStart": 2706,
+          "providedParts": {
+            "text": {
+              "sourceStart": 0,
+              "sourceEnd": 1000,
+              "characters": 1000,
+              "sha256": "3718357c38285b27c9c988840f788481ff616935197ab2928b6e5fe4f4172f0c"
+            },
+            "affected": {
+              "sourceStart": 1675,
+              "sourceEnd": 1968,
+              "characters": 293,
+              "sha256": "ea7cffdb70f4ed672332ca298b8d7e8c276172819b580ec9a397ef0f53aa20c4"
+            },
+            "impact": {
+              "sourceStart": 1176,
+              "sourceEnd": 1488,
+              "characters": 312,
+              "sha256": "769fc069ac73d391f7d81d0769b2218c0158982b985018498d1b575442856a7d"
+            },
+            "remediation": {
+              "sourceStart": 4070,
+              "sourceEnd": 4466,
+              "characters": 396,
+              "sha256": "a2ce02106aa8ad9e37735bbd8e330d8bf4170b367de0253ed09f7a246cd0c51e"
+            }
+          }
+        },
+        {
+          "id": "vendor:CVE-2023-22515:mitigation",
+          "scope": "cve",
+          "cves": ["CVE-2023-22515"],
+          "url": "https://confluence.atlassian.com/security/cve-2023-22515-broken-access-control-vulnerability-in-confluence-data-center-and-server-1295682276.html",
+          "bodyCharacters": 1190,
+          "bodySha256": "f1f05656fdeabfe61ef547ae6657fa1ff95c10dceae76a24684ba5bd08455a12",
+          "sourceOriginStart": 6259,
+          "providedParts": {
+            "text": {
+              "sourceStart": 0,
+              "sourceEnd": 1000,
+              "characters": 1000,
+              "sha256": "b651ff6eebb4228be5ae8fd4cb8aa22918a4989b12f4b12c5c1767e284fa98ff"
+            },
+            "affected": null,
+            "impact": null,
+            "remediation": null
+          }
+        }
+      ]
+    },
+    {
+      "label": "curl",
+      "key": "CVE-2023-38545",
+      "url": "https://curl.se/docs/CVE-2023-38545.html",
+      "provenance": {
+        "label": "curl",
+        "url": "https://curl.se/docs/CVE-2023-38545.html",
+        "start": "CVE-2023-38545",
+        "end": "Thanks a lot!",
+        "resolvedUrl": "https://curl.se/docs/CVE-2023-38545.html",
+        "fetchedAt": "2026-11-02T00:51:52.623Z",
+        "rawSha256": "e9038f569b4dfe6b9fc0e2b8e984bba908f093254de4f928c636d98ae3372a30",
+        "textSha256": "fe21ff8b9f734505cb47a11f034cc474b103952b541419f8432cbe2f1a68d4e5",
+        "characters": 6652,
+        "bodyStart": 1038,
+        "bodySha256": "e972335a250c9444430d7ae77e13cc5b21fc9dd28ef0e5bb9d76a9cc5037827e",
+        "bodyCharacters": 5614,
+        "inputSha256": "2dac52a4182fb9c53e91388ae921073400ca383842a0e23c550639d83c906a00"
+      },
+      "seedSha256": "bd7b79ad71dd346523bc398d84a9b1e48cca25936dab806a18543145c1bd2572",
+      "sourceInputSha256": "2dac52a4182fb9c53e91388ae921073400ca383842a0e23c550639d83c906a00",
+      "seedValidation": {
+        "valid": true,
+        "complete": true,
+        "reasons": []
+      },
+      "seed": {
+        "subject": "curl / libcurl",
+        "overview": "SOCKS5プロキシとのハンドシェイク中にヒープ上のバッファがオーバーフローする問題である。名前解決をSOCKS5プロキシ側に任せる場合、255バイトを超えるホスト名では本来ローカルで名前解決する処理へ切り替えるが、遅いハンドシェイク中の不具合によって切り替えを示す変数の値が誤り、長すぎるホスト名がバッファへコピーされる可能性がある。",
+        "impact": "影響するlibcurlは7.69.0から8.3.0までで、8.3.0を含む。7.69.0未満と8.4.0以降は対象外である。オーバーフローが可能になるのはCURLOPT_BUFFERSIZEを設定していないか65541未満にしたアプリケーションである。curlコマンドは既定では100kBのバッファを設定するため、利用者が65541 bytes/second未満のレート制限を設定していない場合には、このオーバーフローの影響を受けない。",
+        "action": "curlを8.4.0へ更新するか、利用中のローカル版へパッチを適用する。回避策としてCURLPROXY_SOCKS5_HOSTNAMEプロキシをcurlで利用しないようにし、プロキシ環境変数にもsocks5h://を設定しない。",
+        "actionKind": "workaround",
+        "uncertainties": [],
+        "tags": [],
+        "references": {
+          "subject": [
+            {
+              "evidenceId": "vendor:CVE-2023-38545",
+              "quoteSha256": "77a6970ff48e51faf7e74c52363031e7a03877c1554a0a39e845d8356cff9769",
+              "quoteCharacters": 1000,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 0,
+                  "end": 1000
+                }
+              ]
+            }
+          ],
+          "overview": [
+            {
+              "evidenceId": "vendor:CVE-2023-38545",
+              "quoteSha256": "4ed9677b40e7c859d22a1c24bc39486e01880f129287ef17b8a69552202ed393",
+              "quoteCharacters": 704,
+              "suppliedMatches": [
+                {
+                  "part": "text",
+                  "start": 120,
+                  "end": 824
+                }
+              ]
+            }
+          ],
+          "impact": [
+            {
+              "evidenceId": "vendor:CVE-2023-38545",
+              "quoteSha256": "7bb91550e4b626fa73ebdee8ce8048563d6ac542b5f669edbd7a12b7fe3bbaed",
+              "quoteCharacters": 111,
+              "suppliedMatches": [
+                {
+                  "part": "affected",
+                  "start": 0,
+                  "end": 111
+                }
+              ]
+            },
+            {
+              "evidenceId": "vendor:CVE-2023-38545",
+              "quoteSha256": "3c458db4da5f553139bbe2587e20a556b776f0c389fd548db65c2a3fbf55a32f",
+              "quoteCharacters": 278,
+              "suppliedMatches": [
+                {
+                  "part": "impact",
+                  "start": 0,
+                  "end": 278
+                }
+              ]
+            }
+          ],
+          "action": [
+            {
+              "evidenceId": "vendor:CVE-2023-38545",
+              "quoteSha256": "985cdf1a7c03234d96a78f593961eb9c12f248dbac40f96bfd7a7de4a5960730",
+              "quoteCharacters": 196,
+              "suppliedMatches": [
+                {
+                  "part": "remediation",
+                  "start": 0,
+                  "end": 196
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "seedPost": "[High] CVE-2023-38545\ncurl / libcurl\nSOCKS5プロキシとのハンドシェイク中にヒープ上のバッファがオーバーフローする問題である。名前解決をSOCKS5プロキシ側に任せる場合、255バイトを超えるホスト名では本来ローカルで名前解決する処理へ切り替えるが、遅いハンドシェイク中の不具合によって切り替えを示す変数の値が誤り、長すぎるホスト名がバッファへコピーされる可能性がある。\n\n影響: 影響するlibcurlは7.69.0から8.3.0までで、8.3.0を含む。7.69.0未満と8.4.0以降は対象外である。オーバーフローが可能になるのはCURLOPT_BUFFERSIZEを設定していないか65541未満にしたアプリケーションである。curlコマンドは既定では100kBのバッファを設定するため、利用者が65541 bytes/second未満のレート制限を設定していない場合には、このオーバーフローの影響を受けない。\n\n対策: curlを8.4.0へ更新するか、利用中のローカル版へパッチを適用する。回避策としてCURLPROXY_SOCKS5_HOSTNAMEプロキシをcurlで利用しないようにし、プロキシ環境変数にもsocks5h://を設定しない。\n\n出典: https://curl.se/docs/CVE-2023-38545.html",
+      "seedPostCodePoints": 595,
+      "criteria": [
+        {
+          "code": "CURL_REMOTE_DNS_SLOW",
+          "importance": "material",
+          "description": "SOCKS5のリモート名前解決と遅いハンドシェイクでの問題であることを保持する。"
+        },
+        {
+          "code": "CURL_BUFFER_RATE",
+          "importance": "material",
+          "description": "CURLOPT_BUFFERSIZE/65541境界とcurlコマンドの既定バッファ・レート制限の例外を保持し、全curlが無条件で影響するとしない。"
+        },
+        {
+          "code": "CURL_VERSION_BOUNDARIES",
+          "importance": "material",
+          "description": "7.69.0〜8.3.0（8.3.0含む）、8.4.0以降対象外という境界を保持する。"
+        },
+        {
+          "code": "CURL_UPGRADE_OR_PATCH",
+          "importance": "material",
+          "description": "少なくとも1つの有効な対処を残す。8.4.0への更新だけ、又はパッチだけでも正しい選択肢であり、他の選択肢の省略は情報損失として分ける。"
+        },
+        {
+          "code": "CURL_WORKAROUND_NAMES",
+          "importance": "material",
+          "description": "回避策を書く場合、CURLPROXY_SOCKS5_HOSTNAMEとsocks5h://の設定を誤らない。更新又はパッチのみを案内し回避策全体を省く場合は重大な誤りにしない。"
+        },
+        {
+          "code": "CURL_HOSTNAME_255",
+          "importance": "information",
+          "description": "255バイトを超えるホスト名というバグ説明の境界を保持する。"
+        }
+      ],
+      "operationalShorteningRequired": false,
+      "sources": [
+        {
+          "id": "vendor:CVE-2023-38545",
+          "scope": "cve",
+          "cves": ["CVE-2023-38545"],
+          "url": "https://curl.se/docs/CVE-2023-38545.html",
+          "bodyCharacters": 5614,
+          "bodySha256": "e972335a250c9444430d7ae77e13cc5b21fc9dd28ef0e5bb9d76a9cc5037827e",
+          "sourceOriginStart": 1038,
+          "providedParts": {
+            "text": {
+              "sourceStart": 0,
+              "sourceEnd": 1000,
+              "characters": 1000,
+              "sha256": "77a6970ff48e51faf7e74c52363031e7a03877c1554a0a39e845d8356cff9769"
+            },
+            "affected": {
+              "sourceStart": 4596,
+              "sourceEnd": 4707,
+              "characters": 111,
+              "sha256": "7bb91550e4b626fa73ebdee8ce8048563d6ac542b5f669edbd7a12b7fe3bbaed"
+            },
+            "impact": {
+              "sourceStart": 2377,
+              "sourceEnd": 2655,
+              "characters": 278,
+              "sha256": "3c458db4da5f553139bbe2587e20a556b776f0c389fd548db65c2a3fbf55a32f"
+            },
+            "remediation": {
+              "sourceStart": 5118,
+              "sourceEnd": 5314,
+              "characters": 196,
+              "sha256": "985cdf1a7c03234d96a78f593961eb9c12f248dbac40f96bfd7a7de4a5960730"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

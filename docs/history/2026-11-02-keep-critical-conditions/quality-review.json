@@ -1,0 +1,1367 @@
+{
+  "recordedDate": "2026-11-02",
+  "status": "completed",
+  "independentAiNotHumanGold": true,
+  "batches": [
+    {
+      "suffix": "r1",
+      "reviewer": "AIによる独立盲検レビュー（issue20_quality_review）。人のgold判定ではない。",
+      "criteria": [
+        "匿名表示48件を同caseIdのsupplied evidenceのtext/sectionsだけと照合した。",
+        "materialErrorsは影響範囲・攻撃成立条件・対処の判断を実質的に変える誤記又は重大な条件/手順の脱落。otherOmissionsは生成項目欠落、単なる対象バージョン省略等。uncertainは提供範囲だけでは帰属や誤りを確定できない所見。",
+        "概要・影響が未確認の場合、提供原文に問題の説明があるなら生成項目欠落とし、原文不足と区別する。",
+        "表示全体を見て条件が別欄に残る場合は重複を要求しない。引用形式・タグ分類・actionKind単独は重大誤りとしない。",
+        "sourceQuoteは同caseIdのtext又はsections内に連続完全一致する原文。"
+      ],
+      "limitations": [
+        "全事実保持の網羅検査ではない。各出力に重大所見なしであっても全内容の正しさを認定しない。",
+        "変更プロンプト・コード・条件対応表・検品結果・過去監査は未参照。外部検索、API呼び出し、委任は行っていない。",
+        "原文に存在しない対策・版番号・影響帰結は要求しない。未確認表示を、原文自体に不足する情報についての誤りとはしない。",
+        "複数CVE記事の切り出しで指示語の対象が不明な場合は誤帰属を断定しない。重大な省略と一般的要約の境界はAIの判断を含む。"
+      ],
+      "reviewedRows": 48,
+      "blindedInputSha256": "4f01e22e92b34903ad234354c99fbc969b75dcd752c833f3f15a86fa475d3aa9"
+    },
+    {
+      "suffix": "final",
+      "reviewer": "AIによる独立盲検レビュー（issue20_quality_review）。人のgold判定ではない。",
+      "criteria": [
+        "匿名表示24件を同caseIdのsupplied evidenceのtext/sectionsだけと照合した。前回と同じ現象には同じcodeを使用した。",
+        "materialErrorsは影響範囲・攻撃成立条件・対処の判断を実質的に変える誤記又は重大な条件/手順の脱落。otherOmissionsは生成項目欠落、単なる対象バージョン省略等。uncertainは提供範囲だけでは帰属や誤りを確定できない所見。",
+        "概要・影響が未確認の場合、提供原文に問題の説明があるなら生成項目欠落とし、原文不足と区別する。",
+        "表示全体を見て条件が別欄に残る場合は重複を要求しない。引用形式・タグ分類・actionKind単独は重大誤りとしない。",
+        "sourceQuoteは同caseIdのtext又はsections内に連続完全一致する原文。"
+      ],
+      "limitations": [
+        "全事実保持の網羅検査ではない。各出力に重大所見なしであっても全内容の正しさを認定しない。",
+        "今回の入力以外の条件名・変更コード・プロンプト・benchmark結果・blind-map・過去監査/検品は未参照。外部検索、API呼び出し、委任は行っていない。",
+        "原文に存在しない対策・版番号・影響帰結は要求しない。未確認表示を、原文自体に不足する情報についての誤りとはしない。",
+        "複数CVE記事の切り出しで指示語の対象が不明な場合は誤帰属を断定しない。重大な省略と一般的要約の境界はAIの判断を含む。"
+      ],
+      "reviewedRows": 24,
+      "blindedInputSha256": "5c85748354ce619c6bf85734cb4f2333b104a87f1b29b916d81112a58d44c4bb"
+    }
+  ],
+  "note": "候補2の24件は概要欠落によって不採用とし、独立した意味照合を追加していない。最終候補は同じ評価担当が条件名と検品結果を伏せて照合。候補調整後なので未見資料の評価ではない。",
+  "rows": [
+    {
+      "id": "after-v1/t1/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（ CWE-122 ） - CVE-2023-4863",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "042feae4c769fd38"
+    },
+    {
+      "id": "before/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "08138ad9dbe1afa6"
+    },
+    {
+      "id": "before/t1/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "EXCLUSIVE_BOUNDARY_INCLUDED",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "beforeは0.24.0を含まない。「以前」は修正済みの境界版まで影響対象に含めており、単なるバージョン省略ではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "0b2b377e33325a50"
+    },
+    {
+      "id": "after-v1/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "3a408846799a74aa"
+    },
+    {
+      "id": "after-v1/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "3f7dabb217bdbdc5"
+    },
+    {
+      "id": "before/t2/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "430cbb29378a0909"
+    },
+    {
+      "id": "after-v1/t1/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "MITIGATION_STEPS_MISSING",
+          "claim": "対策欄なし",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "提供された対象CVEの具体的緩和手順が全て欠落し、必要な対応を実施できない表示になっている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "本脆弱性が悪用された場合、任意のコードを実行される可能性があります。",
+          "explanation": "textには対象CVEのコード実行の影響がある。sections.impactがnullでも、提供原文全体で情報が不足しているわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "4c68403d0ecbd654"
+    },
+    {
+      "id": "before/t2/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "FORENSICS_REQUIREMENT_MISSING",
+          "claim": "CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "CISA’s “Forensics Triage Requirements”",
+          "explanation": "原文のフォレンジック要件への参照が省略されている。一般的なガイダンス参照があるため、この指摘単独では重大誤りとしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "501d01de029c7c00"
+    },
+    {
+      "id": "after-v1/t1/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文にJavaバインディングの制御されない再帰が記載されているが、概要と影響の両方から脱落している。DoS等の具体的帰結は原文にないため要求しない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "対象バージョンの提供情報が省略。誤った境界を主張してはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "51fba7aadc11894c"
+    },
+    {
+      "id": "before/t1/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "536a71a9e9c4520c"
+    },
+    {
+      "id": "before/t2/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "EXCLUSIVE_BOUNDARY_INCLUDED",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "beforeは0.24.0を含まない。「以前」は修正済みの境界版まで影響対象に含めており、単なるバージョン省略ではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "5590fbce64279dda"
+    },
+    {
+      "id": "before/t2/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "596237471491ef9f"
+    },
+    {
+      "id": "after-v1/t1/shorten-mitigation",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "5cd272726deb2cbf"
+    },
+    {
+      "id": "before/t3/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性がある",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [
+        {
+          "code": "AMBIGUOUS_CVE_ATTRIBUTION",
+          "claim": "内部ネットワークへの横展開が試みられる",
+          "sourceQuote": "内部ネットワークへの横展開が試みられたことを示唆する痕跡も確認されたとしています。",
+          "explanation": "提供記事には横展開の記述があるが、その段落の「本脆弱性」の帰属は複数CVEを含む切り出しだけでは確定できない。対象CVEへの誤帰属を断定せず判断保留とする。"
+        }
+      ],
+      "opaqueId": "601f4b719a3622fd"
+    },
+    {
+      "id": "after-v1/t1/synthetic-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Orion Console permits authenticated administrators to cause denial of service when importing a malformed configuration.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "Orion Console permits authenticated administrators to cause denial of service when importing a malformed configuration.",
+          "explanation": "対象CVEのDoSと成立条件は提供原文にあるが生成項目から欠落。別CVEのコード実行を誤記したものとは区別する。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "6098a132fb724ab8"
+    },
+    {
+      "id": "after-v1/t1/synthetic-exclusive",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Orion Parser versions before 7.4 allow authenticated administrators to execute code when importing a crafted archive.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "618e4b848c171428"
+    },
+    {
+      "id": "before/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "61abdf53470d53c6"
+    },
+    {
+      "id": "after-v1/t3/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "本脆弱性が悪用された場合、任意のコードを実行される可能性があります。",
+          "explanation": "textには対象CVEのコード実行の影響がある。sections.impactがnullでも、提供原文全体で情報が不足しているわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "66d7d77b87f28266"
+    },
+    {
+      "id": "before/t3/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "EXCLUSIVE_BOUNDARY_INCLUDED",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "beforeは0.24.0を含まない。「以前」は修正済みの境界版まで影響対象に含めており、単なるバージョン省略ではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "68b7e6914c7857b5"
+    },
+    {
+      "id": "before/t2/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性がある",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [
+        {
+          "code": "AMBIGUOUS_CVE_ATTRIBUTION",
+          "claim": "内部ネットワークへの横展開が試みられる",
+          "sourceQuote": "内部ネットワークへの横展開が試みられたことを示唆する痕跡も確認されたとしています。",
+          "explanation": "提供記事には横展開の記述があるが、その段落の「本脆弱性」の帰属は複数CVEを含む切り出しだけでは確定できない。対象CVEへの誤帰属を断定せず判断保留とする。"
+        }
+      ],
+      "opaqueId": "6b0a8a27b064b218"
+    },
+    {
+      "id": "after-v1/t2/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文にJavaバインディングの制御されない再帰が記載されているが、概要と影響の両方から脱落している。DoS等の具体的帰結は原文にないため要求しない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "対象バージョンの提供情報が省略。誤った境界を主張してはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "6d9edf8972d32869"
+    },
+    {
+      "id": "before/t1/shorten-exclusive",
+      "materialErrors": [
+        {
+          "code": "CRAFTED_INPUT_CONDITION_MISSING",
+          "claim": "管理者がアーカイブをインポートしてコード実行",
+          "sourceQuote": "when importing a crafted archive.",
+          "explanation": "細工されたアーカイブという成立条件が欠落し、通常のアーカイブでも成立するように読める。管理者という権限条件は残っている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "Orion Parser versions before 7.4",
+          "explanation": "更新先7.4はあるが影響範囲の7.4未満が省略されている。境界の逆転ではない。"
+        },
+        {
+          "code": "AUTHENTICATION_EXPLICITNESS_MISSING",
+          "claim": "管理者がアーカイブをインポート",
+          "sourceQuote": "authenticated administrators",
+          "explanation": "管理者は残る一方、認証済みという明示がない。未認証管理者を可能と断定する文ではないため、独立した重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "70dbb5bfd54ccc36"
+    },
+    {
+      "id": "after-v1/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Improper certificate validation in Visual Studio",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "73ae6534425fdde4"
+    },
+    {
+      "id": "before/t1/synthetic-exclusive",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "87c514765dd331e4"
+    },
+    {
+      "id": "after-v1/t3/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "a generation of predictable numbers or identifiers vulnerability",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8ba4092cbc72f4da"
+    },
+    {
+      "id": "after-v1/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8baba9587366f13d"
+    },
+    {
+      "id": "after-v1/t1/synthetic-unknown-remediation",
+      "materialErrors": [
+        {
+          "code": "CRAFTED_INPUT_CONDITION_MISSING",
+          "claim": "作成されたプロジェクトを開く際に",
+          "sourceQuote": "when opening a crafted project.",
+          "explanation": "craftedを単に「作成された」と訳しており、細工されたプロジェクトを開くという攻撃成立条件が伝わらない。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Orion Editor allows an unauthorized actor to bypass permissions when opening a crafted project.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "8f8f9a43e87bd47b"
+    },
+    {
+      "id": "before/t1/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性がある",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        },
+        {
+          "code": "ALL_WORKERS_MISSING",
+          "claim": "session.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "再起動は残っているが、全ワーカーが必須である点が落ち、一部のみの実施で完了と読める。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "984fc921c497f35b"
+    },
+    {
+      "id": "after-v1/t1/synthetic-inclusive-mitigation",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "a40a7427b71ad291"
+    },
+    {
+      "id": "before/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "a957159546a862d0"
+    },
+    {
+      "id": "after-v1/t3/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "Uncontrolled Recursion vulnerability in Apache Thrift Java bindings.",
+          "explanation": "提供原文にJavaバインディングの制御されない再帰が記載されているが、概要と影響の両方から脱落している。DoS等の具体的帰結は原文にないため要求しない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "対象バージョンの提供情報が省略。誤った境界を主張してはいない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "aa391b38f53993fa"
+    },
+    {
+      "id": "before/t1/shorten-mitigation",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "コード実行",
+          "sourceQuote": "only when custom handlers and upload tracking are both enabled.",
+          "explanation": "カスタムハンドラーとアップロード追跡の両方が有効な場合のみ、という必要条件が脱落している。"
+        },
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "使用中止の分岐なし",
+          "sourceQuote": "Discontinue use if the mitigation is unavailable.",
+          "explanation": "緩和策を使えない場合の使用中止が脱落している。"
+        },
+        {
+          "code": "MITIGATION_STEPS_MISSING",
+          "claim": "対策: 修正版なし",
+          "sourceQuote": "Set feature.upload_progress=off and restart all workers.",
+          "explanation": "修正版なし自体は正しいが、提供されている具体的緩和策の設定と全ワーカー再起動が全て欠落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "Orion Gateway versions through 9.1 (inclusive)",
+          "explanation": "9.1を含む影響範囲が省略されている。誤った境界は表示されていない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "af9e6ac626ba21a5"
+    },
+    {
+      "id": "before/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "b4f51e869d2ad009"
+    },
+    {
+      "id": "after-v1/t3/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（ CWE-122 ） - CVE-2023-4863",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "b6678d708401a43d"
+    },
+    {
+      "id": "before/t1/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "be06b6377b58d11a"
+    },
+    {
+      "id": "before/t3/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "be95ab0b96b3fc21"
+    },
+    {
+      "id": "before/t1/synthetic-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "bf7b35661aed7598"
+    },
+    {
+      "id": "after-v1/t2/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "a generation of predictable numbers or identifiers vulnerability",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "c06ec6b84afade02"
+    },
+    {
+      "id": "before/t1/synthetic-unknown-remediation",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "権限をバイパスできる",
+          "sourceQuote": "when opening a crafted project.",
+          "explanation": "細工されたプロジェクトを開く必要がある点が脱落し、権限回避の条件を広げている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "権限をバイパスできる",
+          "sourceQuote": "allows an unauthorized actor to bypass permissions",
+          "explanation": "許可されていない主体についての明示がない。逆の権限要件を主張しているわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "d892f91ee7e6b197"
+    },
+    {
+      "id": "before/t1/synthetic-inclusive-mitigation",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "コード実行",
+          "sourceQuote": "only when custom handlers and upload tracking are both enabled.",
+          "explanation": "カスタムハンドラーとアップロード追跡の両方が有効な場合のみ、という必要条件が脱落している。"
+        },
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "使用中止の分岐なし",
+          "sourceQuote": "Discontinue use if the mitigation is unavailable.",
+          "explanation": "緩和策を使えない場合の使用中止が脱落している。"
+        },
+        {
+          "code": "ALL_WORKERS_MISSING",
+          "claim": "feature.upload_progress=offに設定してワーカーを再起動する",
+          "sourceQuote": "restart all workers.",
+          "explanation": "全ワーカーを対象とする指定が脱落し、一部ワーカーの再起動で完了と読める。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "Orion Gateway versions through 9.1 (inclusive)",
+          "explanation": "9.1を含む影響範囲が省略されている。誤った境界は表示されていない。"
+        },
+        {
+          "code": "PATCH_STATUS_MISSING",
+          "claim": "修正版の提供状況なし",
+          "sourceQuote": "A patch has not been released.",
+          "explanation": "パッチ未提供という既知の状態が省略されている。不明又は修正済みと取り違えた記述はない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "d972e482c253890f"
+    },
+    {
+      "id": "after-v1/t1/shorten-exclusive",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "df17c6bb73ecaec8"
+    },
+    {
+      "id": "after-v1/t2/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "MITIGATION_STEPS_MISSING",
+          "claim": "対策欄なし",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "提供された対象CVEの具体的緩和手順が全て欠落し、必要な対応を実施できない表示になっている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "IMPACT_FIELD_MISSING",
+          "claim": "影響: 未確認",
+          "sourceQuote": "本脆弱性が悪用された場合、任意のコードを実行される可能性があります。",
+          "explanation": "textには対象CVEのコード実行の影響がある。sections.impactがnullでも、提供原文全体で情報が不足しているわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "e219fb5bff9c9221"
+    },
+    {
+      "id": "before/t3/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "FORENSICS_REQUIREMENT_MISSING",
+          "claim": "CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "CISA’s “Forensics Triage Requirements”",
+          "explanation": "原文のフォレンジック要件への参照が省略されている。一般的なガイダンス参照があるため、この指摘単独では重大誤りとしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "e609d687983f17e4"
+    },
+    {
+      "id": "after-v1/t2/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Improper certificate validation in Visual Studio",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "e95fb132ff03bc35"
+    },
+    {
+      "id": "before/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "ed14bbb18b02b2c1"
+    },
+    {
+      "id": "after-v1/t1/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "a generation of predictable numbers or identifiers vulnerability",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "f32f6a3a5c24607c"
+    },
+    {
+      "id": "after-v1/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Improper certificate validation in Visual Studio",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "f828d4d9b92adfb1"
+    },
+    {
+      "id": "after-v1/t2/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite、Hyper Historian、AnalytiX、MobileHMI、IoTWorX、MC Works64、GENESIS32およびBizViz",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しにGENESIS等の別CVEの対象製品まで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "libwebpライブラリの処理におけるヒープベースのバッファオーバフロー（ CWE-122 ） - CVE-2023-4863",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。別欄で説明されている場合でも項目欠落として記録し、重大誤りとはしない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "faa188fd1faff1f4"
+    },
+    {
+      "id": "after-v3/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "014139cb452cc4ad"
+    },
+    {
+      "id": "after-v3/t1/synthetic-exclusive",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "Orion Parserの古いバージョン",
+          "sourceQuote": "Orion Parser versions before 7.4",
+          "explanation": "古いバージョンとの表現と更新先7.4はあるが、影響範囲の7.4未満が省略されている。境界の逆転ではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "03d901587b3e52ea"
+    },
+    {
+      "id": "after-v3/t2/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "0dc7e97f494db82d"
+    },
+    {
+      "id": "after-v3/t1/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        },
+        {
+          "code": "ALL_WORKERS_MISSING",
+          "claim": "session.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "再起動は残っているが、全ワーカーが必須である点が落ち、一部のみの実施で完了と読める。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "3e653fb85de6f390"
+    },
+    {
+      "id": "after-v3/t1/synthetic-unknown-remediation",
+      "materialErrors": [
+        {
+          "code": "CRAFTED_INPUT_CONDITION_MISSING",
+          "claim": "作成されたプロジェクトを開く際に",
+          "sourceQuote": "when opening a crafted project.",
+          "explanation": "craftedを単に「作成された」と訳しており、細工されたプロジェクトを開くという攻撃成立条件が伝わらない。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "権限を回避できる",
+          "sourceQuote": "allows an unauthorized actor to bypass permissions",
+          "explanation": "許可されていない主体についての明示がない。逆の権限要件を主張しているわけではない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "50d805781f42593c"
+    },
+    {
+      "id": "after-v3/t1/jvn",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合",
+          "explanation": "細工したファイルのインポートという成立条件が表示全体から脱落し、影響が生じる条件を広げている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "CODE_EXECUTION_IMPACT_MISSING",
+          "claim": "影響欄は情報の窃取・改ざん等とDoSのみ",
+          "sourceQuote": "任意のコードを実行される可能性があります。",
+          "explanation": "原文にある任意コード実行が省略されている。情報侵害やDoSは残っており、逆の主張はしていないため一般的な影響の省略として記録する。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "5d620a19d34bed63"
+    },
+    {
+      "id": "after-v3/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "5deee5965aecff69"
+    },
+    {
+      "id": "after-v3/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "60dda22a076c459d"
+    },
+    {
+      "id": "after-v3/t1/synthetic-inclusive-mitigation",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "コードの実行が可能",
+          "sourceQuote": "only when custom handlers and upload tracking are both enabled.",
+          "explanation": "カスタムハンドラーとアップロード追跡の両方が有効な場合のみ、という必要条件が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "SUMMARY_FIELD_MISSING",
+          "claim": "概要: 未確認",
+          "sourceQuote": "Orion Gateway versions through 9.1 (inclusive) allow code execution only when custom handlers and upload tracking are both enabled.",
+          "explanation": "提供原文に対象の問題の説明があるが、概要欄に生成されていない。概要欄の未生成自体は重大誤りとはしない。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "Orion Gateway versions through 9.1 (inclusive)",
+          "explanation": "9.1を含む影響範囲が省略されている。誤った境界は表示されていない。"
+        },
+        {
+          "code": "PATCH_STATUS_MISSING",
+          "claim": "修正版の提供状況なし",
+          "sourceQuote": "A patch has not been released.",
+          "explanation": "パッチ未提供という既知の状態が省略されている。不明又は修正済みと取り違えた記述はない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "67d6ad504ab647e6"
+    },
+    {
+      "id": "after-v3/t2/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "710df142988769d8"
+    },
+    {
+      "id": "after-v3/t2/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        },
+        {
+          "code": "ALL_WORKERS_MISSING",
+          "claim": "session.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "再起動は残っているが、全ワーカーが必須である点が落ち、一部のみの実施で完了と読める。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "87cb1aa0a849f97a"
+    },
+    {
+      "id": "after-v3/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "990e8071c36aac4c"
+    },
+    {
+      "id": "after-v3/t3/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "FORENSICS_REQUIREMENT_MISSING",
+          "claim": "CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "CISA’s “Forensics Triage Requirements”",
+          "explanation": "原文のフォレンジック要件への参照が省略されている。一般的なガイダンス参照があるため、この指摘単独では重大誤りとしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "a24f9debdd03ded8"
+    },
+    {
+      "id": "after-v3/t1/shorten-exclusive",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "cbe02b3955d8a084"
+    },
+    {
+      "id": "after-v3/t3/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "EXCLUSIVE_BOUNDARY_INCLUDED",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "beforeは0.24.0を含まない。「以前」は修正済みの境界版まで影響対象に含めており、単なるバージョン省略ではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "cc6aba7227d31b0f"
+    },
+    {
+      "id": "after-v3/t2/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "FORENSICS_REQUIREMENT_MISSING",
+          "claim": "CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "CISA’s “Forensics Triage Requirements”",
+          "explanation": "原文のフォレンジック要件への参照が省略されている。一般的なガイダンス参照があるため、この指摘単独では重大誤りとしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "d4d900f581e44b4d"
+    },
+    {
+      "id": "after-v3/t3/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "UNRELEASED_FIX_AS_AVAILABLE",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0",
+          "sourceQuote": "CVE-2026-115560へのアップデートリリースまで以下の緩和策の設定を推奨しています。",
+          "explanation": "対象CVEは更新リリースまで設定による緩和が必要。条件なしに修正済み版への更新を現行の代替策として示し、提供状況を取り違えている。"
+        },
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "任意のコードを実行される可能性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "コード実行に必要な特定設定とアプリケーションコードの組み合わせが脱落し、一般的な構成でも成立するように範囲を広げている。"
+        },
+        {
+          "code": "ALL_WORKERS_MISSING",
+          "claim": "session.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "再起動は残っているが、全ワーカーが必須である点が落ち、一部のみの実施で完了と読める。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "d4d9279624b2311c"
+    },
+    {
+      "id": "after-v3/t1/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "EXCLUSIVE_BOUNDARY_INCLUDED",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "beforeは0.24.0を含まない。「以前」は修正済みの境界版まで影響対象に含めており、単なるバージョン省略ではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "d7271a8373ed22c3"
+    },
+    {
+      "id": "after-v3/t2/jvn",
+      "materialErrors": [
+        {
+          "code": "ATTACK_PRECONDITION_MISSING",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合",
+          "explanation": "細工したファイルのインポートという成立条件が表示全体から脱落し、影響が生じる条件を広げている。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "CODE_EXECUTION_IMPACT_MISSING",
+          "claim": "影響欄は情報の窃取・改ざん等とDoSのみ",
+          "sourceQuote": "任意のコードを実行される可能性があります。",
+          "explanation": "原文にある任意コード実行が省略されている。情報侵害やDoSは残っており、逆の主張はしていないため一般的な影響の省略として記録する。"
+        },
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "e297a183e4eb87fd"
+    },
+    {
+      "id": "after-v3/t1/shorten-mitigation",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "e4704dc79f73c73c"
+    },
+    {
+      "id": "after-v3/t3/jvn",
+      "materialErrors": [
+        {
+          "code": "OTHER_CVE_PRODUCT_ATTRIBUTION",
+          "claim": "三菱電機株式会社のGENESIS、GENESIS64、ICONICS Suite",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象CVEの製品はGENESIS64とICONICS Suite。見出しに別CVEの対象製品GENESISまで並べ、対象CVEの製品範囲を拡大している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "AFFECTED_VERSION_MISSING",
+          "claim": "影響バージョンの記載なし",
+          "sourceQuote": "GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "原文にある対象バージョン範囲が表示から脱落している。境界の逆転とは区別する。"
+        },
+        {
+          "code": "REMEDIATION_VARIATION_MISSING",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "製品・バージョンごとの差と一部対策版がない旨が省略。更新又は回避策という選択自体は原文にあり、修正版が全対象で提供済みとの明示的誤りとはしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "e4a142ba3533d45f"
+    },
+    {
+      "id": "after-v3/t1/kev",
+      "materialErrors": [
+        {
+          "code": "STOP_USE_CONDITION_MISSING",
+          "claim": "ベンダーの指示に従って緩和策を適用",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "ベンダー指示への一般的参照だけになり、緩和策を利用できない場合の使用中止という必須分岐が脱落している。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "FORENSICS_REQUIREMENT_MISSING",
+          "claim": "CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "CISA’s “Forensics Triage Requirements”",
+          "explanation": "原文のフォレンジック要件への参照が省略されている。一般的なガイダンス参照があるため、この指摘単独では重大誤りとしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "eaed86c0c20dd54f"
+    },
+    {
+      "id": "after-v3/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "ACTOR_SCOPE_MISSING",
+          "claim": "ネットワーク上でのスプーフィング",
+          "sourceQuote": "allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "許可されていない攻撃者による点が省略されている。認証必須等の逆の主張はなく、unauthorizedを未認証と断定もしない。"
+        }
+      ],
+      "uncertain": [],
+      "opaqueId": "ed91723cf5201fdb"
+    },
+    {
+      "id": "after-v3/t1/synthetic-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [],
+      "opaqueId": "ef03ec650c620b30"
+    }
+  ]
+}

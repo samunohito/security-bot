@@ -1,0 +1,1175 @@
+{
+  "reviewer": "独立レビュー担当AI（critic_blind_review）。人間のgoldではない。API測定結果・既存audit/meaning verdict・既存所見は参照せず、prepared.jsonのdataとrenderedPostを原文と照合。",
+  "limitations": [
+    "68構造化応答は6資料の反復であり、独立な68記事の標本ではない。資料別件数は12/11/12/12/9/12。4構造失敗はこの意味レビューの対象外であり、成功率の分母から黙って除外してはいけない。一般精度やモデル順位は推定できない。",
+    "row IDには生成モデル条件が見えているため、検品結果に対する盲検であって生成条件に対する完全な盲検ではない。prepared.jsonのlocal判定はレビューの判断根拠に使用していない。",
+    "全68件のkey/evidenceが6資料のsuppliedInputと一致することを検証した。原則として各row.data.evidenceのtext/sectionsだけで判断した。JPCERT原文全体も帰属確認のため読んだが、suppliedInputにない題名・周辺構造を検品モデルが知っていたものとして扱わない。",
+    "認証と権限の区別、および成立条件の省略が重大かどうかには評価者判断がある。unauthorizedを未認証と確定する4件は事実上の矛盾ではなく裏付け不足の指摘。攻撃条件省略11件は条件を保つという本レビュー基準による。強い断定の誤りと、これら解釈を伴う指摘は集計を分けるとよい。",
+    "重大誤りがないという所見は、任意タグ・引用形式・actionKind・情報充足ゲートまで全て妥当という認定ではない。High/Criticalなどプログラム側表示の深刻度はsuppliedInputのみでは完全検証できず、独立の意味誤りに数えない。",
+    "集中型だけが現在のformatter出力を受け取り、現行型はsummaryだけを受け取る。さらに許容基準も異なるため、純粋なプロンプト効果や同じ判定問題におけるモデル精度の比較ではない。現行の厳密なタグ/引用拒否を集中型の誤拒否として全て数えると評価目的の変更と精度改善が混ざる。",
+    "全68件の診断と、ローカル通過43件、そのうち情報充足を満たす経路は別の母集団。上流で止まる重大誤りの検出を、そのまま投稿事故の削減数として数えない。検品なしにも固定のローカル/情報充足ゲートを残す必要がある。",
+    "同じrowを拒否しても、既知の重大誤りを理由として検出した場合と、タグなど別の理由で止めた場合を区別する。row単位の拒否だけでは真の検出といえない。複数コードを持つ1rowを複数事故として数えない。",
+    "各方式1回、temperature 0でも再現揺れは未測定。API失敗、不正JSON、出力上限と内容拒否を分け、正常応答だけの分母で全方式を比較しない。並列2と交互順序は時間差を減らすが独立反復にはならない。",
+    "集中型の基準を固定する前から既知だった6資料の問題に合わせた設計であり、保持標本による評価ではない。未見の資料での効用は別途確認が必要。"
+  ],
+  "criteria": {
+    "materialErrors": "表示またはsummaryに、対策の捏造/修正版提供の根拠なき断定、exclusive/inclusiveな境界の誤り、認証条件の根拠なき確定、利用者操作や特殊構成という重要な成立条件の消失、緩和不能時の利用中止や全ワーカー再起動など実効性に関わる明示指示の欠落がある場合。",
+    "otherOmissions": "正しい情報の短縮であり条件の逆転を伴わない影響バージョン省略、影響製品の一部省略、一般的な対策の詳細省略など。元資料に具体的被害/対策がない場合の未確認表示は誤りにしない。",
+    "uncertain": "提供された根拠だけでは帰属・表現の意味が一意に決まらず重大誤りと確定できないもの。",
+    "scope": "任意タグの用途/テーマ分類、actionKind、引用の連続性や形式は単独ではmaterialErrorsにしない。商品名を重大に取り違えたタグは対象だが本標本には確定例なし。記事共通の対策を条件付き/共通の助言として忠実に表すことは許容し、対象CVEの修正提供済みという断定と区別する。",
+    "codes": {
+      "remediation_not_established": "根拠にない対象向け更新指示",
+      "authentication_not_established": "unauthorizedのみから未認証を断定",
+      "affected_boundary_includes_fix": "beforeを以前として修正版自体まで影響範囲に含める",
+      "crafted_import_condition_omitted": "細工したファイルのインポートという成立条件が表示から消失",
+      "special_configuration_condition_omitted": "特定設定とアプリケーションコードの組合せという成立条件が表示から消失",
+      "patch_available_not_established": "修正提供前の対象CVEに修正版への更新を現在の対策として提示",
+      "restart_all_workers_omitted": "緩和策に必須の全ワーカー再起動を省略または全数を不明瞭化",
+      "discontinue_if_no_mitigation_omitted": "緩和策が使えない場合の利用中止指示を省略"
+    }
+  },
+  "rows": [
+    {
+      "id": "llama-before/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [
+        {
+          "code": "unprovided_action_ambiguous",
+          "field": "action",
+          "claim": "対策: 未提供",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "根拠中に対策の記載がないことは確かだが、表示は根拠未提示と対策/修正版未提供のどちらにも読める。未修正の断定としては確定しない。"
+        }
+      ]
+    },
+    {
+      "id": "llama-after/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t1/jvn",
+      "materialErrors": [
+        {
+          "code": "crafted_import_condition_omitted",
+          "field": "overview/impact",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。",
+          "explanation": "原文の被害には細工したファイルのインポートという成立条件がある。表示には条件がなく被害のみが残るため、被害の成立や利用者操作を判断する重要条件が失われる。バージョンの単なる省略とは別扱い。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        },
+        {
+          "code": "affected_product_omitted",
+          "field": "subject",
+          "claim": "三菱電機 GENESIS64",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象であるGENESIS64の表示は正しいが、もう一つの対象ICONICS Suiteを省略している。唯一の対象と断定していないため重大な対象混同とはしない。"
+        },
+        {
+          "code": "product_specific_remediation_detail_omitted",
+          "field": "action",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "更新またはワークアラウンドという記事共通の助言は原文にある。更新提供済みと断定していないので、製品/版ごとの確認や未提供時の注意の省略として記録する。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t1/jvn",
+      "materialErrors": [
+        {
+          "code": "crafted_import_condition_omitted",
+          "field": "overview/impact",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。",
+          "explanation": "原文の被害には細工したファイルのインポートという成立条件がある。表示には条件がなく被害のみが残るため、被害の成立や利用者操作を判断する重要条件が失われる。バージョンの単なる省略とは別扱い。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        },
+        {
+          "code": "affected_product_omitted",
+          "field": "subject",
+          "claim": "三菱電機 GENESIS64",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "対象であるGENESIS64の表示は正しいが、もう一つの対象ICONICS Suiteを省略している。唯一の対象と断定していないため重大な対象混同とはしない。"
+        },
+        {
+          "code": "product_specific_remediation_detail_omitted",
+          "field": "action",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "更新またはワークアラウンドという記事共通の助言は原文にある。更新提供済みと断定していないので、製品/版ごとの確認や未提供時の注意の省略として記録する。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t1/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPのセッションアップロードプログレス機能の脆弱性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        },
+        {
+          "code": "restart_all_workers_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "原文は設定変更に加えて全ワーカーの再起動を要求する。表示では再起動そのものまたは全数の条件が失われ、緩和の適用範囲を誤るおそれがある。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t1/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPのセッションアップロードプログレス機能の脆弱性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        },
+        {
+          "code": "restart_all_workers_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "原文は設定変更に加えて全ワーカーの再起動を要求する。表示では再起動そのものまたは全数の条件が失われ、緩和の適用範囲を誤るおそれがある。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t1/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者が、ディスク上の既知の場所に攻撃者が制御したコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t1/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04 Prioritizing Security Updates Based on Riskのガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04 Prioritizing Security Updates Based on Riskのガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者がディスク上の既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t1/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "affected_boundary_includes_fix",
+          "field": "impact",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "before 0.24.0は0.24.0を含まない。「以前」は同版を含み、修正するという対策の説明とも衝突する。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t2/nvd-normal",
+      "materialErrors": [
+        {
+          "code": "remediation_not_established",
+          "field": "action",
+          "claim": "更新する",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "提供根拠は証明書検証不備と影響のみで、修正版や更新による解消を示していない。対象の対策として更新を断定できない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/jvn",
+      "materialErrors": [
+        {
+          "code": "crafted_import_condition_omitted",
+          "field": "overview/impact",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。",
+          "explanation": "原文の被害には細工したファイルのインポートという成立条件がある。表示には条件がなく被害のみが残るため、被害の成立や利用者操作を判断する重要条件が失われる。バージョンの単なる省略とは別扱い。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        },
+        {
+          "code": "product_specific_remediation_detail_omitted",
+          "field": "action",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "更新またはワークアラウンドという記事共通の助言は原文にある。更新提供済みと断定していないので、製品/版ごとの確認や未提供時の注意の省略として記録する。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPのセッションアップロードプログレス機能の脆弱性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        },
+        {
+          "code": "restart_all_workers_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "原文は設定変更に加えて全ワーカーの再起動を要求する。表示では再起動そのものまたは全数の条件が失われ、緩和の適用範囲を誤るおそれがある。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定しワーカーを再起動",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t2/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPのセッションアップロードプログレス機能の脆弱性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        },
+        {
+          "code": "restart_all_workers_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "原文は設定変更に加えて全ワーカーの再起動を要求する。表示では再起動そのものまたは全数の条件が失われ、緩和の適用範囲を誤るおそれがある。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t2/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04ガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04ガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者がディスクの既知の場所に攻撃者制御のコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "affected_boundary_includes_fix",
+          "field": "impact",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "before 0.24.0は0.24.0を含まない。「以前」は同版を含み、修正するという対策の説明とも衝突する。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t3/jvn",
+      "materialErrors": [
+        {
+          "code": "crafted_import_condition_omitted",
+          "field": "overview/impact",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。",
+          "explanation": "原文の被害には細工したファイルのインポートという成立条件がある。表示には条件がなく被害のみが残るため、被害の成立や利用者操作を判断する重要条件が失われる。バージョンの単なる省略とは別扱い。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        },
+        {
+          "code": "product_specific_remediation_detail_omitted",
+          "field": "action",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "更新またはワークアラウンドという記事共通の助言は原文にある。更新提供済みと断定していないので、製品/版ごとの確認や未提供時の注意の省略として記録する。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t3/jvn",
+      "materialErrors": [
+        {
+          "code": "crafted_import_condition_omitted",
+          "field": "overview/impact",
+          "claim": "内部情報を窃取、改ざん、破壊、削除されたり、当該システムをサービス運用妨害（DoS）状態にされたりする可能性",
+          "sourceQuote": "細工したファイルをインポートされた場合、ヒープベースのバッファオーバーフローが発生し任意のコードを実行される可能性があります。",
+          "explanation": "原文の被害には細工したファイルのインポートという成立条件がある。表示には条件がなく被害のみが残るため、被害の成立や利用者操作を判断する重要条件が失われる。バージョンの単なる省略とは別扱い。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        },
+        {
+          "code": "product_specific_remediation_detail_omitted",
+          "field": "action",
+          "claim": "アップデートするまたはワークアラウンドを実施する",
+          "sourceQuote": "対策方法は、脆弱性および製品・バージョンにより異なります。",
+          "explanation": "更新またはワークアラウンドという記事共通の助言は原文にある。更新提供済みと断定していないので、製品/版ごとの確認や未提供時の注意の省略として記録する。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t3/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPのセッションアップロードプログレス機能の脆弱性",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        },
+        {
+          "code": "restart_all_workers_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "explanation": "原文は設定変更に加えて全ワーカーの再起動を要求する。表示では再起動そのものまたは全数の条件が失われ、緩和の適用範囲を誤るおそれがある。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、または緩和策の設定",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t3/jpcert-multi-cve",
+      "materialErrors": [
+        {
+          "code": "special_configuration_condition_omitted",
+          "field": "overview/impact",
+          "claim": "PHPの脆弱性（CVE-2026-115560）が公表され、任意のコードを実行される可能性がある",
+          "sourceQuote": "特定の設定とアプリケーションコードの組み合わせの下で発生する脆弱性（CVE-2026-115560）",
+          "explanation": "対象CVEは一般的でない特定の設定とコードの組合せで成立する。表示からその限定が失われ、PHPの機能一般に同じ影響があるように読める。具体的組合せは根拠にもないため新たに要求しない。"
+        },
+        {
+          "code": "patch_available_not_established",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "sourceQuote": "修正済みバージョンが提供されるまで「IV. 緩和策」に示す設定への変更を推奨しています。",
+          "explanation": "原文は対象CVEについて修正提供までの緩和策を指示する。表示は修正版への更新を今選べる対策として並べ、対象CVEの修正提供が確認できない段階を取り違える。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正済みバージョンへの更新、またはsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": [
+        {
+          "code": "cross_cve_attack_report_attribution",
+          "field": "impact",
+          "claim": "任意のコードを実行される可能性があり、内部ネットワークへの横展開が試みられる",
+          "sourceQuote": "内部ネットワークへの横展開が試みられたことを示唆する痕跡も確認されたとしています。",
+          "explanation": "この攻撃報告はsuppliedInputで対象CVEを明示せず、複数CVEを扱う記事中の「本脆弱性」に依存する。対象への帰属を確定できない。原文全体の題名/周辺構造は先行2CVEに関係するため疑いはあるが、抜粋だけから対象での被害だと断定も、絶対に対象外だと断定もしない。"
+        }
+      ]
+    },
+    {
+      "id": "llama-after/t3/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t3/kev",
+      "materialErrors": [
+        {
+          "code": "discontinue_if_no_mitigation_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "discontinue use of the product if mitigations are unavailable.",
+          "explanation": "緩和策を利用できない場合の製品利用中止という明示指示が消えている。緩和策がない環境で利用継続してよいと判断する危険につながる重要な運用指示の欠落。"
+        }
+      ],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、CISAのBOD 26-04のガイダンスに従う",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモートの認証済み攻撃者がディスクの既知の場所に攻撃者が制御するコンテンツを持つファイルをアップロードできる",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t3/previous-json-error",
+      "materialErrors": [
+        {
+          "code": "affected_boundary_includes_fix",
+          "field": "impact",
+          "claim": "Apache Thrift 0.24.0以前のバージョンに影響",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "before 0.24.0は0.24.0を含まない。「以前」は同版を含み、修正するという対策の説明とも衝突する。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-after/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "llama-before/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/kev",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "2.5.13以下という影響範囲の省略",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "認証なしのSQLインジェクションは支持されている。境界を書き換えずに省略したもので、重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/nvd-normal",
+      "materialErrors": [
+        {
+          "code": "authentication_not_established",
+          "field": "impact",
+          "claim": "未認証の攻撃者がネットワーク経由でなりすましを行う可能性がある。",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "unauthorizedは権限/許可がないことを述べ、認証の有無を確定していない。表示は未認証でも成立すると条件を強めており、その断定には裏付けがない。認証必須だと反対の事実を主張するものではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正版の提供まではsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモート認証済みの攻撃者が、ディスク上の既知の場所へ攻撃者制御の内容を含むファイルをアップロードできる。",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "2.5.13以下という影響範囲の省略",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "認証なしのSQLインジェクションは支持されている。境界を書き換えずに省略したもので、重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t3/nvd-normal",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": [
+        {
+          "code": "vendor_absent_from_supplied_input",
+          "field": "tags",
+          "claim": "Microsoft",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "提供本文はVisual StudioのみでMicrosoftという語を含まない。出典表現の要件は満たさないが、対象製品を取り違えた重大な主張とは断定できない。"
+        }
+      ]
+    },
+    {
+      "id": "luna-medium/t3/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t3/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t3/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t3/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-medium/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/nvd-normal",
+      "materialErrors": [
+        {
+          "code": "authentication_not_established",
+          "field": "impact",
+          "claim": "未認証の攻撃者がネットワーク経由でなりすましを行える。",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "unauthorizedは権限/許可がないことを述べ、認証の有無を確定していない。表示は未認証でも成立すると条件を強めており、その断定には裏付けがない。認証必須だと反対の事実を主張するものではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正リリースまでsession.upload_progress.enabled=0に設定し、すべてのワーカーを再起動する。",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、適用できない場合は製品の使用を中止する。",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "リモート認証済みの攻撃者が、攻撃者制御の内容を持つファイルをディスク上の既知の場所にアップロードできる。",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t1/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/nvd-normal",
+      "materialErrors": [
+        {
+          "code": "authentication_not_established",
+          "field": "impact",
+          "claim": "ネットワーク経由で、認証されていない攻撃者になりすましを行われる可能性があります。",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "unauthorizedは権限/許可がないことを述べ、認証の有無を確定していない。表示は未認証でも成立すると条件を強めており、その断定には裏付けがない。認証必須だと反対の事実を主張するものではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "already_applied_exception_omitted",
+          "field": "action",
+          "claim": "修正アップデートが提供されるまで、session.upload_progress.enabled=0に設定し、すべてのワーカーを再起動してください。",
+          "sourceQuote": "すでに適用している場合は追加の対応は不要とされています。",
+          "explanation": "適用済みの場合の省力化に関わる例外は省略されているが、緩和策自体は変わらない。単独では重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用してください。緩和策が利用できない場合は製品の使用を中止してください。",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        },
+        {
+          "code": "chaining_details_omitted",
+          "field": "impact",
+          "claim": "遠隔認証を得た攻撃者に、既知のディスク上の場所へ任意の内容のファイルをアップロードされるおそれがあります。",
+          "sourceQuote": "This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+          "explanation": "他CVEと組み合わせられる旨は省略されているが、このCVE単体のファイルアップロード能力と認証条件は保持している。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t2/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/nvd-normal",
+      "materialErrors": [
+        {
+          "code": "authentication_not_established",
+          "field": "impact",
+          "claim": "未認証の攻撃者がネットワーク経由でなりすましを行う可能性がある。",
+          "sourceQuote": "Improper certificate validation in Visual Studio allows an unauthorized attacker to perform spoofing over a network.",
+          "explanation": "unauthorizedは権限/許可がないことを述べ、認証の有無を確定していない。表示は未認証でも成立すると条件を強めており、その断定には裏付けがない。認証必須だと反対の事実を主張するものではない。"
+        }
+      ],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/jvn",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "GENESIS64/ICONICS Suiteの10.97〜10.97.2という範囲の省略",
+          "sourceQuote": "CVE-2023-4863 \n GENESIS64 10.97から10.97.2まで\n ICONICS Suite 10.97から10.97.2まで",
+          "explanation": "版範囲の単なる省略。表示に異なる影響範囲を明示したわけではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/jpcert-multi-cve",
+      "materialErrors": [],
+      "otherOmissions": [],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/kev",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "forensics_guidance_reference_omitted",
+          "field": "action",
+          "claim": "ベンダーの指示に従って緩和策を適用し、BOD 26-04の該当ガイダンスに従う。緩和策が利用できない場合は製品の使用を中止する。",
+          "sourceQuote": "ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes).",
+          "explanation": "フォレンジック要件への参照が省略されている。提示抜粋には実行する具体的手順や適用対象の詳細がないため、利用中止条件の欠落とは分けて扱う。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/previous-json-error",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "影響バージョン範囲の省略",
+          "sourceQuote": "This issue affects Apache Thrift: before 0.24.0.",
+          "explanation": "0.24.0未満の影響範囲は表示されていないが、0.24.0へ更新する対策は原文通り。省略自体は誤った境界ではない。"
+        }
+      ],
+      "uncertain": []
+    },
+    {
+      "id": "luna-high/t3/incomplete-information",
+      "materialErrors": [],
+      "otherOmissions": [
+        {
+          "code": "affected_version_omitted",
+          "field": "renderedPost",
+          "claim": "2.5.13以下という影響範囲の省略",
+          "sourceQuote": "Unauthenticated SQL Injection in Transliterator <= 2.5.13 versions.",
+          "explanation": "認証なしのSQLインジェクションは支持されている。境界を書き換えずに省略したもので、重大誤りに数えない。"
+        }
+      ],
+      "uncertain": []
+    }
+  ]
+}

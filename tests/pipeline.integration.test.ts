@@ -7,7 +7,7 @@ import { loadConfig } from '../src/config';
 import { Store } from '../src/store';
 import { PublishError } from '../src/social/provider';
 import { UrlReferenceProvider } from '../src/social/url-reference';
-import { SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
+import { SHORTEN_SYSTEM, SUMMARY_SYSTEM, VERIFY_SYSTEM } from '../src/llm/prompts';
 import type { LlmProvider, LlmRequest } from '../src/llm/provider';
 import type { PostIntent, SourceItem, SummaryTag } from '../src/domain';
 import { otherKey, phpArticle, phpKey, phpMitigation } from './fixtures/evidence-articles';
@@ -179,7 +179,7 @@ describe('complete pipeline', () => {
               };
             }
             requests.push(request);
-            const shortening = request.system.includes('at most 45');
+            const shortening = request.system === SHORTEN_SYSTEM;
             if (request.system === VERIFY_SYSTEM) {
               verifications++;
             }
@@ -192,7 +192,7 @@ describe('complete pipeline', () => {
                   }
                 : {
                     overview: articleClaim(
-                      request.system.includes('at most 45') ? '脆弱性' : '脆弱性'.repeat(200),
+                      shortening ? '脆弱性' : '脆弱性'.repeat(200),
                       `${phpKey}についての注意喚起。`,
                     ),
                     impact: articleClaim(
@@ -233,7 +233,7 @@ describe('complete pipeline', () => {
       expect(requests.slice(0, 3).map((request) => request.system)).toEqual([
         SUMMARY_SYSTEM,
         VERIFY_SYSTEM,
-        expect.stringContaining('at most 45'),
+        SHORTEN_SYSTEM,
       ]);
       for (const request of requests) {
         expect(request.data).toMatchObject({
@@ -976,7 +976,9 @@ describe('complete pipeline', () => {
       const config = makeConfig();
       config.targets = config.targets.filter((target) => target.id === 'main');
       const longAction = 'バックアップを取得し、設定を確認して、バージョン2.0へ更新してください。'.repeat(5);
+      config.targets[0]!.maxCharacters = 250;
       const texts: string[] = [];
+      const shorteningInputs: unknown[] = [];
       let shortenings = 0;
       let verifications = 0;
       const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
@@ -993,9 +995,10 @@ describe('complete pipeline', () => {
                 usage: { inputTokens: 100, outputTokens: 100 },
               };
             }
-            const shortening = request.system.includes('at most 45');
+            const shortening = request.system === SHORTEN_SYSTEM;
             if (shortening) {
               shortenings++;
+              shorteningInputs.push(request.data);
             }
             return {
               value: schema.parse({
@@ -1024,6 +1027,7 @@ describe('complete pipeline', () => {
       await processAll(bot, now);
 
       expect(shortenings).toBe(1);
+      expect(shorteningInputs).toEqual([expect.objectContaining({ maxPostCharacters: 250 })]);
       expect(verifications).toBe(outcome === 'invalid_quote' ? 1 : 2);
       const delivery = (await bot.store.list('deliveries'))[0]!;
       if (outcome === 'valid') {
@@ -1035,6 +1039,85 @@ describe('complete pipeline', () => {
         expect(delivery.state).toBe('held');
         expect(texts).toEqual([]);
       }
+    },
+  );
+
+  it.each([360, 500])(
+    '短縮時に投稿先の全体上限を渡し、45文字を超える条件と全手順を表示に残す: %i',
+    async (maxCharacters) => {
+      const config = makeConfig();
+      config.targets = config.targets.filter((target) => target.id === 'main');
+      config.targets[0]!.maxCharacters = maxCharacters;
+      const impactQuote =
+        'Acme versions before 2.0 allow authenticated administrators to execute code when importing a crafted file.';
+      const actionQuote =
+        'Set mode=0 and restart all workers. Discontinue use of the product if mitigations are unavailable.';
+      const impactText =
+        'Acme 2.0未満で、認証済みの管理者が細工したファイルをインポートした場合に任意のコードを実行される可能性があります。';
+      const actionText =
+        'mode=0に設定し、すべてのワーカーを再起動する。緩和策を利用できない場合は製品の使用を中止する。';
+      const shortened = {
+        overview: claim('任意コード実行の脆弱性', impactQuote),
+        impact: claim(impactText, impactQuote),
+        action: claim(actionText, actionQuote),
+        actionKind: 'additional_steps',
+        uncertainties: [],
+      };
+      const texts: string[] = [];
+      const shorteningInputs: unknown[] = [];
+      const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+        llm: {
+          async generateStructured<T>(request: LlmRequest, schema: z.ZodType<T>) {
+            if (request.system === VERIFY_SYSTEM) {
+              return {
+                value: schema.parse({ supported: true, contradictions: [], unsupportedClaims: [] }),
+                usage: { inputTokens: 100, outputTokens: 100 },
+              };
+            }
+            if (request.system === SHORTEN_SYSTEM) {
+              shorteningInputs.push(request.data);
+              return { value: schema.parse(shortened), usage: { inputTokens: 100, outputTokens: 100 } };
+            }
+            return {
+              value: schema.parse({
+                ...shortened,
+                overview: claim('Acmeの任意コード実行についての説明。'.repeat(40), impactQuote),
+              }),
+              usage: { inputTokens: 100, outputTokens: 100 },
+            };
+          },
+        },
+        social: () => ({
+          prepare: (intent) => new UrlReferenceProvider(maxCharacters).prepare(intent),
+          async publish(post) {
+            texts.push(post.text);
+            return { id: 'conditions', url: 'https://social.example/notes/conditions' };
+          },
+        }),
+      });
+      await bot.store.ingest(
+        {
+          ...item,
+          text: `${impactQuote}\n${actionQuote}`,
+          impact: impactQuote,
+          affected: null,
+          remediation: actionQuote,
+        },
+        now,
+      );
+      await bot.tick(now);
+      await processAll(bot, now);
+
+      expect(shorteningInputs).toHaveLength(1);
+      expect(shorteningInputs[0]).toMatchObject({
+        maxPostCharacters: maxCharacters,
+        previousSummary: { impact: shortened.impact, action: shortened.action },
+      });
+      expect((await bot.store.list('deliveries'))[0]?.state).toBe('sent');
+      expect(texts).toHaveLength(1);
+      expect(texts[0]).toContain(`影響: ${impactText}`);
+      expect(texts[0]).toContain(`対策: ${actionText}`);
+      expect([...texts[0]!].length).toBeLessThanOrEqual(maxCharacters);
     },
   );
 
@@ -1058,7 +1141,7 @@ describe('complete pipeline', () => {
             const value =
               request.system === VERIFY_SYSTEM
                 ? { supported: true, contradictions: [], unsupportedClaims: [] }
-                : request.system.includes('at most 45')
+                : request.system === SHORTEN_SYSTEM
                   ? { ...metadata, actionKind: shortenedActionKind, tags: Array(6).fill(metadata.tags[0]) }
                   : { ...metadata, overview: claim('脆弱性'.repeat(200), 'Acme 1.0 allows remote execution.') };
             return { value: schema.parse(value), usage: { inputTokens: 100, outputTokens: 100 } };

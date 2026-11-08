@@ -1,5 +1,5 @@
 import type { Environment, SourceConfig } from '../config';
-import { getText, type Fetcher } from '../http';
+import { getText, ResponseTooLargeError, type Fetcher, type TextResult } from '../http';
 import { parseNvd } from './parsers';
 import type { SourceCursor, SourceOptions, SourceProvider } from './provider';
 
@@ -31,12 +31,38 @@ export function nvdProvider(
       url.searchParams.set('lastModStartDate', new Date(start).toISOString());
       url.searchParams.set('lastModEndDate', new Date(end).toISOString());
       url.searchParams.set('startIndex', String(cursor.startIndex ?? 0));
-      url.searchParams.set('resultsPerPage', '50');
       if (config.apiKeySecret && typeof env[config.apiKeySecret] === 'string') {
         headers.apiKey = String(env[config.apiKeySecret]);
       }
 
-      const response = await getText(url.href, { headers, maxBytes: 1_000_000 }, fetcher);
+      const pageSize = cursor.pageSize ?? 50;
+      if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50) {
+        throw new Error('invalid_nvd_pagination');
+      }
+
+      url.searchParams.set('resultsPerPage', String(pageSize));
+      let response: TextResult;
+      try {
+        response = await getText(url.href, { headers, maxBytes: 1_000_000 }, fetcher);
+      } catch (error) {
+        if (!(error instanceof ResponseTooLargeError) || pageSize === 1) {
+          throw error;
+        }
+
+        // 次の取得が429で延期されても縮小した件数を失わないよう、継続ジョブへ渡す。
+        return {
+          items: [],
+          more: true,
+          cursor: {
+            ...cursor,
+            windowStart: start,
+            windowEnd: end,
+            startIndex: cursor.startIndex ?? 0,
+            pageSize: Math.max(1, Math.floor(pageSize / 2)),
+          },
+        };
+      }
+
       if (response.notModified) {
         return { items: [], cursor, more: false };
       }
@@ -67,6 +93,7 @@ export function nvdProvider(
               windowStart: start,
               windowEnd: end,
               startIndex: next,
+              pageSize,
             }
           : { completedThrough: end },
       };

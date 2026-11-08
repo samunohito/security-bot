@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Bot } from '../src/pipeline';
 import { adminRequest } from '../src/admin';
 import { loadConfig } from '../src/config';
+import { sourceProvider } from '../src/sources';
 import { Store } from '../src/store';
 import { PublishError } from '../src/social/provider';
 import { UrlReferenceProvider } from '../src/social/url-reference';
@@ -157,6 +158,82 @@ async function processAll(bot: Bot, now: number) {
   }
 }
 describe('complete pipeline', () => {
+  it('サイズ超過で保留されたNVD収集を再試行し縮小した件数と取得位置をD1へ保存する', async () => {
+    const source = loadConfig().sources.find((source) => source.id === 'nvd')!;
+    const config = loadConfig({ sources: [source], targets: [], llm: { provider: 'fake' } });
+    const requests: URL[] = [];
+    let rateLimited = true;
+    const provider = sourceProvider(source, {}, async (input) => {
+      const url = new URL(String(input));
+      requests.push(url);
+      const pageSize = Number(url.searchParams.get('resultsPerPage'));
+      if (pageSize > 25) {
+        return new Response('', { headers: { 'Content-Length': '1000001' } });
+      }
+      if (rateLimited) {
+        rateLimited = false;
+
+        return new Response('', { status: 429, headers: { 'Retry-After': '120' } });
+      }
+
+      const startIndex = Number(url.searchParams.get('startIndex'));
+      const count = Math.min(pageSize, 76 - startIndex);
+      return Response.json({
+        totalResults: 76,
+        resultsPerPage: count,
+        startIndex,
+        vulnerabilities: Array.from({ length: count }, (_, index) => ({
+          cve: {
+            id: `CVE-2026-${1100 + startIndex + index}`,
+            published: '2026-10-26T00:00:00.000',
+            lastModified: '2026-10-27T00:00:00.000',
+            descriptions: [{ lang: 'en', value: 'Acme flaw' }],
+          },
+        })),
+      });
+    });
+    const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, { source: () => provider });
+    await bot.store.syncSources([source], now);
+    const jobId = (await bot.store.sourceState(source.id))!.active_job!;
+    const oldClaim = (await bot.store.claimJob(jobId, now))!;
+    const cursor = { completedThrough: now - 86400000, windowStart: now - 3600000, windowEnd: now, startIndex: 50 };
+    await db.prepare('UPDATE sources SET cursor=? WHERE id=?').bind(JSON.stringify(cursor), source.id).run();
+    await bot.store.failJob(oldClaim, 'held', 'resource_limit: response too large', now);
+    await bot.store.sourceError(source.id, 'resource_limit: response too large', false, now, oldClaim);
+
+    await bot.store.retryJob(jobId, now + 1000);
+    await bot.runJob(jobId, now + 1000);
+
+    expect((await bot.store.getJob(jobId))?.state).toBe('done');
+    const nextCursor = await bot.store.sourceCursor(source.id);
+    expect(nextCursor).toEqual({ ...cursor, pageSize: 25 });
+    const state = (await bot.store.sourceState(source.id))!;
+    expect(state.last_error).toBeNull();
+    expect(state.active_job).toBeTruthy();
+    expect(state.active_job).not.toBe(jobId);
+    expect((await bot.store.getJob(state.active_job!))?.state).toBe('pending');
+    expect(requests.map((url) => url.searchParams.get('startIndex'))).toEqual(['50']);
+    expect((await bot.store.list('jobs')).filter((job) => job.type === 'ingest')).toHaveLength(0);
+
+    await bot.runJob(state.active_job!, now + 2000);
+
+    expect((await bot.store.getJob(state.active_job!))?.state).toBe('deferred');
+    expect(await bot.store.sourceCursor(source.id)).toEqual(nextCursor);
+    expect((await bot.store.sourceState(source.id))?.active_job).toBe(state.active_job);
+    await bot.runJob(state.active_job!, now + 122000);
+
+    expect(await bot.store.sourceCursor(source.id)).toEqual({ ...cursor, startIndex: 75, pageSize: 25 });
+    expect((await bot.store.list('jobs')).filter((job) => job.type === 'ingest')).toHaveLength(25);
+    await bot.runJob((await bot.store.sourceState(source.id))!.active_job!, now + 123000);
+
+    expect(await bot.store.sourceCursor(source.id)).toEqual({ completedThrough: now });
+    expect((await bot.store.sourceState(source.id))?.active_job).toBeNull();
+    expect(requests.at(-1)?.searchParams.get('resultsPerPage')).toBe('25');
+    expect(requests.at(-1)?.searchParams.get('startIndex')).toBe('75');
+    expect(requests.map((url) => url.searchParams.get('resultsPerPage'))).toEqual(['50', '25', '25', '25']);
+    expect((await bot.store.list('jobs')).filter((job) => job.type === 'ingest')).toHaveLength(26);
+  });
+
   it.each(['valid', 'foreign', 'unseen', 'unsupported'] as const)(
     '対象項目の番号なし引用を生成・短縮で照合し、帰属と再検品を省略しない: %s',
     async (outcome) => {

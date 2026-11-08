@@ -7,6 +7,7 @@ export interface SourceCursor {
   windowStart?: number;
   windowEnd?: number;
   startIndex?: number;
+  pageSize?: number;
   kevSignatures?: Record<string, string>;
 }
 

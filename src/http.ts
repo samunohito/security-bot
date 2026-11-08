@@ -1,5 +1,12 @@
 export type Fetcher = typeof fetch;
 
+export class ResponseTooLargeError extends Error {
+  /** 応答サイズの上限超過を他の取得エラーと区別する。 */
+  constructor() {
+    super('resource_limit: response too large');
+  }
+}
+
 export class HttpError extends Error {
   /** HTTPステータスと再試行までの待ち時間（ミリ秒）を保持する。 */
   constructor(
@@ -67,7 +74,7 @@ export async function getText(
   const maxBytes = options.maxBytes ?? 262144;
   if (Number(response.headers.get('content-length')) > maxBytes) {
     await response.body?.cancel();
-    throw new Error('resource_limit: response too large');
+    throw new ResponseTooLargeError();
   }
 
   const reader = response.body?.getReader();
@@ -82,7 +89,7 @@ export async function getText(
       receivedBytes += value.byteLength;
       if (receivedBytes > maxBytes) {
         await reader.cancel();
-        throw new Error('resource_limit: response too large');
+        throw new ResponseTooLargeError();
       }
       chunks.push(value);
     }

@@ -30,6 +30,17 @@ export function formatDigestEntry(intent: PostIntent, reason: string, score: num
     .join('\n');
 }
 
+/** 新規KEVのCVE・対象製品・対策を検証済み要約から整形する。 */
+export function formatKevDigestEntry(key: string, title: string, summary: Summary): string {
+  return [
+    `${key}｜${escapeText(summary.subject?.text ?? title)}`,
+    formatAction(summary),
+    summary.uncertainties.length ? `未確認事項: ${escapeText(summary.uncertainties.join('／'))}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 /** 投稿意図を日本語のセキュリティ告知文に整形する。 */
 export function formatPost(intent: PostIntent): string {
   const summary = intent.summary;
@@ -37,8 +48,10 @@ export function formatPost(intent: PostIntent): string {
   const hasCve = /^CVE-\d{4}-\d{4,}$/.test(intent.key);
   const subject = escapeText(summary.subject?.text ?? intent.title);
   const overview = summary.overview ? escapeText(summary.overview.text) : '概要: 未確認';
+  const severity = intent.kev && intent.severity === '未評価' ? '' : `[${escapeText(intent.severity)}] `;
+  const kev = intent.kev ? '[悪用確認済み（CISA KEV）] ' : '';
   const heading = [
-    ...(hasCve ? [`${label}[${escapeText(intent.severity)}] ${intent.key}`] : []),
+    ...(hasCve ? [`${label}${severity}${kev}${intent.key}`] : []),
     `${hasCve ? '' : label}${subject}`,
     ...(overview !== subject ? [overview] : []),
   ].join('\n');

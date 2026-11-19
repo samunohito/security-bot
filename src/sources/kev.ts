@@ -34,6 +34,7 @@ export function kevProvider(
       const all = parseKev(JSON.parse(response.text), config.id, now);
       const signatures: Record<string, string> = {};
       const items: SourceItem[] = [];
+      const kevNewIds: string[] = [];
       for (const item of all) {
         const signature = JSON.stringify([item.title, item.text]);
         signatures[item.id] = signature;
@@ -43,6 +44,9 @@ export function kevProvider(
         }
         if (!cursor.kevSignatures && item.modifiedAt < now - (options.initialLookbackSeconds ?? 86400) * 1000) {
           continue;
+        }
+        if (previous === undefined) {
+          kevNewIds.push(item.id);
         }
         items.push(previous === undefined ? item : { ...item, modifiedAt: now });
       }
@@ -76,7 +80,7 @@ export function kevProvider(
         throw new Error('resource_limit: KEV baseline cursor');
       }
 
-      return { items, more: false, cursor: nextCursor };
+      return { items, more: false, cursor: nextCursor, kevNewIds };
     },
   };
 }

@@ -57,6 +57,13 @@
       "when": 1793273296168,
       "tag": "0007_index_current_revision",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795049632220,
+      "tag": "0008_kev_digests",
+      "breakpoints": true
     }
   ]
 }

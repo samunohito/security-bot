@@ -94,8 +94,12 @@ export const revisions = sqliteTable(
     urgent: integer().notNull(),
     eligible: integer().notNull(),
     created_at: integer().notNull(),
+    kev_batch: text(),
   },
-  (table) => [index('revisions_priority').on(table.eligible, table.priority, desc(table.event_at))],
+  (table) => [
+    index('revisions_priority').on(table.eligible, table.priority, desc(table.event_at)),
+    index('revisions_kev_batch').on(table.kev_batch, table.threat_key).where(sql`${table.kev_batch} IS NOT NULL`),
+  ],
 );
 
 export const summaries = sqliteTable('summaries', {
@@ -125,6 +129,7 @@ export const deliveries = sqliteTable(
     mode: text().notNull().default('individual'),
     window_start: integer(),
     window_end: integer(),
+    kev_batch: text(),
     event_at: integer(),
     state: text().notNull().default('ready'),
     urgent: integer().notNull(),

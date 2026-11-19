@@ -18,3 +18,9 @@ export function digestWindow(now: number, intervalSeconds: number): { start: num
 
   return { start: end - interval, end };
 }
+import type { KevBatch, ThreatSnapshot } from './domain';
+
+/** 現在の根拠に含まれるKEV新規掲載の収集情報を返す。 */
+export function kevBatch(snapshot: ThreatSnapshot): KevBatch | undefined {
+  return snapshot.evidence.find((entry) => entry.exploited && entry.scope === 'cve' && entry.kevBatch)?.kevBatch;
+}

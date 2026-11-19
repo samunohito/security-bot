@@ -7,6 +7,7 @@ import { PublishError } from '../src/social/provider';
 import { UrlReferenceProvider } from '../src/social/url-reference';
 import type { SourceItem } from '../src/domain';
 import { VERIFY_SYSTEM } from '../src/llm/prompts';
+import { kevProvider } from '../src/sources/kev';
 
 const db = (env as unknown as { DB: D1Database }).DB;
 const now = Date.parse('2026-10-28T00:00:00Z');
@@ -54,13 +55,26 @@ beforeEach(async () => {
     await db.prepare(`DELETE FROM ${table}`).run();
   }
 });
-function harness(failure?: 'unknown' | 'second-unknown', maxCharacters = 2000) {
+function harness(
+  failure?: 'unknown' | 'second-unknown',
+  maxCharacters = 2000,
+  kev?: () => string[],
+  beforeVerify?: (key: string) => Promise<void>,
+) {
   const sent: string[] = [];
   const config = loadConfig({
     dryRun: false,
     publishing: { mode: 'nvd-high-digest' },
     mode: 'performance',
-    sources: [{ id: 'custom', kind: 'nvd', enabled: false, url: 'https://example.com', pollIntervalSeconds: 7200 }],
+    sources: [
+      {
+        id: 'custom',
+        kind: kev ? 'kev' : 'nvd',
+        enabled: Boolean(kev),
+        url: 'https://example.com',
+        pollIntervalSeconds: kev ? 60 : 7200,
+      },
+    ],
     targets: [
       {
         id: 'main',
@@ -69,14 +83,34 @@ function harness(failure?: 'unknown' | 'second-unknown', maxCharacters = 2000) {
         tokenSecret: 'TOKEN',
         maxCharacters,
         normalIntervalSeconds: 60,
+        urgentIntervalSeconds: kev ? 60 : 300,
         minimumIntervalSeconds: 60,
         normalDailyLimit: 100,
       },
     ],
   });
   const bot = new Bot({ DB: db, JOBS: { async send() {} } }, config, {
+    source: kev
+      ? (source) =>
+          kevProvider(source, async () =>
+            Response.json({
+              vulnerabilities: kev().map((cveID) => ({
+                cveID,
+                vendorProject: 'Acme',
+                product: '1.0',
+                vulnerabilityName: 'Acme',
+                shortDescription: 'Acme 1.0 allows remote execution.',
+                requiredAction: 'Upgrade to 2.0.',
+                dateAdded: '2026-10-28',
+              })),
+            }),
+          )
+      : undefined,
     llm: {
       async generateStructured<T>(request: { system: string; data: unknown }, schema: z.ZodType<T>) {
+        if (request.system === VERIFY_SYSTEM) {
+          await beforeVerify?.((request.data as { key: string }).key);
+        }
         const claim = (value: string, quote: string) => ({
           text: value,
           evidence: [{ id: (request.data as { evidence: { id: string }[] }).evidence[0]!.id, quote }],
@@ -86,7 +120,7 @@ function harness(failure?: 'unknown' | 'second-unknown', maxCharacters = 2000) {
             request.system === VERIFY_SYSTEM
               ? { supported: true, contradictions: [], unsupportedClaims: [] }
               : {
-                  overview: claim('Acmeの脆弱性', text),
+                  overview: claim('Acmeの脆弱性', kev ? 'Acme 1.0 allows remote execution.' : text),
                   subject: claim('Acme', 'Acme'),
                   impact: claim('Acme 1.0でコード実行', 'Acme 1.0 allows remote execution.'),
                   action: claim('2.0へ更新', 'Upgrade to 2.0.'),
@@ -128,6 +162,238 @@ async function drain(bot: Bot, at: number) {
   }
   throw new Error('jobs_not_drained');
 }
+it.each(['nvd-high-digest', 'individual'] as const)(
+  '発信方式が%sでも、同じ収集のKEV新規掲載を緊急枠の1投稿で通知する',
+  async (mode) => {
+    const ids = ['CVE-2026-1111', 'CVE-2026-1112'];
+    const { bot: original, sent } = harness(undefined, 500, () => ids);
+    const bot = new Bot(
+      original.env,
+      { ...original.config, publishing: { ...original.config.publishing, mode } },
+      original.providers,
+    );
+    await bot.tick(now);
+    await drain(bot, now);
+    await bot.tick(now + 60000);
+    await drain(bot, now + 60000);
+
+    expect(sent, JSON.stringify(await bot.store.list('jobs'))).toHaveLength(1);
+    expect(sent[0]).toContain('CISA KEV追加 2件');
+    expect(sent[0]).toContain('悪用確認済み');
+    for (const id of ids) {
+      expect(sent[0]).toContain(id);
+    }
+    expect((await bot.store.list('deliveries')).filter((delivery) => delivery.state === 'sent')).toMatchObject([
+      { mode: 'digest', urgent: 1 },
+    ]);
+  },
+);
+
+it('KEVの単独掲載は悪用確認済みと明示して個別通知する', async () => {
+  const { bot, sent } = harness(undefined, 500, () => ['CVE-2026-1111']);
+  await bot.tick(now);
+  await drain(bot, now);
+
+  expect(sent, JSON.stringify(await bot.store.list('jobs'))).toHaveLength(1);
+  expect(sent[0]).toContain('悪用確認済み（CISA KEV）');
+  expect((await bot.store.list('deliveries'))[0]).toMatchObject({ mode: 'individual', urgent: 1 });
+});
+
+it('1件の要約が遅れた場合は5分後に検証済みのKEVを先に通知する', async () => {
+  const ids = ['CVE-2026-1111', 'CVE-2026-1112'];
+  const { bot, sent } = harness(undefined, 500, () => ids);
+  await bot.tick(now);
+  const source = (await bot.store.list('sources'))[0]!;
+  await bot.runJob(source.active_job!, now);
+  const ingests = (await bot.store.list('jobs')).filter((job) => job.type === 'ingest');
+  await bot.runJob(ingests[0]!.id, now);
+  const slow = await bot.store.getJob(ingests[1]!.id);
+  const slowCve = (JSON.parse(slow!.payload) as { item: SourceItem }).item.id;
+  await db
+    .prepare('UPDATE jobs SET available_at=? WHERE id=?')
+    .bind(now + 360000, slow!.id)
+    .run();
+  await drain(bot, now);
+
+  await bot.tick(now + 240000);
+  await drain(bot, now + 240000);
+  expect(sent).toHaveLength(0);
+  await bot.tick(now + 300000);
+  await drain(bot, now + 300000);
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain('CISA KEV追加 1件');
+  expect(sent[0]).not.toContain(slowCve);
+
+  await drain(bot, now + 360000);
+  await bot.tick(now + 420000);
+  await drain(bot, now + 420000);
+  expect(sent).toHaveLength(2);
+  expect(sent[1]).toContain(slowCve);
+});
+
+it('検品中のKEVを完了扱いせず、検品後に同じ投稿へまとめる', async () => {
+  let start!: () => void;
+  let release!: () => void;
+  const started = new Promise<void>((resolve) => {
+    start = resolve;
+  });
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const ids = ['CVE-2026-1111', 'CVE-2026-1112'];
+  const { bot, sent } = harness(
+    undefined,
+    500,
+    () => ids,
+    async (key) => {
+      if (key === ids[1]) {
+        start();
+        await blocked;
+      }
+    },
+  );
+  await bot.tick(now);
+  const work = drain(bot, now);
+  try {
+    await started;
+    await drain(bot, now);
+    await bot.tick(now + 60000);
+    await drain(bot, now + 60000);
+    expect(sent).toHaveLength(0);
+  } finally {
+    release();
+    await work;
+  }
+  await bot.tick(now + 120000);
+  await drain(bot, now + 120000);
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toContain('CISA KEV追加 2件');
+});
+
+it('KEVまとめを文字数の上限で分割し、全件を一度ずつ緊急枠で通知する', async () => {
+  const ids = Array.from({ length: 5 }, (_, index) => `CVE-2026-${1111 + index}`);
+  const { bot, sent } = harness(undefined, 200, () => ids);
+  await bot.tick(now);
+  await drain(bot, now);
+  for (let minute = 1; minute <= ids.length; minute++) {
+    const at = now + minute * 60000;
+    await bot.tick(at);
+    await drain(bot, at);
+  }
+  expect(sent.length).toBeGreaterThan(1);
+  expect(sent.every((text) => [...text].length <= 200)).toBe(true);
+  expect(sent.flatMap((text) => text.match(/CVE-2026-\d+/g) ?? []).sort()).toEqual(ids);
+  expect((await bot.store.list('deliveries')).every((delivery) => delivery.urgent === 1)).toBe(true);
+});
+
+it('文字数の上限を戻すと無効化されたKEVまとめを復帰できる', async () => {
+  const ids = Array.from({ length: 5 }, (_, index) => `CVE-2026-${1111 + index}`);
+  const { bot, sent } = harness(undefined, 500, () => ids);
+  await bot.tick(now);
+  await drain(bot, now);
+  const at = now + 60000;
+  await bot.tick(at);
+  const [delivery] = await bot.store.list('deliveries');
+  const smaller = new Bot(
+    bot.env,
+    { ...bot.config, targets: bot.config.targets.map((target) => ({ ...target, maxCharacters: 200 })) },
+    bot.providers,
+  );
+  await drain(smaller, at);
+  expect((await bot.store.getDelivery(delivery!.id))?.state).toBe('stale');
+
+  await bot.tick(at + 60000);
+  await drain(bot, at + 60000);
+  expect(sent).toHaveLength(1);
+  expect((await bot.store.getDelivery(delivery!.id))?.state).toBe('sent');
+});
+
+it('結果不明のKEVまとめに含まれたCVEを、根拠が増えた後もまとめ直さない', async () => {
+  const ids = ['CVE-2026-1111', 'CVE-2026-1112'];
+  const { bot, sent } = harness('unknown', 500, () => ids);
+  await bot.tick(now);
+  await drain(bot, now);
+  await bot.tick(now + 60000);
+  await drain(bot, now + 60000);
+  expect(sent).toHaveLength(1);
+  const [unknown] = await bot.store.list('deliveries');
+  expect(unknown).toMatchObject({ state: 'unknown', urgent: 1 });
+
+  await bot.store.ingest(
+    { ...item, sourceId: 'other', modifiedAt: now + 120000, fetchedAt: now + 120000 },
+    now + 120000,
+  );
+  await bot.tick(now + 120000);
+  await drain(bot, now + 120000);
+  await bot.tick(now + 360000);
+  await drain(bot, now + 360000);
+  expect(sent).toHaveLength(1);
+  expect(await bot.store.list('deliveries')).toMatchObject([{ id: unknown!.id, state: 'unknown' }]);
+});
+
+it('準備後に根拠が変わったKEVまとめは送信枠を予約できない', async () => {
+  const { bot, sent } = harness(undefined, 500, () => ['CVE-2026-1111', 'CVE-2026-1112']);
+  await bot.tick(now);
+  await drain(bot, now);
+  const at = now + 60000;
+  await bot.tick(at);
+  const [delivery] = await bot.store.list('deliveries');
+  expect(delivery).toMatchObject({ state: 'ready', urgent: 1 });
+
+  await bot.store.ingest({ ...item, sourceId: 'other', modifiedAt: at, fetchedAt: at }, at);
+  expect(await bot.store.reserveDelivery(delivery!.id, bot.config.targets[0]!, at)).toBeNull();
+  expect((await bot.store.getDelivery(delivery!.id))?.state).toBe('ready');
+  expect(sent).toHaveLength(0);
+});
+
+it('KEVまとめ掲載後に別の情報源から対象範囲が更新されたら個別通知する', async () => {
+  const { bot, sent } = harness(undefined, 500, () => ['CVE-2026-1111', 'CVE-2026-1112']);
+  await bot.tick(now);
+  await drain(bot, now);
+  await bot.tick(now + 60000);
+  await drain(bot, now + 60000);
+  expect(sent[0]).toContain('CISA KEV追加 2件');
+
+  const at = now + 120000;
+  await bot.store.ingest(
+    { ...item, sourceId: 'other', affected: 'Acme 1.0 and 1.1', modifiedAt: at, fetchedAt: at },
+    at,
+  );
+  await bot.tick(at);
+  await drain(bot, at);
+  expect(sent).toHaveLength(2);
+  expect(sent[1]).toContain('[更新] [High] [悪用確認済み（CISA KEV）] CVE-2026-1111');
+  expect(sent[1]).toContain('https://social.example/notes/1');
+});
+
+it.each([1, 2])('悪用を別の情報源で通知済みでも、CISA KEVへの新規掲載%d件を通知する', async (count) => {
+  const ids: string[] = [];
+  const { bot, sent } = harness(undefined, 500, () => ids);
+  await bot.store.ingest(
+    {
+      ...item,
+      sourceId: 'other',
+      impact: 'Acme 1.0 allows remote execution.',
+      exploited: true,
+      urgent: true,
+    },
+    now,
+  );
+  await bot.tick(now);
+  await drain(bot, now);
+  expect(sent).toHaveLength(1);
+  ids.push(...['CVE-2026-1111', 'CVE-2026-1112'].slice(0, count));
+  await bot.tick(now + 60000);
+  await drain(bot, now + 60000);
+  await bot.tick(now + 120000);
+  await drain(bot, now + 120000);
+  expect(sent).toHaveLength(2);
+  expect(sent[1]).toContain(count === 1 ? '[悪用確認済み（CISA KEV）]' : 'CISA KEV追加 2件');
+  for (const id of ids) {
+    expect(sent[1]).toContain(id);
+  }
+});
+
 it('Highは6時間の区切りまで待ち、掲載後のCriticalを個別通知する', async () => {
   const { bot, sent } = harness();
   await bot.store.ingest(item, now);

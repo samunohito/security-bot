@@ -158,10 +158,11 @@ AIの呼び出しはローカル起動でもクラウド側の推論・利用量
 ## 発信方法
 
 プロジェクト設定では `publishing.mode: "nvd-high-digest"` を選択します。
-KEV・JVN・JPCERT・NVD Criticalは個別、NVDのみのHighは新規公表・初評価・昇格を6時間ごとにまとめます。
+JVN・JPCERT・NVD Criticalは個別、NVDのみのHighは新規公表・初評価・昇格を6時間ごとにまとめます。
 日本時間0・6・12・18時に作成し、文字数を超える場合は分割します。送信には通常の間隔・日次上限を適用します。
 High→Criticalと悪用確認は個別通知します。同帯域のスコア変動や翻訳追加だけではNVDを再掲載しません。
-方式を省略すると従来どおり個別投稿します。詳細は[発信方法と掲載理由](docs/specs/publishing-policy.md)を参照してください。
+方式を省略するとNVD Highも個別投稿します。CISA KEVは、同じ収集で複数の新規掲載を検知した場合に緊急枠でまとめます。
+単独の掲載や、更新通知の条件を満たす既存項目の変更は個別です。詳細は[発信方法と掲載理由](docs/specs/publishing-policy.md)を参照してください。
 
 導入前に追加migrationを適用します。初回実行では既存CVEを観測の基準にし、古いHighを一括投稿しません。
 `list publications` は観測と要約の品質状態、`show deliveries ID` はまとめの所属、`dry-run ID`

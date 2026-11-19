@@ -120,12 +120,14 @@ describe('source boundaries', () => {
     const provider = sourceProvider(source, {}, async () => Response.json(data));
     const initial = await provider.collect({}, now);
     expect(initial.items).toHaveLength(0);
+    expect(initial.kevNewIds).toEqual([]);
     data = {
       vulnerabilities: [{ ...old, requiredAction: 'Apply the newly released patch' }],
     };
     const updated = await provider.collect(initial.cursor, now + 900000);
     expect(updated.items).toHaveLength(1);
     expect(updated.items[0]?.modifiedAt).toBe(now + 900000);
+    expect(updated.kevNewIds).toEqual([]);
   });
 
   it('NVDのページ取得中は対象期間を固定し完了時にだけカーソルを確定する', async () => {

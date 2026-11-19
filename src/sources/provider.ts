@@ -15,6 +15,7 @@ export interface SourceBatch {
   items: SourceItem[];
   cursor: SourceCursor;
   more: boolean;
+  kevNewIds?: string[];
 }
 
 export interface SourceProvider {

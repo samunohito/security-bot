@@ -15,6 +15,34 @@ export interface DigestMember {
   summary: Summary;
 }
 
+// 送信結果が確定していない場合も、同じKEV掲載を別のまとめへ移さない。
+const kevCovered = (target: string, except = "''") => `(
+  EXISTS(SELECT 1 FROM deliveries d WHERE d.target_id=${target}
+    AND d.revision_id=r.id AND d.state IN ('sent','sending','unknown'))
+  OR EXISTS(SELECT 1 FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id
+    WHERE i.threat_key=r.threat_key AND d.target_id=${target}
+    AND d.kev_batch=r.kev_batch AND d.id<>${except}
+    AND (d.state IN ('sent','sending','unknown') OR
+      (d.state IN ('ready','held','preview') AND i.revision_id=r.id AND i.evidence_hash=r.evidence_hash)))
+)`;
+
+/** KEVまとめの全所属を現在の根拠・品質・掲載履歴と照合するSQL条件を返す。 */
+export function kevDigestCurrentSql(strict: string): string {
+  return `EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id)
+    AND NOT EXISTS(
+      SELECT 1 FROM delivery_items i LEFT JOIN threats t ON t.key=i.threat_key
+      LEFT JOIN revisions r ON r.id=t.revision_id
+      LEFT JOIN summaries s ON s.revision_id=r.id AND s.evidence_hash=r.evidence_hash
+      WHERE i.delivery_id=deliveries.id AND (
+        r.id IS NULL OR r.id<>i.revision_id OR r.evidence_hash<>i.evidence_hash
+        OR r.kev_batch IS NOT deliveries.kev_batch OR json_extract(r.snapshot,'$.eventAt') IS NOT i.event_at
+        OR s.summary IS NOT i.summary_json OR COALESCE(json_extract(s.validation,'$.valid'),0)<>1
+        OR (${strict}=1 AND COALESCE(json_extract(s.validation,'$.complete'),0)<>1)
+        OR ${kevCovered('deliveries.target_id', 'deliveries.id')}
+      )
+    )`;
+}
+
 export class PublicationStore {
   /** 根拠の観測と投稿先別の掲載履歴をD1で管理する。 */
   constructor(
@@ -127,16 +155,27 @@ export class PublicationStore {
     const level = severityLevel(revision.snapshot.scores);
     const classification = classify(revision.snapshot);
     const base = { route: 'individual' as const, level, eventAt: revision.snapshot.eventAt, reason: revision.kind };
-    if (!this.enabled) {
-      const covered = await this.db
-        .prepare(`SELECT 1 FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id
-        WHERE i.revision_id=? AND d.target_id=? AND d.mode='digest'
-        AND (d.state='sent' OR (?=1 AND d.state IN ('sending','unknown'))) LIMIT 1`)
-        .bind(revision.id, target, includeInFlight ? 1 : 0)
-        .first();
-      return covered ? null : base;
-    }
-    if (!this.nvdOnly(revision.snapshot)) {
+    if (!this.enabled || !this.nvdOnly(revision.snapshot)) {
+      const history = await this.db
+        .prepare(`SELECT i.revision_id,d.state FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id
+        WHERE i.threat_key=? AND (i.revision_id=? OR d.kev_batch=?) AND d.target_id=? AND d.mode='digest'
+        AND (?=0 OR d.kev_batch IS NOT NULL)
+        AND (d.state='sent' OR (?=1 AND d.state IN ('sending','unknown')))`)
+        .bind(
+          revision.threat_key,
+          revision.id,
+          revision.kev_batch,
+          target,
+          this.enabled ? 1 : 0,
+          includeInFlight ? 1 : 0,
+        )
+        .all<{ revision_id: string; state: string }>();
+      if (history.results.some((entry) => entry.revision_id === revision.id || entry.state !== 'sent')) {
+        return null;
+      }
+      if (revision.kev_batch && !history.results.length) {
+        return { ...base, route: 'digest', reason: 'KEV追加' };
+      }
       return base;
     }
     const history = await this.db
@@ -228,14 +267,23 @@ export class PublicationStore {
       this.config?.targets.filter((target) => target.enabled || this.config?.dryRun).map((target) => target.id) ?? [];
     await this.db
       .prepare(`UPDATE deliveries SET state='ready',error=NULL,available_at=MAX(available_at,?),updated_at=?
-      WHERE mode='individual' AND state='stale' AND error='individual_to_digest'
+      WHERE mode='individual' AND state='stale' AND error IN ('individual_to_digest','kev_to_digest')
       AND target_id IN (SELECT value FROM json_each(?))
       AND EXISTS(SELECT 1 FROM threats t JOIN revisions r ON r.id=t.revision_id LEFT JOIN publication_observations o ON o.threat_key=t.key
-        WHERE r.id=deliveries.revision_id AND (?=0 OR COALESCE(o.nvd_only,0)=0 OR r.priority<>2 OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1))
+        WHERE r.id=deliveries.revision_id AND r.kev_batch IS NULL
+        AND (?=0 OR COALESCE(o.nvd_only,0)=0 OR r.priority<>2 OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1))
       AND (?=1 OR NOT EXISTS(SELECT 1 FROM delivery_items i JOIN deliveries d ON d.id=i.delivery_id
         WHERE i.revision_id=deliveries.revision_id AND d.target_id=deliveries.target_id AND d.mode='digest' AND d.state IN ('sent','sending','unknown')))`)
       .bind(now, now, JSON.stringify(activeTargets), this.enabled ? 1 : 0, this.enabled ? 1 : 0)
       .run();
+    await this.db.batch([
+      this.db
+        .prepare(`UPDATE deliveries SET state='stale',error='digest_members_changed',updated_at=?
+        WHERE kev_batch IS NOT NULL AND state IN ('ready','held','preview')
+        AND (event_at<? OR NOT (${kevDigestCurrentSql('0')}))`)
+        .bind(now, now - (this.config?.freshnessSeconds ?? 259200) * 1000),
+      this.resumeDigests('kev_batch IS NOT NULL', activeTargets, now),
+    ]);
     if (!this.enabled) {
       return;
     }
@@ -246,7 +294,7 @@ export class PublicationStore {
     const deadline = Math.max(cutoff, now - (this.config?.freshnessSeconds ?? 259200) * 1000);
     const expired = await this.db
       .prepare(`UPDATE deliveries SET state='stale',error='digest_members_expired',updated_at=?
-      WHERE mode='digest' AND state IN ('ready','held','preview')
+      WHERE mode='digest' AND kev_batch IS NULL AND state IN ('ready','held','preview')
       AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id AND i.event_at<?)
       AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id AND i.event_at>=?)`)
       .bind(now, deadline, deadline)
@@ -269,7 +317,7 @@ export class PublicationStore {
       .run();
     await this.db
       .prepare(`UPDATE deliveries SET state='stale',error='digest_members_changed',updated_at=?
-      WHERE mode='digest' AND state IN ('ready','held','preview') AND EXISTS(
+      WHERE mode='digest' AND kev_batch IS NULL AND state IN ('ready','held','preview') AND EXISTS(
         SELECT 1 FROM delivery_items i LEFT JOIN threats t ON t.key=i.threat_key LEFT JOIN revisions r ON r.id=t.revision_id
         LEFT JOIN publication_observations o ON o.threat_key=i.threat_key LEFT JOIN summaries s ON s.revision_id=r.id
         WHERE i.delivery_id=deliveries.id AND (r.id IS NULL OR r.id<>i.revision_id OR r.evidence_hash<>i.evidence_hash
@@ -277,13 +325,98 @@ export class PublicationStore {
           OR s.evidence_hash IS NULL OR s.evidence_hash<>i.evidence_hash OR i.summary_json IS NULL OR s.summary<>i.summary_json))`)
       .bind(now)
       .run();
-    const targets =
-      this.config?.targets.filter((target) => target.enabled || this.config?.dryRun).map((target) => target.id) ?? [];
-    await this.db
+    await this.resumeDigests("mode='digest' AND kev_batch IS NULL", activeTargets, now).run();
+  }
+
+  private resumeDigests(kind: string, targets: string[], now: number) {
+    return this.db
       .prepare(`UPDATE deliveries SET state='ready',error=NULL,available_at=MAX(available_at,?),updated_at=?
-      WHERE mode='digest' AND ((state='held' AND error='digest_disabled') OR (state='preview' AND ?=0)) AND target_id IN (SELECT value FROM json_each(?))`)
-      .bind(now, now, this.config?.dryRun ? 1 : 0, JSON.stringify(targets))
-      .run();
+      WHERE ${kind} AND ((state='held' AND error='digest_disabled') OR (state='preview' AND ?=0))
+      AND target_id IN (SELECT value FROM json_each(?))`)
+      .bind(now, now, this.config?.dryRun ? 1 : 0, JSON.stringify(targets));
+  }
+
+  /** 鮮度内のKEVまとめ候補と、検証・掲載の状態を収集単位で取得する。 */
+  async kevCandidates(target: string, earliest: number) {
+    return (
+      await this.db
+        .prepare(`SELECT r.*,s.summary,s.validation,${kevCovered('?')} AS covered
+        FROM revisions r JOIN threats t ON t.revision_id=r.id
+        LEFT JOIN summaries s ON s.revision_id=r.id AND s.evidence_hash=r.evidence_hash
+        WHERE r.kev_batch IS NOT NULL AND json_extract(r.snapshot,'$.eventAt')>=?
+        ORDER BY r.kev_batch,r.threat_key`)
+        .bind(target, target, earliest)
+        .all<
+          Omit<Revision, 'snapshot' | 'kev_batch'> & {
+            snapshot: string;
+            kev_batch: string;
+            summary: string | null;
+            validation: string | null;
+            covered: number;
+          }
+        >()
+    ).results;
+  }
+
+  /** 同じ掲載を含む並行作成を防ぎながら、KEVまとめの一分割と所属を確定する。 */
+  async createKevDigest(
+    target: string,
+    batchId: string,
+    collectedAt: number,
+    page: { members: DigestMember[]; text: string },
+    now: number,
+  ): Promise<void> {
+    const items = JSON.stringify(
+      page.members.map(({ revision, decision, summary }) => ({
+        key: revision.threat_key,
+        revision: revision.id,
+        hash: revision.evidence_hash,
+        level: decision.level,
+        eventAt: decision.eventAt,
+        summary: JSON.stringify(summary),
+      })),
+    );
+    const id = await digest(`kev:${target}:${batchId}:${page.text}:${items}`);
+    const eventAt = Math.min(...page.members.map((member) => member.decision.eventAt));
+
+    await this.db.batch([
+      this.db
+        .prepare(`INSERT INTO deliveries(id,target_id,mode,kev_batch,window_start,window_end,event_at,state,urgent,available_at,prepared,created_at,updated_at)
+        SELECT ?,?,'digest',?,?,?,?,'ready',1,?,?,?,?
+        WHERE ?>=COALESCE((SELECT CAST(value AS INTEGER) FROM settings WHERE key='event_cutoff'),0)
+        AND NOT EXISTS(
+          SELECT 1 FROM json_each(?) m LEFT JOIN threats t ON t.key=json_extract(m.value,'$.key')
+          LEFT JOIN revisions r ON r.id=t.revision_id
+          WHERE r.id IS NOT json_extract(m.value,'$.revision') OR r.evidence_hash IS NOT json_extract(m.value,'$.hash')
+          OR r.kev_batch IS NOT ? OR ${kevCovered('?')}
+        )
+        ON CONFLICT(id) DO UPDATE SET state='ready',error=NULL,
+          available_at=MAX(excluded.available_at,deliveries.available_at+1),updated_at=excluded.updated_at
+        WHERE deliveries.state='stale' AND deliveries.error IN ('digest_members_changed','digest_format_error')`)
+        .bind(
+          id,
+          target,
+          batchId,
+          collectedAt,
+          collectedAt,
+          eventAt,
+          now,
+          JSON.stringify({ text: page.text }),
+          now,
+          now,
+          eventAt,
+          items,
+          batchId,
+          target,
+          target,
+        ),
+      this.db
+        .prepare(`INSERT OR IGNORE INTO delivery_items(delivery_id,threat_key,revision_id,evidence_hash,level,exploited,event_at,summary_json)
+        SELECT ?,json_extract(value,'$.key'),json_extract(value,'$.revision'),json_extract(value,'$.hash'),
+        json_extract(value,'$.level'),1,json_extract(value,'$.eventAt'),json_extract(value,'$.summary')
+        FROM json_each(?) WHERE EXISTS(SELECT 1 FROM deliveries WHERE id=? AND state='ready')`)
+        .bind(id, items, id),
+    ]);
   }
 
   /** 一つの期間の全分割と所属を、他の実行による二重作成なしで確定する。 */
@@ -352,6 +485,15 @@ export class PublicationStore {
 
   /** まとめの全項目が現在も送信可能かを確認する。 */
   async digestCurrent(delivery: Delivery): Promise<boolean> {
+    const strict = this.config?.targets.find((target) => target.id === delivery.target_id)?.qualityGate.enabled ?? true;
+    if (delivery.kev_batch !== null) {
+      return Boolean(
+        await this.db
+          .prepare(`SELECT 1 FROM deliveries WHERE id=? AND ${kevDigestCurrentSql('?')}`)
+          .bind(delivery.id, strict ? 1 : 0)
+          .first(),
+      );
+    }
     const members = await this.members(delivery.id);
     if (!members.length) {
       return false;
@@ -371,8 +513,6 @@ export class PublicationStore {
         .bind(delivery.id, member.threat_key)
         .first<{ summary: string; validation: string; summary_json: string | null }>();
       const validation = quality ? (JSON.parse(quality.validation) as { valid: boolean; complete: boolean }) : null;
-      const strict =
-        this.config?.targets.find((target) => target.id === delivery.target_id)?.qualityGate.enabled ?? true;
       if (
         !quality ||
         quality.summary !== quality.summary_json ||

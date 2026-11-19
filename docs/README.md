@@ -67,7 +67,7 @@
 
 ### 現行仕様・補助資料
 
-- [個別投稿とNVD Highのまとめ投稿](specs/publishing-policy.md)：掲載条件、昇格、6時間の集計、既存DBへの導入。
+- [個別投稿とまとめ投稿](specs/publishing-policy.md)：KEVの緊急まとめ、NVDの掲載条件・昇格・6時間の集計、既存DBへの導入。
 - [投稿本文とハッシュタグ](specs/post-format.md)：投稿の構成、対策の表示条件、分類と選定基準、旧要約の扱い。
 
 導入・運用方法はルートの [`README.md`](../README.md) を参照してください。

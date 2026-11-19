@@ -4,6 +4,12 @@ export interface Score {
   issuer: string;
 }
 
+export interface KevBatch {
+  id: string;
+  size: number;
+  collectedAt: number;
+}
+
 export interface SourceItem {
   sourceId: string;
   id: string;
@@ -22,6 +28,7 @@ export interface SourceItem {
   remediation: string | null;
   impact?: string | null;
   rejected: boolean;
+  kevBatch?: KevBatch;
 }
 
 export interface Evidence extends SourceItem {
@@ -81,6 +88,7 @@ export interface PostIntent {
   key: string;
   title: string;
   severity: string;
+  kev?: boolean;
   summary: Summary;
   sources: string[];
   previousPost?: PublishedPost;

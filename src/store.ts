@@ -19,8 +19,8 @@ import {
 } from './domain';
 import type { PreparedPost } from './social/provider';
 import type { SourceCursor } from './sources/provider';
-import { PublicationStore } from './publication-store';
-import { severityLevel, digestWindow } from './publication';
+import { kevDigestCurrentSql, PublicationStore } from './publication-store';
+import { severityLevel, digestWindow, kevBatch } from './publication';
 
 export type Job = typeof tables.jobs.$inferSelect;
 export type Revision = Omit<typeof tables.revisions.$inferSelect, 'snapshot'> & { snapshot: ThreatSnapshot };
@@ -122,7 +122,7 @@ export class Store {
           this.statement(
             `DELETE FROM digest_windows
       WHERE window_end=? AND target_id IN (SELECT d.target_id FROM deliveries d
-        WHERE d.mode='digest' AND d.state IN ('ready','held','preview')
+        WHERE d.mode='digest' AND d.kev_batch IS NULL AND d.state IN ('ready','held','preview')
         AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.event_at<${eventCutoffQuery})
         AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=d.id AND i.event_at>=MAX(${eventCutoffQuery},?)))`,
             digestWindow(now, this.config!.publishing.digestIntervalSeconds).end,
@@ -182,9 +182,9 @@ export class Store {
             and(eq(tables.jobs.state, 'held'), eq(tables.jobs.error, 'analysis_policy_changed')),
             and(
               eq(tables.jobs.state, 'done'),
-              sql`EXISTS(SELECT 1 FROM settings WHERE key='publication_initialized')
-              AND EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id
+              sql`EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id
                 WHERE r.id=json_extract(${tables.jobs.payload},'$.revisionId')
+                AND (r.kev_batch IS NOT NULL OR EXISTS(SELECT 1 FROM settings WHERE key='publication_initialized'))
                 AND substr(${tables.jobs.id},1,length('analyze:'||r.id||':'||r.evidence_hash||':'))='analyze:'||r.id||':'||r.evidence_hash||':'
                 AND NOT EXISTS(SELECT 1 FROM summaries s WHERE s.revision_id=r.id AND s.evidence_hash=r.evidence_hash))`,
             ),
@@ -463,7 +463,7 @@ export class Store {
     return Number(row!.value);
   }
 
-  /** 現在の収集ジョブが所有者である場合にカーソルと継続ジョブを確定する。 */
+  /** 現在の収集ジョブが所有者である場合にカーソル・継続・KEV取り込みを確定する。 */
   async completeSource(
     id: string,
     cursor: SourceCursor,
@@ -471,8 +471,28 @@ export class Store {
     now: number,
     continuation: { id: string; payload: unknown } | undefined,
     owner: Pick<Job, 'id' | 'lease_token'>,
+    ingests: { id: string; item: SourceItem }[] = [],
   ) {
-    const statements = [
+    const statements: D1PreparedStatement[] = [];
+    for (let start = 0; start < ingests.length; start += 50) {
+      statements.push(
+        this.statement(
+          `INSERT OR IGNORE INTO jobs(id,type,payload,available_at,created_at)
+          SELECT json_extract(value,'$.id'),'ingest',json_object('sourceId',?,'item',json_extract(value,'$.item')),?,?
+          FROM json_each(?) WHERE EXISTS(SELECT 1 FROM sources WHERE id=? AND active_job=?)
+          AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND lease_token=? AND state='running')`,
+          id,
+          now,
+          now,
+          JSON.stringify(ingests.slice(start, start + 50)),
+          id,
+          owner.id,
+          owner.id,
+          owner.lease_token,
+        ),
+      );
+    }
+    statements.push(
       this.statement(
         "UPDATE sources SET cursor=?,next_poll_at=?,last_success_at=?,last_error=NULL,active_job=? WHERE id=? AND active_job=? AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND lease_token=? AND state='running')",
         JSON.stringify(cursor),
@@ -484,7 +504,7 @@ export class Store {
         owner.id,
         owner.lease_token,
       ),
-    ];
+    );
 
     if (continuation) {
       statements.push(
@@ -672,6 +692,7 @@ export class Store {
           material: tables.threats.material,
           generation: tables.threats.generation,
           priority: tables.revisions.priority,
+          kev_batch: tables.revisions.kev_batch,
           level: sql<number>`COALESCE((SELECT current_level FROM publication_observations WHERE threat_key=${tables.threats.key}),-1)`,
           event_at: sql<number | null>`${sql.raw(eventTimeQuery('revisions'))}`,
         })
@@ -708,8 +729,24 @@ export class Store {
       const nvdPolicy = trackObservations && this.publications.nvdOnly(current);
       const classificationChanged =
         nvdPolicy && (old.priority !== classification.priority || old.level !== severityLevel(current.scores));
-      const changed = !old.revision_id || material !== old.material || crossesCutoff || classificationChanged;
-      const identity = `${key}:${material}:${current.eventAt}${nvdPolicy ? `:${classification.priority}:${old.generation + 1}` : ''}`;
+      const listing = current.rejected ? undefined : kevBatch(current);
+      const batchId = listing && listing.size > 1 ? listing.id : null;
+      let newlyListed = batchId !== null && batchId !== old.kev_batch;
+      if (listing?.size === 1) {
+        const existingListing =
+          old.revision_id &&
+          (await this.statement(
+            `SELECT 1 FROM revisions r, json_each(r.snapshot,'$.evidence') e
+          WHERE r.id=? AND json_extract(e.value,'$.kevBatch.id')=?`,
+            old.revision_id,
+            listing.id,
+          ).first());
+        newlyListed = !existingListing;
+      }
+      const changed =
+        !old.revision_id || material !== old.material || crossesCutoff || classificationChanged || newlyListed;
+      const suffix = nvdPolicy ? `:${classification.priority}:${old.generation + 1}` : '';
+      const identity = `${key}:${material}:${current.eventAt}${suffix}${newlyListed ? `:kev:${listing?.id}` : ''}`;
       const id = changed ? await digest(identity) : old.revision_id!;
       const evidenceHash = await digest(
         JSON.stringify(current.evidence.map((e) => ({ ...e, fetchedAt: 0, modifiedAt: 0 }))),
@@ -718,7 +755,7 @@ export class Store {
 
       const result = await this.db.batch([
         this.statement(
-          `INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at) SELECT ?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) AND ${eventCutoffQuery}=? ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible`,
+          `INSERT INTO revisions(id,threat_key,snapshot,evidence_hash,kind,event_at,priority,urgent,eligible,created_at,kev_batch) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM threats WHERE key=? AND generation=?) AND ${eventCutoffQuery}=? ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,evidence_hash=excluded.evidence_hash,priority=excluded.priority,urgent=excluded.urgent,eligible=excluded.eligible,kev_batch=excluded.kev_batch`,
           id,
           key,
           JSON.stringify(current),
@@ -729,6 +766,7 @@ export class Store {
           classification.urgent ? 1 : 0,
           classification.eligible || (current.rejected && Boolean(old.revision_id)) ? 1 : 0,
           now,
+          batchId,
           key,
           old.generation,
           cutoff,
@@ -1165,7 +1203,10 @@ export class Store {
         day,
       ),
       this.statement(
-        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND NOT EXISTS(SELECT 1 FROM revisions cr WHERE cr.id=deliveries.revision_id AND COALESCE(deliveries.event_at,${eventTimeQuery('cr')})<${eventCutoffQuery}) AND (deliveries.mode<>'digest' OR (deliveries.event_at>=${eventCutoffQuery} AND EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id) AND NOT EXISTS(SELECT 1 FROM delivery_items i LEFT JOIN threats t ON t.key=i.threat_key LEFT JOIN revisions r ON r.id=t.revision_id LEFT JOIN publication_observations o ON o.threat_key=i.threat_key LEFT JOIN summaries s ON s.revision_id=r.id WHERE i.delivery_id=deliveries.id AND (r.id IS NULL OR r.id<>i.revision_id OR r.evidence_hash<>i.evidence_hash OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1 OR COALESCE(o.nvd_only,0)<>1 OR o.high_at IS NULL OR o.high_at<>i.event_at OR s.evidence_hash IS NULL OR s.evidence_hash<>i.evidence_hash OR i.summary_json IS NULL OR s.summary<>i.summary_json OR COALESCE(json_extract(s.validation,'$.valid'),0)<>1 OR (?=1 AND COALESCE(json_extract(s.validation,'$.complete'),0)<>1) OR (SELECT MAX(json_extract(value,'$.score')) FROM json_each(r.snapshot,'$.scores')) NOT BETWEEN 7 AND 8.999999 OR EXISTS(SELECT 1 FROM delivery_items other JOIN deliveries od ON od.id=other.delivery_id WHERE other.threat_key=i.threat_key AND other.level>=2 AND od.target_id=deliveries.target_id AND od.id<>deliveries.id AND od.state IN ('sent','sending','unknown')))))) AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
+        `UPDATE deliveries SET state='sending',lease_token=?,lease_until=?,reserved_day=?,updated_at=?,prepared=COALESCE(?,prepared) WHERE id=? AND target_id=? AND state='ready' AND available_at<=? AND NOT EXISTS(SELECT 1 FROM revisions cr WHERE cr.id=deliveries.revision_id AND COALESCE(deliveries.event_at,${eventTimeQuery('cr')})<${eventCutoffQuery}) AND (deliveries.mode<>'digest' OR (deliveries.event_at>=${eventCutoffQuery}
+          AND CASE WHEN deliveries.kev_batch IS NOT NULL THEN (${kevDigestCurrentSql('?')})
+          ELSE (EXISTS(SELECT 1 FROM delivery_items i WHERE i.delivery_id=deliveries.id) AND NOT EXISTS(SELECT 1 FROM delivery_items i LEFT JOIN threats t ON t.key=i.threat_key LEFT JOIN revisions r ON r.id=t.revision_id LEFT JOIN publication_observations o ON o.threat_key=i.threat_key LEFT JOIN summaries s ON s.revision_id=r.id WHERE i.delivery_id=deliveries.id AND (r.id IS NULL OR r.id<>i.revision_id OR r.evidence_hash<>i.evidence_hash OR r.urgent=1 OR json_extract(r.snapshot,'$.rejected')=1 OR COALESCE(o.nvd_only,0)<>1 OR o.high_at IS NULL OR o.high_at<>i.event_at OR s.evidence_hash IS NULL OR s.evidence_hash<>i.evidence_hash OR i.summary_json IS NULL OR s.summary<>i.summary_json OR COALESCE(json_extract(s.validation,'$.valid'),0)<>1 OR (?=1 AND COALESCE(json_extract(s.validation,'$.complete'),0)<>1) OR (SELECT MAX(json_extract(value,'$.score')) FROM json_each(r.snapshot,'$.scores')) NOT BETWEEN 7 AND 8.999999 OR EXISTS(SELECT 1 FROM delivery_items other JOIN deliveries od ON od.id=other.delivery_id WHERE other.threat_key=i.threat_key AND other.level>=2 AND od.target_id=deliveries.target_id AND od.id<>deliveries.id AND od.state IN ('sent','sending','unknown')))))
+          END)) AND (? IS NULL OR EXISTS(SELECT 1 FROM revisions r JOIN threats t ON t.revision_id=r.id WHERE r.id=deliveries.revision_id AND r.evidence_hash=?)) AND (urgent=1 OR NOT EXISTS(SELECT 1 FROM deliveries u WHERE u.target_id=deliveries.target_id AND u.urgent=1 AND u.state='ready' AND u.available_at<=? AND EXISTS(SELECT 1 FROM quotas uq WHERE uq.target_id=u.target_id AND uq.day=? AND uq.bucket='urgent' AND uq.used<?))) AND EXISTS(SELECT 1 FROM targets t WHERE t.id=? AND t.paused=0 AND t.active_delivery IS NULL AND (t.last_attempt_at IS NULL OR t.last_attempt_at<=?) AND (CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END IS NULL OR CASE WHEN deliveries.urgent=1 THEN t.last_urgent_at ELSE t.last_normal_at END<=? - CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)) AND EXISTS(SELECT 1 FROM quotas q WHERE q.target_id=? AND q.day=? AND q.bucket=CASE WHEN deliveries.urgent=1 THEN 'urgent' ELSE 'normal' END AND q.used<CASE WHEN deliveries.urgent=1 THEN ? ELSE ? END)`,
         token,
         now + 300000,
         day,
@@ -1174,6 +1215,7 @@ export class Store {
         id,
         target.id,
         now,
+        target.qualityGate.enabled ? 1 : 0,
         target.qualityGate.enabled ? 1 : 0,
         expectedEvidenceHash ?? null,
         expectedEvidenceHash ?? null,

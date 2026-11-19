@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import type { Config, Environment, SourceConfig, TargetConfig } from './config';
-import { classify, digest, type PostIntent, type Summary, type Validation } from './domain';
+import {
+  classify,
+  digest,
+  type KevBatch,
+  type PostIntent,
+  type SourceItem,
+  type Summary,
+  type Validation,
+} from './domain';
 import { HttpError } from './http';
 import { SHORTEN_SYSTEM, SUMMARY_SYSTEM, VERIFY_SYSTEM } from './llm/prompts';
 import type { AiBinding, LlmProvider, LlmRequest } from './llm/provider';
@@ -13,9 +21,9 @@ import { describePublishFailure } from './social/diagnostics';
 import { sourceProvider } from './sources';
 import type { SourceProvider } from './sources/provider';
 import { Store, type Job, type Revision, type Delivery } from './store';
-import { digestWindow } from './publication';
-import { formatDigest } from './social/digest';
-import { formatDigestEntry } from './social/format';
+import { digestWindow, kevBatch, severityLevel } from './publication';
+import { formatDigest, formatKevDigest } from './social/digest';
+import { formatDigestEntry, formatKevDigestEntry } from './social/format';
 import { selectTags } from './social/tags';
 import type { DigestMember } from './publication-store';
 
@@ -77,6 +85,18 @@ export class Bot {
     return `analyze:${revisionId}:${evidenceHash}:${await this.analysisPolicy()}`;
   }
 
+  private hasKev(revision: Revision): boolean {
+    return (
+      !revision.snapshot.rejected &&
+      revision.snapshot.evidence.some(
+        (entry) =>
+          entry.exploited &&
+          entry.scope === 'cve' &&
+          this.config.sources.some((source) => source.kind === 'kev' && source.id === entry.sourceId),
+      )
+    );
+  }
+
   /** 定期実行として状態を同期し、作業をキューへ送る。 */
   async tick(now = Date.now()) {
     await this.store.bootstrapTime(now);
@@ -98,6 +118,7 @@ export class Bot {
     if (this.store.publications.enabled) {
       await this.buildDigests(now);
     }
+    await this.buildKevDigests(now);
 
     for (const delivery of await this.store.dueDeliveries(now)) {
       await this.store.enqueue(
@@ -255,6 +276,7 @@ export class Bot {
         key: revision.threat_key,
         title: revision.snapshot.title,
         severity: classify(revision.snapshot).severity,
+        kev: this.hasKev(revision),
         summary: cached.summary,
         sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(0, 2),
         previousPost: await this.store.previousPost(target.id, revision.threat_key),
@@ -381,9 +403,20 @@ export class Bot {
       })
     ).collect(cursor, now);
 
+    const newKevIds = new Set(source.kind === 'kev' ? batch.kevNewIds : undefined);
+    const group =
+      newKevIds.size > 0
+        ? { id: await digest(JSON.stringify([job.id, [...newKevIds].sort()])), size: newKevIds.size, collectedAt: now }
+        : null;
+    const kevIngests: { id: string; item: SourceItem }[] = [];
     for (const item of batch.items) {
       const hash = await digest(JSON.stringify({ ...item, fetchedAt: 0 }));
-      await this.store.enqueue(`ingest:${source.id}:${hash}`, 'ingest', { sourceId: source.id, item }, now);
+      const ingestId = `ingest:${source.id}:${hash}`;
+      if (source.kind === 'kev') {
+        kevIngests.push({ id: ingestId, item: group && newKevIds.has(item.id) ? { ...item, kevBatch: group } : item });
+      } else {
+        await this.store.enqueue(ingestId, 'ingest', { sourceId: source.id, item }, now);
+      }
     }
 
     const continuation = batch.more
@@ -393,7 +426,15 @@ export class Bot {
         }
       : undefined;
 
-    await this.store.completeSource(id, batch.cursor, now + source.pollIntervalSeconds * 1000, now, continuation, job);
+    await this.store.completeSource(
+      id,
+      batch.cursor,
+      now + source.pollIntervalSeconds * 1000,
+      now,
+      continuation,
+      job,
+      kevIngests,
+    );
   }
 
   private promptEvidence(revision: Revision) {
@@ -565,11 +606,14 @@ export class Bot {
         continue;
       }
       const decision = await this.store.publications.decision(revision, target.id);
-      if (!decision || (this.store.publications.enabled && decision.route === 'digest')) {
+      if (!decision) {
+        continue;
+      }
+      const allowed = cached.validation.valid && (!target.qualityGate.enabled || cached.validation.complete);
+      if (decision.route === 'digest' && (allowed || !revision.kev_batch)) {
         continue;
       }
       const deliveryId = await digest(`${target.id}:${id}`);
-      const allowed = cached.validation.valid && (!target.qualityGate.enabled || cached.validation.complete);
       await this.store.createDelivery(
         deliveryId,
         target.id,
@@ -684,10 +728,11 @@ export class Bot {
     }
 
     const decision = await this.store.publications.decision(revision, target.id);
-    if (!decision || (this.store.publications.enabled && decision.route !== 'individual')) {
+    if (!decision || decision.route !== 'individual') {
+      const digestReason = revision.kev_batch ? 'kev_to_digest' : 'individual_to_digest';
       await this.store.staleDelivery(
         id,
-        decision?.route === 'digest' ? 'individual_to_digest' : 'publication_policy_changed',
+        decision?.route === 'digest' ? digestReason : 'publication_policy_changed',
         now,
       );
       return;
@@ -716,6 +761,7 @@ export class Bot {
       key: revision.threat_key,
       title: revision.snapshot.title,
       severity: classify(revision.snapshot).severity,
+      kev: this.hasKev(revision),
       summary: cached.summary,
       sources: [...new Set(revision.snapshot.evidence.map((e) => e.url))].slice(0, 2),
       previousPost,
@@ -740,6 +786,94 @@ export class Bot {
     }
 
     await this.sendPrepared(delivery, target, provider, prepared, now, revision.evidence_hash);
+  }
+
+  private async buildKevDigests(now: number) {
+    if (!this.config.sources.some((source) => source.kind === 'kev') || !this.config.targets.length) {
+      return;
+    }
+
+    const earliest = Math.max(await this.store.eventCutoff(), now - this.config.freshnessSeconds * 1000);
+    for (const target of this.config.targets) {
+      if (!target.enabled && !this.config.dryRun) {
+        continue;
+      }
+      const rows = await this.store.publications.kevCandidates(target.id, earliest);
+      const groups = new Map<string, { batch: KevBatch; rows: typeof rows }>();
+      for (const row of rows) {
+        const group = groups.get(row.kev_batch);
+        if (group) {
+          group.rows.push(row);
+          continue;
+        }
+        const batch = kevBatch(JSON.parse(row.snapshot) as Revision['snapshot']);
+        if (batch) {
+          groups.set(batch.id, { batch, rows: [row] });
+        }
+      }
+      for (const { batch, rows } of groups.values()) {
+        const candidates = rows
+          .filter((row) => !row.covered)
+          .map((row) => ({
+            row,
+            validation: row.validation ? (JSON.parse(row.validation) as Validation) : null,
+          }));
+        // 要約の遅れで緊急通知を止めないよう、準備待ちには上限を設ける。
+        if (
+          now < batch.collectedAt + 300000 &&
+          (rows.length < batch.size ||
+            candidates.some(({ validation }) => !validation || validation.reasons.includes('verification_pending')))
+        ) {
+          continue;
+        }
+        const members = new Map<string, DigestMember>();
+        const entries: { id: string; text: string }[] = [];
+        for (const { row, validation } of candidates) {
+          if (!row.summary || !validation?.valid || (target.qualityGate.enabled && !validation.complete)) {
+            continue;
+          }
+          const revision: Revision = { ...row, snapshot: JSON.parse(row.snapshot) as Revision['snapshot'] };
+          const summary = JSON.parse(row.summary) as Summary;
+          const text = formatKevDigestEntry(revision.threat_key, revision.snapshot.title, summary);
+          try {
+            formatKevDigest([{ id: revision.id, text }], target.maxCharacters, batch.size);
+          } catch {
+            const id = await digest(`${target.id}:${revision.id}`);
+            const delivery = await this.store.getDelivery(id);
+            if (delivery?.state !== 'held' || delivery.error !== 'digest_item_too_long') {
+              await this.store.createDelivery(
+                id,
+                target.id,
+                revision.id,
+                true,
+                now,
+                'held',
+                'digest_item_too_long',
+                revision.snapshot.eventAt,
+              );
+            }
+            continue;
+          }
+          const decision = {
+            route: 'digest' as const,
+            level: severityLevel(revision.snapshot.scores),
+            eventAt: revision.snapshot.eventAt,
+            reason: 'KEV追加',
+          };
+          members.set(revision.id, { revision, decision, summary });
+          entries.push({ id: revision.id, text });
+        }
+        for (const page of formatKevDigest(entries, target.maxCharacters)) {
+          await this.store.publications.createKevDigest(
+            target.id,
+            batch.id,
+            batch.collectedAt,
+            { text: page.text, members: page.ids.map((id) => members.get(id)!) },
+            now,
+          );
+        }
+      }
+    }
   }
 
   private async buildDigests(now: number) {
@@ -837,7 +971,11 @@ export class Bot {
   }
 
   private async publishDigest(delivery: Delivery, target: TargetConfig | undefined, now: number) {
-    if (!target || (!target.enabled && !this.config.dryRun) || !this.store.publications.enabled) {
+    if (
+      !target ||
+      (!target.enabled && !this.config.dryRun) ||
+      (delivery.kev_batch === null && !this.store.publications.enabled)
+    ) {
       await this.store.holdDelivery(delivery.id, 'digest_disabled', now);
       return;
     }
@@ -854,7 +992,11 @@ export class Bot {
     }
     const prepared = JSON.parse(delivery.prepared ?? '{}') as PreparedPost;
     if (typeof prepared.text !== 'string' || [...prepared.text].length > target.maxCharacters) {
-      await this.store.holdDelivery(delivery.id, 'digest_format_error', now);
+      if (delivery.kev_batch) {
+        await this.store.staleDelivery(delivery.id, 'digest_format_error', now);
+      } else {
+        await this.store.holdDelivery(delivery.id, 'digest_format_error', now);
+      }
       return;
     }
     const provider = this.providers.social?.(target) ?? createSocialProvider(target, this.env);

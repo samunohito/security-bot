@@ -466,4 +466,27 @@ describe('durable work', () => {
     expect((await store.sourceState(source.id))?.active_job).toBeNull();
     expect((await store.list('sources'))[0]?.last_error).toBeNull();
   });
+
+  it('KEVのカーソルと取り込みジョブを現在の収集所有者だけが確定できる', async () => {
+    const source = loadConfig().sources.find((s) => s.id === 'kev')!;
+    await store.syncSources([source], now);
+    const id = (await store.outbox(now))[0]!.id;
+    const expired = (await store.claimJob(id, now))!;
+    const at = now + 190000;
+    await store.recover(at);
+    const current = (await store.claimJob(id, at + 1))!;
+    const cursor = { kevSignatures: { [item.id]: 'current' } };
+    const collected = { ...item, sourceId: source.id };
+    await store.completeSource(source.id, { kevSignatures: {} }, at + 60000, at + 1, undefined, expired, [
+      { id: 'ingest:expired', item: collected },
+    ]);
+    await store.completeSource(source.id, cursor, at + 60000, at + 2, undefined, current, [
+      { id: 'ingest:current', item: collected },
+    ]);
+    expect(await store.sourceCursor(source.id)).toEqual(cursor);
+    expect(await store.getJob('ingest:expired')).toBeNull();
+    const ingest = await store.getJob('ingest:current');
+    expect(ingest?.type).toBe('ingest');
+    expect(JSON.parse(ingest!.payload)).toEqual({ item: collected, sourceId: source.id });
+  });
 });

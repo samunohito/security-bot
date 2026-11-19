@@ -6,6 +6,21 @@ import type { SourceCursor, SourceProvider } from '../src/sources/provider';
 const now = Date.parse('2026-10-27T00:00:00Z');
 const source = loadConfig().sources.find((source) => source.id === 'nvd')!;
 
+describe('NVDのページング', () => {
+  it.each([540, 700])('取得位置が末尾以降の空ページで検索窓を完了する（開始位置: %s）', async (startIndex) => {
+    const provider = sourceProvider(source, {}, async () =>
+      Response.json({ vulnerabilities: [], totalResults: 540, startIndex, resultsPerPage: 0 }),
+    );
+    const cursor = { windowStart: now - 3600000, windowEnd: now, startIndex, pageSize: 50 };
+
+    await expect(provider.collect(cursor, now + 60000)).resolves.toEqual({
+      items: [],
+      more: false,
+      cursor: { completedThrough: now },
+    });
+  });
+});
+
 async function collectPage(provider: SourceProvider, cursor: SourceCursor, now: number) {
   for (let attempt = 0; attempt < 6; attempt++) {
     const batch = await provider.collect(cursor, now);

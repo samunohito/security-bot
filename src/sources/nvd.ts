@@ -71,11 +71,18 @@ export function nvdProvider(
         totalResults: number;
         resultsPerPage: number;
         startIndex: number;
+        vulnerabilities: unknown;
       };
+      // 収集中に結果が減ると、NVDは同じ開始位置に対して末尾以降の空ページを返す。
+      const emptyTerminalPage =
+        data.startIndex >= data.totalResults &&
+        Array.isArray(data.vulnerabilities) &&
+        data.vulnerabilities.length === 0;
       if (
         ![data.totalResults, data.resultsPerPage, data.startIndex].every(Number.isSafeInteger) ||
         data.totalResults < 0 ||
-        (data.totalResults > 0 && data.resultsPerPage <= 0) ||
+        data.resultsPerPage < 0 ||
+        (data.resultsPerPage === 0 && !emptyTerminalPage) ||
         data.startIndex !== (cursor.startIndex ?? 0)
       ) {
         throw new Error('invalid_nvd_pagination');
